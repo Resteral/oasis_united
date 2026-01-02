@@ -1,0 +1,94 @@
+.container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  padding: 1.5rem 0;
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+.logo {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: hsl(var(--primary));
+}
+
+.nav {
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+}
+
+.navLink {
+  color: hsl(var(--muted-foreground));
+  font-weight: 500;
+}
+
+.navLink:hover {
+  color: hsl(var(--foreground));
+}
+
+.hero {
+  padding: 8rem 2rem;
+  text-align: center;
+  background: radial-gradient(circle at center, hsl(var(--background)), hsl(var(--card)));
+}
+
+.title {
+  font-size: 4rem;
+  line-height: 1.1;
+  margin-bottom: 1.5rem;
+  background: linear-gradient(to right, hsl(var(--foreground)), hsl(var(--muted-foreground)));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.highlight {
+  color: hsl(var(--primary));
+  -webkit-text-fill-color: hsl(var(--primary));
+}
+
+.subtitle {
+  font-size: 1.25rem;
+  color: hsl(var(--muted-foreground));
+  max-width: 600px;
+  margin: 0 auto 3rem;
+}
+
+.cta {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.features {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+  padding: 4rem 1rem;
+}
+
+.featureCard {
+  padding: 2rem;
+  border-radius: var(--radius);
+  border: 1px solid hsl(var(--border));
+}
+
+.featureCard h3 {
+  margin-bottom: 1rem;
+  font-size: 1.25rem;
+}
+
+.featureCard p {
+  color: hsl(var(--muted-foreground));
+}
+
+.footer {
+  margin-top: auto;
+  padding: 2rem;
+  text-align: center;
+  color: hsl(var(--muted-foreground));
+  border-top: 1px solid hsl(var(--border));
+}

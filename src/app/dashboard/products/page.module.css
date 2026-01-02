@@ -1,0 +1,81 @@
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.title {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+.subtitle {
+    color: hsl(var(--muted-foreground));
+}
+
+.tableContainer {
+    background-color: hsl(var(--card));
+    border-radius: var(--radius);
+    border: 1px solid hsl(var(--border));
+    overflow: hidden;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+.table th {
+    background-color: hsl(var(--muted));
+    color: hsl(var(--muted-foreground));
+    padding: 1rem;
+    font-weight: 500;
+    font-size: 0.875rem;
+}
+
+.table td {
+    padding: 1rem;
+    border-bottom: 1px solid hsl(var(--border));
+    color: hsl(var(--foreground));
+}
+
+.table tr:last-child td {
+    border-bottom: none;
+}
+
+.nameCell {
+    font-weight: 600;
+}
+
+.badge {
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    background-color: hsl(var(--input));
+    font-size: 0.75rem;
+    color: hsl(var(--muted-foreground));
+}
+
+.lowStock {
+    color: hsl(var(--destructive));
+    font-weight: 600;
+}
+
+.actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.actionBtn {
+    background: none;
+    border: none;
+    color: hsl(var(--primary));
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.actionBtn:hover {
+    text-decoration: underline;
+}

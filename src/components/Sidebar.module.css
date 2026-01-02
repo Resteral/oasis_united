@@ -1,0 +1,59 @@
+.sidebar {
+    width: 250px;
+    height: 100vh;
+    background-color: hsl(var(--card));
+    border-right: 1px solid hsl(var(--border));
+    display: flex;
+    flex-direction: column;
+    padding: 1.5rem;
+    position: fixed;
+    left: 0;
+    top: 0;
+}
+
+.logo {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: hsl(var(--primary));
+    margin-bottom: 2rem;
+    letter-spacing: -0.05em;
+}
+
+.nav {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    flex: 1;
+}
+
+.link {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius);
+    color: hsl(var(--muted-foreground));
+    text-decoration: none;
+    transition: all 0.2s;
+    font-weight: 500;
+}
+
+.link:hover {
+    background-color: hsl(var(--accent));
+    color: hsl(var(--accent-foreground));
+}
+
+.icon {
+    margin-right: 0.75rem;
+    font-size: 1.25rem;
+}
+
+.footer {
+    padding-top: 1rem;
+    border-top: 1px solid hsl(var(--border));
+}
+
+.user {
+    font-size: 0.875rem;
+    color: hsl(var(--foreground));
+    font-weight: 600;
+}

@@ -7,10 +7,10 @@ export default function Home() {
     <div className={styles.container}>
       <header className={styles.header}>
         <div className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div className={styles.logo}>OasisUnited</div>
+          <Link href="/" className={styles.logo} style={{ textDecoration: 'none' }}>OasisUnited</Link>
           <nav className={styles.nav}>
             <Link href="/shop/demo" className={styles.navLink}>Demo Store</Link>
-            <Link href="/dashboard" className="btn btn-primary">Business Login</Link>
+            <Link href="/login" className="btn btn-primary">Log In</Link>
           </nav>
         </div>
       </header>
@@ -47,6 +47,26 @@ export default function Home() {
           <div className={`${styles.featureCard} glass`}>
             <h3>Analytics</h3>
             <p>Track views, orders, and customer engagement in real-time.</p>
+          </div>
+        </section>
+
+        <section className={styles.discovery}>
+          <div className="container">
+            <h2 className={styles.sectionTitle}>Suggestions Near You</h2>
+            <div className={styles.nearbyGrid}>
+              {[1, 2, 3].map((i) => (
+                <Link href="/shop/demo" key={i} className={styles.businessCard}>
+                  <div className={styles.businessImage} />
+                  <div className={styles.businessInfo}>
+                    <h4>Local Cafe {i}</h4>
+                    <p>Open • 0.8 miles away</p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+            <div style={{ textAlign: 'center', marginTop: '2rem' }}>
+              <button className="btn btn-outline">Use My Location</button>
+            </div>
           </div>
         </section>
       </main>

@@ -14,6 +14,48 @@
     color: hsl(var(--muted-foreground));
 }
 
+.addProductForm {
+    background-color: hsl(var(--card));
+    padding: 1.5rem;
+    border-radius: var(--radius);
+    border: 1px solid hsl(var(--border));
+    margin-bottom: 2rem;
+    animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.formRow {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.imageControl {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.preview {
+    width: 100px;
+    height: 100px;
+    object-fit: cover;
+    border-radius: var(--radius);
+    border: 1px solid hsl(var(--border));
+}
+
 .tableContainer {
     background-color: hsl(var(--card));
     border-radius: var(--radius);
@@ -39,10 +81,20 @@
     padding: 1rem;
     border-bottom: 1px solid hsl(var(--border));
     color: hsl(var(--foreground));
+    vertical-align: middle;
 }
 
 .table tr:last-child td {
     border-bottom: none;
+}
+
+.productThumb {
+    width: 40px;
+    height: 40px;
+    border-radius: 6px;
+    background-color: hsl(var(--muted));
+    background-size: cover;
+    background-position: center;
 }
 
 .nameCell {

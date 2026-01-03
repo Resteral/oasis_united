@@ -3,6 +3,7 @@ import styles from './Sidebar.module.css';
 
 const navItems = [
     { label: 'Overview', href: '/dashboard', icon: '📊' },
+    { label: 'Messages', href: '/dashboard/messages', icon: '💬' },
     { label: 'Products', href: '/dashboard/products', icon: '📦' },
     { label: 'Posts & Events', href: '/dashboard/posts', icon: '📢' },
     { label: 'Settings', href: '/dashboard/settings', icon: '⚙️' },
@@ -11,9 +12,9 @@ const navItems = [
 export default function Sidebar() {
     return (
         <aside className={styles.sidebar}>
-            <div className={styles.logo}>
+            <Link href="/" className={styles.logo} style={{ textDecoration: 'none' }}>
                 OasisUnited
-            </div>
+            </Link>
             <nav className={styles.nav}>
                 {navItems.map((item) => (
                     <Link key={item.href} href={item.href} className={styles.link}>

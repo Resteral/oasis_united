@@ -87,6 +87,7 @@
     display: flex;
     flex-direction: column;
     gap: 1rem;
+    padding-bottom: 1rem;
 }
 
 .item {
@@ -114,23 +115,61 @@
     border-top: 1px solid hsl(var(--border));
 }
 
-.totalRow {
+.toggleGroup {
     display: flex;
-    justify-content: space-between;
-    font-size: 1.25rem;
-    font-weight: 700;
+    background-color: hsl(var(--muted));
+    padding: 0.25rem;
+    border-radius: var(--radius);
+    margin-bottom: 1rem;
+}
+
+.toggleBtn {
+    flex: 1;
+    padding: 0.5rem;
+    border: none;
+    background: none;
+    color: hsl(var(--muted-foreground));
+    border-radius: 4px;
+    /* inner radius */
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.active {
+    background-color: hsl(var(--card));
+    color: hsl(var(--foreground));
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.form {
     margin-bottom: 1.5rem;
 }
 
-.note {
-    font-size: 0.875rem;
-    color: hsl(var(--muted-foreground));
-    margin-bottom: 0.75rem;
+.totalRow {
+    display: flex;
+    justify-content: space-between;
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.grandTotal {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-top: 1rem;
+    margin-bottom: 1.5rem;
+    border-top: 1px dashed hsl(var(--border));
+    padding-top: 1rem;
 }
 
 .actions {
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
-    margin-bottom: 0.75rem;
+}
+
+.empty {
+    text-align: center;
+    color: hsl(var(--muted-foreground));
+    margin-top: 2rem;
 }

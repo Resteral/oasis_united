@@ -23,73 +23,96 @@
     align-items: center;
     justify-content: center;
     padding: 2rem;
+}
+
+.authCard {
+    width: 100%;
+    max-width: 400px;
+    padding: 2.5rem;
+    background-color: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    border-radius: var(--radius);
     text-align: center;
 }
 
 .title {
-    font-size: 2.5rem;
+    font-size: 2rem;
     margin-bottom: 0.5rem;
-    background: linear-gradient(to right, hsl(var(--foreground)), hsl(var(--muted-foreground)));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
 }
 
 .subtitle {
-    font-size: 1.125rem;
     color: hsl(var(--muted-foreground));
-    margin-bottom: 3rem;
+    margin-bottom: 2rem;
 }
 
-.grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 2rem;
-    max-width: 800px;
-    width: 100%;
+.error {
+    background-color: rgba(239, 68, 68, 0.1);
+    color: hsl(var(--destructive));
+    padding: 0.75rem;
+    border-radius: var(--radius);
+    margin-bottom: 1.5rem;
+    font-size: 0.875rem;
 }
 
-.card {
+.form {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    padding: 3rem 2rem;
-    background-color: hsl(var(--card));
+    gap: 1rem;
+}
+
+.input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid hsl(var(--input));
+    border-radius: var(--radius);
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    outline: none;
+}
+
+.input:focus {
+    border-color: hsl(var(--primary));
+}
+
+.roleSelector {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.roleBtn {
+    flex: 1;
+    padding: 0.75rem;
     border: 1px solid hsl(var(--border));
     border-radius: var(--radius);
-    text-decoration: none;
-    color: hsl(var(--foreground));
+    background-color: hsl(var(--background));
+    color: hsl(var(--muted-foreground));
+    cursor: pointer;
     transition: all 0.2s;
 }
 
-.card:hover {
-    transform: translateY(-5px);
+.roleBtn.active {
+    background-color: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
     border-color: hsl(var(--primary));
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
 }
 
-.icon {
-    font-size: 3rem;
-    margin-bottom: 1.5rem;
-}
-
-.card h2 {
-    font-size: 1.5rem;
-    margin-bottom: 0.75rem;
-}
-
-.card p {
+.switchMode {
+    margin-top: 1.5rem;
+    font-size: 0.875rem;
     color: hsl(var(--muted-foreground));
-    margin-bottom: 2rem;
-    line-height: 1.5;
 }
 
-.linkText {
+.textBtn {
+    background: none;
+    border: none;
     color: hsl(var(--primary));
     font-weight: 600;
-    margin-top: auto;
+    cursor: pointer;
+    padding: 0;
+    margin-left: 0.25rem;
 }
 
-.business {
-    border-color: hsl(var(--accent));
-    background: linear-gradient(to bottom right, hsl(var(--card)), rgba(var(--accent), 0.05));
+.textBtn:hover {
+    text-decoration: underline;
 }

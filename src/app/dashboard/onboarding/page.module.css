@@ -1,0 +1,66 @@
+.container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: hsl(var(--background));
+    padding: 2rem;
+}
+
+.card {
+    width: 100%;
+    max-width: 500px;
+    background-color: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    border-radius: var(--radius);
+    padding: 2.5rem;
+}
+
+.card h1 {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+.card p {
+    color: hsl(var(--muted-foreground));
+    margin-bottom: 2rem;
+}
+
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.field label {
+    font-weight: 500;
+    font-size: 0.875rem;
+}
+
+.input,
+.select {
+    padding: 0.75rem;
+    border: 1px solid hsl(var(--input));
+    border-radius: var(--radius);
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    outline: none;
+}
+
+.slugInput {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: hsl(var(--muted-foreground));
+    font-size: 0.875rem;
+}
+
+.slugInput input {
+    flex: 1;
+}

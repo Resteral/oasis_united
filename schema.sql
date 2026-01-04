@@ -26,6 +26,7 @@ create table public.businesses (
   category text, -- Retail, Restaurant, Health, etc.
   location text,
   image_url text, -- Storefront banner
+  integrations jsonb default '{}'::jsonb, -- Channel configs: { twilio: { phone: '+1...' }, instagram: { handle: '@...' } }
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 

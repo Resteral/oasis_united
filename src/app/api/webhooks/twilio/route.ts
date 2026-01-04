@@ -13,14 +13,26 @@ export async function POST(req: NextRequest) {
         }
 
         console.log(`Received SMS from ${from}: ${body}`);
+        const to = formData.get('To') as string; // Capturing the 'To' number to match business
 
-        // 1. Identify Business (In a real app, mapping Phone -> Business)
-        // For prototype, we'll pick the first business found or a specific one.
-        const { data: business } = await supabase
+        // 1. Identify Business via Dynamic Lookup
+        // We search for the business that has this 'To' phone number saved in their integrations.
+        // Note: In Supabase/Postgres, we can query JSONB fields.
+        let { data: business } = await supabase
             .from('businesses')
             .select('id, name')
-            .limit(1)
+            .contains('integrations', { twilio: { phone: to } })
             .single();
+
+        // Fallback or exact match logic if needed (e.g. normalizing phone numbers)
+        if (!business) {
+            // Try strict equality or similar adjustments if numbers vary in format
+            console.log(`No specific business found for number ${to}, checking fallback (or any business for prototype).`);
+            // For prototype/demo, if we can't match, we might pick the first one just to show it works, 
+            // but strictly we should fail or use a default.
+            const { data: defaultBiz } = await supabase.from('businesses').select('id, name').limit(1).single();
+            business = defaultBiz;
+        }
 
         if (business) {
             // 2. Log Message

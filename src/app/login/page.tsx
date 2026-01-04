@@ -21,8 +21,33 @@ export default function LoginPage() {
 
         try {
             if (isSignUp) {
-                // 1. Sign Up
+                // 1. Sign Up with Metadata
                 const { data: authData, error: authError } = await supabase.auth.signUp({
+                    email,
+                    password,
+                    options: {
+                        data: {
+                            role: role,
+                            full_name: email.split('@')[0],
+                        }
+                    }
+                });
+
+                if (authError) throw authError;
+
+                // 2. Handle Profile Creation (Only if session exists immediately - e.g. Auto Confirm)
+                if (authData.session) {
+                    await ensureProfile(authData.user!);
+                    alert("Account created! You are logged in.");
+                    router.push(role === 'business' ? '/dashboard' : '/profile');
+                } else if (authData.user) {
+                    // Email confirmation required
+                    alert("Account created! Please check your email to confirm your account before signing in.");
+                    setIsSignUp(false); // Switch to login view
+                }
+            } else {
+                // 1. Sign In
+                const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
                     email,
                     password,
                 });
@@ -30,40 +55,10 @@ export default function LoginPage() {
                 if (authError) throw authError;
 
                 if (authData.user) {
-                    // 2. Create Profile with Role
-                    const { error: profileError } = await supabase
-                        .from('profiles')
-                        .insert([
-                            {
-                                id: authData.user.id,
-                                role: role,
-                                full_name: email.split('@')[0] // Default name
-                            }
-                        ]);
+                    // 2. Ensure Profile Exists (Lazy creation for email-confirmed users)
+                    const profile = await ensureProfile(authData.user);
 
-                    if (profileError) throw profileError;
-
-                    alert("Account created! Please sign in."); // Simplified flow
-                    setIsSignUp(false);
-                }
-            } else {
-                // 1. Sign In
-                const { error: authError } = await supabase.auth.signInWithPassword({
-                    email,
-                    password,
-                });
-
-                if (authError) throw authError;
-
-                // 2. Check Role to Redirect
-                const { data: { user } } = await supabase.auth.getUser();
-                if (user) {
-                    const { data: profile } = await supabase
-                        .from('profiles')
-                        .select('role')
-                        .eq('id', user.id)
-                        .single();
-
+                    // 3. Redirect based on Role
                     if (profile?.role === 'business') {
                         router.push('/dashboard');
                     } else {
@@ -72,10 +67,43 @@ export default function LoginPage() {
                 }
             }
         } catch (err: any) {
+            console.error("Auth Error:", err);
             setError(err.message);
         } finally {
             setLoading(false);
         }
+    };
+
+    // Helper to ensure profile exists in public table
+    const ensureProfile = async (user: any) => {
+        // Check if profile exists
+        const { data: profile, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', user.id)
+            .single();
+
+        if (profile) return profile;
+
+        // If not, create it using metadata
+        const { data: newProfile, error: insertError } = await supabase
+            .from('profiles')
+            .insert([
+                {
+                    id: user.id,
+                    role: user.user_metadata?.role || 'consumer',
+                    full_name: user.user_metadata?.full_name || user.email?.split('@')[0],
+                }
+            ])
+            .select()
+            .single();
+
+        if (insertError) {
+            // If insert fails (rarity), just return structure or throw
+            // It might fail if RLS issues persist, but now we have a session.
+            throw new Error("Failed to create profile: " + insertError.message);
+        }
+        return newProfile;
     };
 
     return (

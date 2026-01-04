@@ -68,12 +68,30 @@ create table public.orders (
   business_id uuid references public.businesses(id) not null,
   consumer_id uuid references public.profiles(id), -- Nullable if guest checkout
   customer_name text,
+  customer_contact text, -- Phone number or social handle
+  channel text check (channel in ('web', 'sms', 'instagram', 'offline')) default 'web',
   status text default 'pending', -- pending, completed, cancelled
   total numeric not null,
   items jsonb, -- Snapshot of cart items
   type text, -- pickup, shipping
   address text,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+-- 6. MESSAGES TABLE (For AI Context & History)
+create table public.messages (
+    id uuid default uuid_generate_v4() primary key,
+    business_id uuid references public.businesses(id),
+    customer_contact text not null, -- Phone or Handle
+    channel text not null,
+    direction text check (direction in ('inbound', 'outbound')),
+    content text,
+    created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+alter table public.messages enable row level security;
+create policy "Owners can view messages." on public.messages for select using (
+    exists (select 1 from public.businesses where id = business_id and owner_id = auth.uid())
 );
 
 -- RLS: Business see own orders, Consumer see own orders
@@ -91,3 +109,4 @@ create policy "Anyone can create an order." on public.orders for insert with che
 create extension if not exists pg_trgm;
 create index products_name_trgm_idx on public.products using gin (name gin_trgm_ops);
 create index businesses_category_idx on public.businesses (category);
+w

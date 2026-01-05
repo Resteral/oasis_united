@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import styles from './page.module.css';
+import AiDiscoveryModal from '@/components/AiDiscoveryModal';
 
 export default function Home() {
   // Verifying deployment
@@ -69,6 +70,8 @@ export default function Home() {
             </div>
           </div>
         </section>
+
+        <AiDiscoveryModal />
       </main>
 
       <footer className={styles.footer}>

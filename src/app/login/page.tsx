@@ -11,6 +11,7 @@ export default function LoginPage() {
     const [role, setRole] = useState<'consumer' | 'business'>('consumer');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [smsConsent, setSmsConsent] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -29,6 +30,7 @@ export default function LoginPage() {
                         data: {
                             role: role,
                             full_name: email.split('@')[0],
+                            sms_consent: smsConsent,
                         }
                     }
                 });
@@ -93,6 +95,7 @@ export default function LoginPage() {
                     id: user.id,
                     role: user.user_metadata?.role || 'consumer',
                     full_name: user.user_metadata?.full_name || user.email?.split('@')[0],
+                    sms_consent: user.user_metadata?.sms_consent || false,
                 }
             ])
             .select()
@@ -157,6 +160,20 @@ export default function LoginPage() {
                             onChange={(e) => setPassword(e.target.value)}
                             required
                         />
+
+                        {isSignUp && (
+                            <div style={{ display: 'flex', alignItems: 'flex-start', margin: '1rem 0', fontSize: '0.85rem', color: '#555' }}>
+                                <input
+                                    type="checkbox"
+                                    checked={smsConsent}
+                                    onChange={(e) => setSmsConsent(e.target.checked)}
+                                    style={{ marginTop: '0.2rem', marginRight: '0.5rem' }}
+                                />
+                                <span>
+                                    I agree to receive order updates and promotional messages from <strong>OasisUnited</strong> and its merchants at the number provided. Reply STOP to unsubscribe. Msg & Data rates may apply.
+                                </span>
+                            </div>
+                        )}
 
                         <button type="submit" className="btn btn-primary" disabled={loading}>
                             {loading ? 'Processing...' : (isSignUp ? 'Sign Up' : 'Log In')}

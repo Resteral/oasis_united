@@ -1,30 +1,70 @@
 "use client";
 import { useState, useEffect } from 'react';
-import { AutomationService, Message } from '@/services/automation';
+import { supabase } from '@/lib/supabase';
 import styles from './page.module.css';
 
 export default function InboxPage() {
-    const [messages, setMessages] = useState<Message[]>([]);
-    const [lastCheck, setLastCheck] = useState<Date>(new Date());
+    const [messages, setMessages] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // Poll for new messages every 5 seconds
         const fetchMessages = async () => {
-            const data = await AutomationService.getMessages();
-            setMessages(data);
-            setLastCheck(new Date());
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) return;
+
+            // 1. Get Business ID
+            const { data: business } = await supabase
+                .from('businesses')
+                .select('id')
+                .eq('owner_id', user.id)
+                .single();
+
+            if (business) {
+                // 2. Fetch Messages
+                const { data: msgs } = await supabase
+                    .from('messages')
+                    .select('*')
+                    .eq('business_id', business.id)
+                    .order('created_at', { ascending: false });
+
+                if (msgs) {
+                    setMessages(msgs.map(m => ({
+                        id: m.id,
+                        platform: m.channel,
+                        sender: m.customer_contact,
+                        content: m.content,
+                        timestamp: new Date(m.created_at),
+                        read: true // Schema doesn't have read status yet
+                    })));
+                }
+            }
+            setLoading(false);
         };
 
         fetchMessages();
+        // Polling every 5s
         const interval = setInterval(fetchMessages, 5000);
         return () => clearInterval(interval);
     }, []);
 
-    const handleSimulate = (platform: Message['platform']) => {
-        AutomationService.simulateIncomingMessage(platform, "Thinking about placing a large order for my office.");
-        // Immediate refresh
-        AutomationService.getMessages().then(setMessages);
+    const handleSimulate = async (channel: string) => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        const { data: business } = await supabase.from('businesses').select('id').eq('owner_id', user.id).single();
+
+        if (business) {
+            await supabase.from('messages').insert({
+                business_id: business.id,
+                customer_contact: channel === 'instagram' ? '@demo_user' : '+15550000',
+                channel: channel,
+                direction: 'inbound',
+                content: "This is a simulated message to test the inbox."
+            });
+            // Re-fetch will happen on next poll or we could force it
+        }
     };
+
+    if (loading) return <div className="p-8">Loading messages...</div>;
 
     return (
         <div className={styles.container}>
@@ -32,11 +72,11 @@ export default function InboxPage() {
                 <div>
                     <h1 className={styles.title}>Unified Inbox</h1>
                     <p className={styles.subtitle}>
-                        Connected: <span className={styles.status}>Twilio (SMS, WhatsApp)</span>, <span className={styles.status}>Instagram Direct</span>
+                        Manage all your customer conversations in one place.
                     </p>
                 </div>
                 <div className={styles.simulationControls}>
-                    <span className={styles.label}>Test Webhook:</span>
+                    <span className={styles.label}>Simulate Incoming:</span>
                     <button onClick={() => handleSimulate('sms')} className={styles.simBtn}>+ SMS</button>
                     <button onClick={() => handleSimulate('whatsapp')} className={styles.simBtn}>+ WhatsApp</button>
                     <button onClick={() => handleSimulate('instagram')} className={styles.simBtn}>+ Insta</button>
@@ -44,8 +84,10 @@ export default function InboxPage() {
             </div>
 
             <div className={styles.inbox}>
-                {messages.map((msg) => (
-                    <div key={msg.id} className={`${styles.messageCard} ${!msg.read ? styles.unread : ''}`}>
+                {messages.length === 0 ? (
+                    <div className="p-8 text-center text-gray-500">No messages yet.</div>
+                ) : messages.map((msg) => (
+                    <div key={msg.id} className={`${styles.messageCard}`}>
                         <div className={styles.msgIcon}>
                             {msg.platform === 'sms' && '💬'}
                             {msg.platform === 'whatsapp' && '📱'}
@@ -67,6 +109,7 @@ export default function InboxPage() {
                     </div>
                 ))}
             </div>
+
         </div>
     );
 }

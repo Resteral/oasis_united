@@ -1,7 +1,7 @@
 -- FIXED SCHEMA SCRIPT (Safe to run multiple times)
 -- This script ensures your database has all necessary tables and columns without erroring if they already exist.
 
--- 1. EXTENSIONS
+-- 1. EXTENSIONS (Optional, gen_random_uuid() is built-in for PG13+)
 create extension if not exists pg_trgm;
 
 -- 2. PROFILES TABLE
@@ -15,7 +15,7 @@ create table if not exists public.profiles (
 
 alter table public.profiles enable row level security;
 
--- Policies (Drop first to avoid errors, then recreate)
+-- Policies
 drop policy if exists "Public profiles are viewable by everyone." on public.profiles;
 create policy "Public profiles are viewable by everyone." on public.profiles for select using (true);
 
@@ -28,7 +28,7 @@ create policy "Users can update own profile." on public.profiles for update usin
 
 -- 3. BUSINESSES TABLE
 create table if not exists public.businesses (
-  id uuid default uuid_generate_v4() primary key,
+  id uuid default gen_random_uuid() primary key,
   owner_id uuid references public.profiles(id) not null,
   slug text unique not null,
   name text not null,
@@ -69,13 +69,12 @@ create policy "Owners can insert their business." on public.businesses for inser
 drop policy if exists "Owners can update their business." on public.businesses;
 create policy "Owners can update their business." on public.businesses for update using (auth.uid() = owner_id);
 
--- Index
 create index if not exists businesses_category_idx on public.businesses (category);
 
 
 -- 4. PRODUCTS TABLE
 create table if not exists public.products (
-  id uuid default uuid_generate_v4() primary key,
+  id uuid default gen_random_uuid() primary key,
   business_id uuid references public.businesses(id) not null,
   name text not null,
   description text,
@@ -107,13 +106,12 @@ create policy "Owners can delete products." on public.products for delete using 
   exists (select 1 from public.businesses where id = business_id and owner_id = auth.uid())
 );
 
--- Index
 create index if not exists products_name_trgm_idx on public.products using gin (name gin_trgm_ops);
 
 
 -- 5. ORDERS TABLE
 create table if not exists public.orders (
-  id uuid default uuid_generate_v4() primary key,
+  id uuid default gen_random_uuid() primary key,
   business_id uuid references public.businesses(id) not null,
   consumer_id uuid references public.profiles(id),
   customer_name text,
@@ -125,7 +123,6 @@ create table if not exists public.orders (
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
--- Safely add columns
 do $$
 begin
     if not exists (select 1 from information_schema.columns where table_name = 'orders' and column_name = 'customer_contact') then
@@ -155,7 +152,7 @@ create policy "Anyone can create an order." on public.orders for insert with che
 
 -- 6. MESSAGES TABLE
 create table if not exists public.messages (
-    id uuid default uuid_generate_v4() primary key,
+    id uuid default gen_random_uuid() primary key,
     business_id uuid references public.businesses(id),
     customer_contact text not null,
     channel text not null,
@@ -163,6 +160,13 @@ create table if not exists public.messages (
     content text,
     created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
+
+do $$
+begin
+    if not exists (select 1 from information_schema.columns where table_name = 'messages' and column_name = 'is_read') then
+        alter table public.messages add column is_read boolean default false;
+    end if;
+end $$;
 
 alter table public.messages enable row level security;
 
@@ -174,7 +178,7 @@ create policy "Owners can view messages." on public.messages for select using (
 
 -- 7. POSTS TABLE
 create table if not exists public.posts (
-  id uuid default uuid_generate_v4() primary key,
+  id uuid default gen_random_uuid() primary key,
   business_id uuid references public.businesses(id) not null,
   type text check (type in ('post', 'event')) default 'post',
   title text,

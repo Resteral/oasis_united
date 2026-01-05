@@ -34,8 +34,8 @@ export async function POST(request: NextRequest) {
                         // 1. Find the business connected to this Instagram Page ID
                         const { data: business } = await supabase
                             .from('businesses')
-                            .select('id, name, category, delivery_settings')
-                            .contains('delivery_settings', { instagram_id: pageId })
+                            .select('id, name, category, integrations')
+                            .contains('integrations', { instagram: { id: pageId } })
                             .single();
 
                         if (business) {
@@ -46,6 +46,7 @@ export async function POST(request: NextRequest) {
                                 channel: 'instagram',
                                 direction: 'inbound',
                                 content: message.text,
+                                is_read: false
                             });
 
                             // 3. AI / Context-Aware Logic

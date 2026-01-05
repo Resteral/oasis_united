@@ -20,17 +20,21 @@ create table if not exists public.posts (
 alter table public.posts enable row level security;
 
 -- Everyone can read posts
+drop policy if exists "Posts are viewable by everyone." on public.posts;
 create policy "Posts are viewable by everyone." on public.posts for select using (true);
 
 -- Only business owners can insert/update/delete their own posts
+drop policy if exists "Owners can insert posts." on public.posts;
 create policy "Owners can insert posts." on public.posts for insert with check (
   exists (select 1 from public.businesses where id = business_id and owner_id = auth.uid())
 );
 
+drop policy if exists "Owners can update posts." on public.posts;
 create policy "Owners can update posts." on public.posts for update using (
   exists (select 1 from public.businesses where id = business_id and owner_id = auth.uid())
 );
 
+drop policy if exists "Owners can delete posts." on public.posts;
 create policy "Owners can delete posts." on public.posts for delete using (
   exists (select 1 from public.businesses where id = business_id and owner_id = auth.uid())
 );

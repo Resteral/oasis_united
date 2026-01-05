@@ -84,13 +84,9 @@ export default function DashboardOverview() {
                     <span className={styles.statTrend} style={{ color: '#4caf50' }}>+12% vs last month</span>
                 </div>
                 <div className={styles.statCard}>
-                    <span className={styles.statLabel}>Orders Activity</span>
-                    <div className={styles.statValue} style={{ fontSize: '1.5rem', display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
-                        <span>{stats.totalOrders}</span>
-                        <span style={{ fontSize: '0.9rem', color: '#666', fontWeight: 'normal' }}>Taken</span>
-                        <span style={{ color: '#ccc' }}>/</span>
-                        <span>{stats.ordersServed}</span>
-                        <span style={{ fontSize: '0.9rem', color: '#666', fontWeight: 'normal' }}>Served</span>
+                    <span className={styles.statLabel}>Orders Taken</span>
+                    <div className={styles.statValue}>
+                        {stats.totalOrders}
                     </div>
                     <span className={styles.statTrend} style={{ color: '#4caf50' }}>+5% vs last month</span>
                 </div>

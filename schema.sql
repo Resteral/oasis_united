@@ -27,6 +27,8 @@ create table public.businesses (
   location text,
   image_url text, -- Storefront banner
   integrations jsonb default '{}'::jsonb, -- Channel configs: { twilio: { phone: '+1...' }, instagram: { handle: '@...' } }
+  theme jsonb default '{}'::jsonb, -- Website colors: { primaryColor: '#...', backgroundColor: '#...' }
+  delivery_settings jsonb default '{}'::jsonb, -- Delivery config: { radius: 5, providers: ['doordash'], selfDelivery: true }
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
   updated_at timestamp with time zone default timezone('utc'::text, now())
 );

@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import styles from './page.module.css';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 export default function DashboardOverview() {
     const [loading, setLoading] = useState(true);
@@ -13,6 +14,9 @@ export default function DashboardOverview() {
     });
     const [recentOrders, setRecentOrders] = useState<any[]>([]);
 
+    // Revenue Data State
+    const [revenueData, setRevenueData] = useState<any[]>([]);
+
     useEffect(() => {
         async function loadDashboardData() {
             setLoading(true);
@@ -22,12 +26,17 @@ export default function DashboardOverview() {
             const { data: business } = await supabase.from('businesses').select('id, name').eq('owner_id', user.id).single();
 
             if (business) {
-                // 1. Fetch Stats (Simulated aggregation for demo, in prod use Counts or specialized views)
+                // 1. Fetch Stats
                 const { count: orderCount } = await supabase.from('orders').select('*', { count: 'exact', head: true }).eq('business_id', business.id);
                 const { count: productCount } = await supabase.from('products').select('*', { count: 'exact', head: true }).eq('business_id', business.id);
 
-                // For revenue, we fetch recent orders and sum them (simplified)
-                const { data: orders } = await supabase.from('orders').select('total, created_at, status, customer_name').eq('business_id', business.id).order('created_at', { ascending: false }).limit(5);
+                // Fetch recent orders
+                const { data: orders } = await supabase
+                    .from('orders')
+                    .select('total, created_at, status, customer_name')
+                    .eq('business_id', business.id)
+                    .order('created_at', { ascending: false })
+                    .limit(5);
 
                 // Mock Revenue Calculation (randomized base + actual sums if we had them)
                 const mockRevenue = 12500 + (orderCount || 0) * 25;
@@ -40,6 +49,15 @@ export default function DashboardOverview() {
                 });
 
                 setRecentOrders(orders || []);
+
+                // Generate Mock Chart Data (Last 7 Days)
+                const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                const mockChartData = days.map(day => ({
+                    name: day,
+                    revenue: Math.floor(Math.random() * (2000 - 800) + 800), // Random daily between 800 and 2000
+                    orders: Math.floor(Math.random() * (15 - 2) + 2),
+                }));
+                setRevenueData(mockChartData);
             }
             setLoading(false);
         }
@@ -83,21 +101,31 @@ export default function DashboardOverview() {
             <div className={styles.contentGrid}>
                 <div className={styles.chartSection}>
                     <h3>Revenue Analytics</h3>
-                    <div className={styles.chartPlaceholder}>
-                        {/* Placeholder for a Chart.js or Recharts component */}
-                        <div style={{ display: 'flex', alignItems: 'flex-end', height: '200px', gap: '1rem', padding: '1rem 0' }}>
-                            {[40, 60, 45, 70, 55, 80, 65].map((h, i) => (
-                                <div key={i} style={{
-                                    flex: 1,
-                                    backgroundColor: i === 6 ? '#000' : '#eee',
-                                    height: `${h}%`,
-                                    borderRadius: '4px'
-                                }}></div>
-                            ))}
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#888' }}>
-                            <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
-                        </div>
+                    <div style={{ width: '100%', height: 300 }}>
+                        <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart data={revenueData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                                <defs>
+                                    <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#222" stopOpacity={0.8} />
+                                        <stop offset="95%" stopColor="#222" stopOpacity={0} />
+                                    </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                                <XAxis dataKey="name" axisLine={false} tickLine={false} />
+                                <YAxis axisLine={false} tickLine={false} tickFormatter={(val) => `$${val}`} />
+                                <Tooltip
+                                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                                    formatter={(value: number | undefined) => [`$${value}`, 'Revenue']}
+                                />
+                                <Area
+                                    type="monotone"
+                                    dataKey="revenue"
+                                    stroke="#222"
+                                    fillOpacity={1}
+                                    fill="url(#colorRevenue)"
+                                />
+                            </AreaChart>
+                        </ResponsiveContainer>
                     </div>
                 </div>
 

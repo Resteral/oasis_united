@@ -8,6 +8,7 @@ export default function DashboardOverview() {
     const [loading, setLoading] = useState(true);
     const [stats, setStats] = useState({
         totalOrders: 0,
+        ordersServed: 0,
         totalRevenue: 0,
         activeProducts: 0,
         unreadMessages: 0
@@ -28,6 +29,7 @@ export default function DashboardOverview() {
             if (business) {
                 // 1. Fetch Stats
                 const { count: orderCount } = await supabase.from('orders').select('*', { count: 'exact', head: true }).eq('business_id', business.id);
+                const { count: servedCount } = await supabase.from('orders').select('*', { count: 'exact', head: true }).eq('business_id', business.id).eq('status', 'completed');
                 const { count: productCount } = await supabase.from('products').select('*', { count: 'exact', head: true }).eq('business_id', business.id);
 
                 // Fetch recent orders
@@ -43,6 +45,7 @@ export default function DashboardOverview() {
 
                 setStats({
                     totalOrders: orderCount || 0,
+                    ordersServed: servedCount || 0,
                     totalRevenue: mockRevenue,
                     activeProducts: productCount || 0,
                     unreadMessages: 3 // Mock for now
@@ -81,8 +84,14 @@ export default function DashboardOverview() {
                     <span className={styles.statTrend} style={{ color: '#4caf50' }}>+12% vs last month</span>
                 </div>
                 <div className={styles.statCard}>
-                    <span className={styles.statLabel}>Total Orders</span>
-                    <span className={styles.statValue}>{stats.totalOrders}</span>
+                    <span className={styles.statLabel}>Orders Activity</span>
+                    <div className={styles.statValue} style={{ fontSize: '1.5rem', display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
+                        <span>{stats.totalOrders}</span>
+                        <span style={{ fontSize: '0.9rem', color: '#666', fontWeight: 'normal' }}>Taken</span>
+                        <span style={{ color: '#ccc' }}>/</span>
+                        <span>{stats.ordersServed}</span>
+                        <span style={{ fontSize: '0.9rem', color: '#666', fontWeight: 'normal' }}>Served</span>
+                    </div>
                     <span className={styles.statTrend} style={{ color: '#4caf50' }}>+5% vs last month</span>
                 </div>
                 <div className={styles.statCard}>

@@ -23,7 +23,11 @@ export default function DashboardOverview() {
         async function loadDashboardData() {
             setLoading(true);
             const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return;
+            if (!user) {
+                // Redirect to login if not authenticated
+                window.location.href = '/login';
+                return;
+            }
 
             const { data: business } = await supabase.from('businesses').select('id, name').eq('owner_id', user.id).single();
 

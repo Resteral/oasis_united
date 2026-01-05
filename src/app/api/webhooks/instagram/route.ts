@@ -93,6 +93,7 @@ export async function POST(request: NextRequest) {
                                     channel: 'instagram',
                                     direction: 'outbound',
                                     content: replyText,
+                                    is_read: true,
                                     created_at: new Date(Date.now() + 1000).toISOString() // Slight delay
                                 });
                                 console.log(`[Mock AI Reply] To ${senderId}: ${replyText}`);

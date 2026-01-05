@@ -92,7 +92,11 @@ export default function SettingsPage() {
             location,
             integrations: {
                 twilio: { phone: twilioPhone, connected: !!twilioPhone },
-                instagram: { handle: instagramHandle, connected: !!instagramHandle }
+                instagram: {
+                    handle: instagramHandle,
+                    id: instagramId, // Saved here for lookup
+                    connected: !!instagramHandle || !!instagramId
+                }
             },
             theme: {
                 primaryColor,
@@ -350,17 +354,29 @@ export default function SettingsPage() {
                                 </span>
                             </div>
                             <div style={{ paddingLeft: '1rem' }}>
-                                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9em', color: '#555' }}>Instagram Handle</label>
-                                <input
-                                    value={instagramHandle}
-                                    onChange={e => {
-                                        setInstagramConnected(false);
-                                        setInstagramHandle(e.target.value);
-                                    }}
-                                    placeholder="@yourbusiness"
-                                    style={{ width: '100%', padding: '0.8rem', border: '1px solid #ddd', borderRadius: '6px' }}
-                                />
-                                <p style={{ fontSize: '0.85em', color: '#888', marginTop: '0.5rem' }}>Connect your profile to handle DMs and comments automatically.</p>
+                                <div style={{ marginBottom: '1rem' }}>
+                                    <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9em', color: '#555' }}>Instagram Page ID</label>
+                                    <input
+                                        value={instagramId}
+                                        onChange={e => setInstagramId(e.target.value)}
+                                        placeholder="e.g. 1784140..."
+                                        style={{ width: '100%', padding: '0.8rem', border: '1px solid #ddd', borderRadius: '6px', fontFamily: 'monospace' }}
+                                    />
+                                    <p style={{ fontSize: '0.85em', color: '#888', marginTop: '0.25rem' }}>Required to receive DMs (Page ID, not handle).</p>
+                                </div>
+
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9em', color: '#555' }}>Instagram Handle</label>
+                                    <input
+                                        value={instagramHandle}
+                                        onChange={e => {
+                                            setInstagramConnected(false);
+                                            setInstagramHandle(e.target.value);
+                                        }}
+                                        placeholder="@yourbusiness"
+                                        style={{ width: '100%', padding: '0.8rem', border: '1px solid #ddd', borderRadius: '6px' }}
+                                    />
+                                </div>
                             </div>
                         </div>
                     </div>

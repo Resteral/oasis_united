@@ -27,6 +27,9 @@ export default function SettingsPage() {
     const [deliveryProviders, setDeliveryProviders] = useState<string[]>([]);
     const [instagramId, setInstagramId] = useState('');
     const [instagramAccessToken, setInstagramAccessToken] = useState('');
+    const [facebookId, setFacebookId] = useState('');
+    const [facebookAccessToken, setFacebookAccessToken] = useState('');
+    const [facebookConnected, setFacebookConnected] = useState(false);
 
     useEffect(() => {
         async function fetchSettings() {
@@ -59,6 +62,11 @@ export default function SettingsPage() {
                     setInstagramId(integr.instagram.id || '');
                     setInstagramAccessToken(integr.instagram.access_token || '');
                     setInstagramConnected(integr.instagram.connected);
+                }
+                if (integr.facebook) {
+                    setFacebookId(integr.facebook.id || '');
+                    setFacebookAccessToken(integr.facebook.access_token || '');
+                    setFacebookConnected(integr.facebook.connected);
                 }
 
                 // Parse Theme
@@ -100,6 +108,11 @@ export default function SettingsPage() {
                     id: instagramId,
                     access_token: instagramAccessToken,
                     connected: !!instagramHandle || !!instagramId
+                },
+                facebook: {
+                    id: facebookId,
+                    access_token: facebookAccessToken,
+                    connected: !!facebookId
                 }
             },
             theme: {
@@ -392,6 +405,59 @@ export default function SettingsPage() {
                                         placeholder="@yourbusiness"
                                         style={{ width: '100%', padding: '0.8rem', border: '1px solid #ddd', borderRadius: '6px' }}
                                     />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Facebook Section */}
+                        <div style={{
+                            padding: '1.5rem',
+                            border: '1px solid #eee',
+                            borderRadius: '12px',
+                            backgroundColor: '#fff',
+                            boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+                            position: 'relative',
+                            overflow: 'hidden'
+                        }}>
+                            <div style={{
+                                position: 'absolute', top: 0, left: 0, width: '6px', height: '100%',
+                                background: '#1877F2'
+                            }} />
+
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', paddingLeft: '1rem' }}>
+                                <h3 style={{ margin: 0, color: '#1877F2', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    📘 Facebook
+                                </h3>
+                                <span style={{
+                                    padding: '4px 10px', borderRadius: '20px', fontSize: '0.75em', fontWeight: 'bold',
+                                    backgroundColor: facebookConnected ? '#e8f5e9' : '#eceff1',
+                                    color: facebookConnected ? '#2e7d32' : '#78909c'
+                                }}>
+                                    {facebookConnected ? 'ACTIVE' : 'INACTIVE'}
+                                </span>
+                            </div>
+                            <div style={{ paddingLeft: '1rem' }}>
+                                <div style={{ marginBottom: '1rem' }}>
+                                    <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9em', color: '#555' }}>Facebook Page ID</label>
+                                    <input
+                                        value={facebookId}
+                                        onChange={e => setFacebookId(e.target.value)}
+                                        placeholder="e.g. 1000..."
+                                        style={{ width: '100%', padding: '0.8rem', border: '1px solid #ddd', borderRadius: '6px', fontFamily: 'monospace' }}
+                                    />
+                                    <p style={{ fontSize: '0.85em', color: '#888', marginTop: '0.25rem' }}>Required to receive Messages (Page ID).</p>
+                                </div>
+
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9em', color: '#555' }}>Page Access Token (Facebook)</label>
+                                    <input
+                                        type="password"
+                                        value={facebookAccessToken}
+                                        onChange={e => setFacebookAccessToken(e.target.value)}
+                                        placeholder="EAA..."
+                                        style={{ width: '100%', padding: '0.8rem', border: '1px solid #ddd', borderRadius: '6px', fontFamily: 'monospace' }}
+                                    />
+                                    <p style={{ fontSize: '0.85em', color: '#888', marginTop: '0.25rem' }}>Required for sending AI replies (Permissions: pages_messaging).</p>
                                 </div>
                             </div>
                         </div>

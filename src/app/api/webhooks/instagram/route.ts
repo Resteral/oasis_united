@@ -21,63 +21,87 @@ export async function POST(request: NextRequest) {
     );
     const body = await request.json();
 
-    console.log('Received Instagram Webhook:', JSON.stringify(body, null, 2));
+    console.log('Received Webhook:', JSON.stringify(body, null, 2));
 
     try {
-        if (body.object === 'instagram') {
-            await supabase.from('debug_logs').insert({ source: 'instagram_webhook', message: 'Processing Instagram Event', data: body });
+        // Facebook/Messenger usually uses object === 'page'
+        // Instagram usually uses object === 'instagram'
+        const isInstagram = body.object === 'instagram';
+        const isPage = body.object === 'page';
+
+        if (isInstagram || isPage) {
+            const platform = isInstagram ? 'instagram' : 'facebook';
+            await supabase.from('debug_logs').insert({
+                source: `${platform}_webhook`,
+                message: `Processing ${platform} Event`,
+                data: body
+            });
 
             for (const entry of body.entry) {
                 // The 'id' here is usually the Page ID / Business Account ID
                 const pageId = entry.id;
                 const messaging = entry.messaging;
 
+                if (!messaging) continue;
+
                 for (const event of messaging) {
                     const senderId = event.sender.id;
                     const message = event.message;
 
                     if (message && message.text) {
-                        // 1. Find the business connected to this Instagram Page ID
-                        const { data: business, error: businessError } = await supabase
-                            .from('businesses')
-                            .select('id, name, category, integrations')
-                            .contains('integrations', { instagram: { id: pageId } })
-                            .single();
+                        // 1. Find the business connected to this ID
+                        // Check logic: 
+                        // If Instagram -> look in integrations.instagram.id
+                        // If Facebook -> look in integrations.facebook.id
+
+                        let query = supabase.from('businesses').select('id, name, category, integrations');
+
+                        if (isInstagram) {
+                            query = query.contains('integrations', { instagram: { id: pageId } });
+                        } else {
+                            query = query.contains('integrations', { facebook: { id: pageId } });
+                        }
+
+                        const { data: business, error: businessError } = await query.single();
 
                         if (businessError || !business) {
-                            console.warn(`No business found for Instagram ID: ${pageId}`);
+                            console.warn(`No business found for ${platform} ID: ${pageId}`);
                             await supabase.from('debug_logs').insert({
-                                source: 'instagram_webhook',
+                                source: `${platform}_webhook`,
                                 level: 'error',
-                                message: `No business found for Page ID: ${pageId}. Ensure 'integrations.instagram.id' matches.`,
+                                message: `No business found for Page ID: ${pageId}. Ensure 'integrations.${platform}.id' matches.`,
                                 data: { pageId, error: businessError }
                             });
                             continue;
                         }
 
                         // Log success
-                        await supabase.from('debug_logs').insert({ source: 'instagram_webhook', message: `Found Business: ${business.name}`, data: { businessId: business.id } });
+                        await supabase.from('debug_logs').insert({
+                            source: `${platform}_webhook`,
+                            message: `Found Business: ${business.name}`,
+                            data: { businessId: business.id }
+                        });
 
                         // 2. Insert Message into Database
                         await supabase.from('messages').insert({
                             business_id: business.id,
                             customer_contact: senderId,
-                            channel: 'instagram',
+                            channel: platform, // 'instagram' or 'facebook'
                             direction: 'inbound',
                             content: message.text,
                             is_read: false
                         });
 
                         // 3. AI / Context-Aware Logic
-                        // In a real app, we would send this context to OpenAI/LLM
                         let replyText = "";
                         const lowerMsg = message.text.toLowerCase();
                         const category = (business.category || 'retail').toLowerCase();
 
                         // Simple heuristic "AI" for demonstration
+                        // (Same logic for both platforms)
                         if (category.includes('restaurant') || category.includes('food') || category.includes('cafe')) {
                             if (lowerMsg.includes('order') || lowerMsg.includes('menu')) {
-                                replyText = `Yum! 🍔 We'd love to feed you. What are you craving today? You can see our menu at the link in bio!`;
+                                replyText = `Yum! 🍔 We'd love to feed you at ${business.name}. What are you craving today?`;
                             } else if (lowerMsg.includes('hour') || lowerMsg.includes('open')) {
                                 replyText = "We are open from 9 AM to 9 PM! Come by for a bite! 🥐";
                             } else {
@@ -98,13 +122,16 @@ export async function POST(request: NextRequest) {
                             }
                         }
 
-                        // 4. Send Message via Instagram Graph API (if token exists)
-                        const accessToken = business.integrations?.instagram?.access_token;
+                        // 4. Send Message via Graph API (if token exists)
+                        const integrations = business.integrations || {};
+                        const platformConfig = integrations[platform] || {};
+                        const accessToken = platformConfig.access_token;
+
                         let sentViaApi = false;
 
                         if (replyText && accessToken) {
                             try {
-                                // Using v18.0 as a stable version
+                                // Works for both Instagram and Facebook Pages via Graph API
                                 const response = await fetch(`https://graph.facebook.com/v18.0/me/messages?access_token=${accessToken}`, {
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json' },
@@ -118,32 +145,44 @@ export async function POST(request: NextRequest) {
 
                                 if (response.ok) {
                                     sentViaApi = true;
-                                    await supabase.from('debug_logs').insert({ source: 'instagram_webhook', message: 'API Reply Sent', data: { recipient: senderId, text: replyText } });
-                                } else {
-                                    console.error('Instagram API Error:', result);
                                     await supabase.from('debug_logs').insert({
-                                        source: 'instagram_webhook',
+                                        source: `${platform}_webhook`,
+                                        message: 'API Reply Sent',
+                                        data: { recipient: senderId, text: replyText }
+                                    });
+                                } else {
+                                    console.error('Meta API Error:', result);
+                                    await supabase.from('debug_logs').insert({
+                                        source: `${platform}_webhook`,
                                         level: 'error',
-                                        message: 'Instagram Graph API Failed',
-                                        data: { error: result, accessTokenPresent: !!accessToken }
+                                        message: 'Graph API Failed',
+                                        data: { error: result, platform }
                                     });
                                 }
                             } catch (err) {
-                                console.error('Failed to call Instagram API:', err);
-                                await supabase.from('debug_logs').insert({ source: 'instagram_webhook', level: 'error', message: 'Fetch Exception', data: { error: String(err) } });
+                                console.error('Failed to call Meta API:', err);
+                                await supabase.from('debug_logs').insert({
+                                    source: `${platform}_webhook`,
+                                    level: 'error',
+                                    message: 'Fetch Exception',
+                                    data: { error: String(err) }
+                                });
                             }
                         } else if (!accessToken) {
-                            await supabase.from('debug_logs').insert({ source: 'instagram_webhook', level: 'warn', message: 'Missing Access Token', data: { businessId: business.id } });
+                            await supabase.from('debug_logs').insert({
+                                source: `${platform}_webhook`,
+                                level: 'warn',
+                                message: 'Missing Access Token',
+                                data: { businessId: business.id }
+                            });
                         }
 
                         // 5. Store Outbound Message in Database
-                        // We store it regardless of API success so the Dashboard shows what "would" have been sent 
-                        // (or what was sent), maintaining the conversation history.
                         if (replyText) {
                             await supabase.from('messages').insert({
                                 business_id: business.id,
                                 customer_contact: senderId,
-                                channel: 'instagram',
+                                channel: platform,
                                 direction: 'outbound',
                                 content: replyText,
                                 is_read: true,
@@ -157,7 +196,7 @@ export async function POST(request: NextRequest) {
         }
     } catch (error) {
         console.error('Error processing webhook:', error);
-        await supabase.from('debug_logs').insert({ source: 'instagram_webhook', level: 'error', message: 'Unhandled Webhook Exception', data: { error: String(error) } });
+        await supabase.from('debug_logs').insert({ source: 'webhook_handler', level: 'error', message: 'Unhandled Webhook Exception', data: { error: String(error) } });
     }
 
     return new NextResponse('EVENT_RECEIVED', { status: 200 });

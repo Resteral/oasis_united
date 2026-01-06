@@ -12,8 +12,8 @@ const navItems = [
 export default function Sidebar() {
     return (
         <aside className={styles.sidebar}>
-            <Link href="/" className={styles.logo} style={{ textDecoration: 'none' }}>
-                OasisUnited
+            <Link href="/" className={styles.logo} style={{ textDecoration: 'none', display: 'flex', justifyContent: 'center', padding: '1rem 0' }}>
+                <img src="/logo.png" alt="OasisUnited" style={{ height: '50px', width: 'auto' }} />
             </Link>
             <nav className={styles.nav}>
                 {navItems.map((item) => (

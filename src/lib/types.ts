@@ -19,6 +19,11 @@ export interface Integrations {
         handle?: string;
         connected: boolean;
     };
+    facebook?: {
+        id?: string;
+        access_token?: string;
+        connected: boolean;
+    };
 }
 
 export interface Business {

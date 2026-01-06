@@ -55,10 +55,10 @@ export default function InboxPage() {
         if (business) {
             await supabase.from('messages').insert({
                 business_id: business.id,
-                customer_contact: channel === 'instagram' ? '@demo_user' : '+15550000',
+                customer_contact: channel === 'instagram' || channel === 'facebook' ? '@demo_user' : '+15550000',
                 channel: channel,
                 direction: 'inbound',
-                content: "This is a simulated message to test the inbox."
+                content: `This is a simulated message from ${channel}.`
             });
             // Re-fetch will happen on next poll or we could force it
         }
@@ -80,6 +80,7 @@ export default function InboxPage() {
                     <button onClick={() => handleSimulate('sms')} className={styles.simBtn}>+ SMS</button>
                     <button onClick={() => handleSimulate('whatsapp')} className={styles.simBtn}>+ WhatsApp</button>
                     <button onClick={() => handleSimulate('instagram')} className={styles.simBtn}>+ Insta</button>
+                    <button onClick={() => handleSimulate('facebook')} className={styles.simBtn}>+ FB</button>
                 </div>
             </div>
 
@@ -92,6 +93,7 @@ export default function InboxPage() {
                             {msg.platform === 'sms' && '💬'}
                             {msg.platform === 'whatsapp' && '📱'}
                             {msg.platform === 'instagram' && '📸'}
+                            {msg.platform === 'facebook' && '📘'}
                         </div>
                         <div className={styles.msgContent}>
                             <div className={styles.msgHeader}>

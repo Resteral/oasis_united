@@ -83,9 +83,37 @@ export async function POST(request: NextRequest) {
                                 }
                             }
 
-                            // 4. (Optional) Auto-Reply Simulation
-                            // Since we don't have the Meta Graph API key to actually send,
-                            // we will simulate the "Sent" message being stored in our DB so it appears in the inbox.
+                            // 4. Send Message via Instagram Graph API (if token exists)
+                            const accessToken = business.integrations?.instagram?.access_token;
+                            let sentViaApi = false;
+
+                            if (replyText && accessToken) {
+                                try {
+                                    // Using v18.0 as a stable version
+                                    const response = await fetch(`https://graph.facebook.com/v18.0/me/messages?access_token=${accessToken}`, {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({
+                                            recipient: { id: senderId },
+                                            message: { text: replyText }
+                                        })
+                                    });
+
+                                    const result = await response.json();
+
+                                    if (response.ok) {
+                                        sentViaApi = true;
+                                    } else {
+                                        console.error('Instagram API Error:', result);
+                                    }
+                                } catch (err) {
+                                    console.error('Failed to call Instagram API:', err);
+                                }
+                            }
+
+                            // 5. Store Outbound Message in Database
+                            // We store it regardless of API success so the Dashboard shows what "would" have been sent 
+                            // (or what was sent), maintaining the conversation history.
                             if (replyText) {
                                 await supabase.from('messages').insert({
                                     business_id: business.id,
@@ -94,9 +122,9 @@ export async function POST(request: NextRequest) {
                                     direction: 'outbound',
                                     content: replyText,
                                     is_read: true,
-                                    created_at: new Date(Date.now() + 1000).toISOString() // Slight delay
+                                    created_at: new Date().toISOString()
                                 });
-                                console.log(`[Mock AI Reply] To ${senderId}: ${replyText}`);
+                                console.log(`[${sentViaApi ? 'REAL' : 'MOCK'} AI Reply] To ${senderId}: ${replyText}`);
                             }
                         } else {
                             console.warn(`No business found for Instagram ID: ${pageId}`);

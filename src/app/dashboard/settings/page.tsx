@@ -26,6 +26,7 @@ export default function SettingsPage() {
     const [selfDelivery, setSelfDelivery] = useState(false);
     const [deliveryProviders, setDeliveryProviders] = useState<string[]>([]);
     const [instagramId, setInstagramId] = useState('');
+    const [instagramAccessToken, setInstagramAccessToken] = useState('');
 
     useEffect(() => {
         async function fetchSettings() {
@@ -55,6 +56,8 @@ export default function SettingsPage() {
                 }
                 if (integr.instagram) {
                     setInstagramHandle(integr.instagram.handle || '');
+                    setInstagramId(integr.instagram.id || '');
+                    setInstagramAccessToken(integr.instagram.access_token || '');
                     setInstagramConnected(integr.instagram.connected);
                 }
 
@@ -94,7 +97,8 @@ export default function SettingsPage() {
                 twilio: { phone: twilioPhone, connected: !!twilioPhone },
                 instagram: {
                     handle: instagramHandle,
-                    id: instagramId, // Saved here for lookup
+                    id: instagramId,
+                    access_token: instagramAccessToken,
                     connected: !!instagramHandle || !!instagramId
                 }
             },
@@ -363,6 +367,18 @@ export default function SettingsPage() {
                                         style={{ width: '100%', padding: '0.8rem', border: '1px solid #ddd', borderRadius: '6px', fontFamily: 'monospace' }}
                                     />
                                     <p style={{ fontSize: '0.85em', color: '#888', marginTop: '0.25rem' }}>Required to receive DMs (Page ID, not handle).</p>
+                                </div>
+
+                                <div style={{ marginBottom: '1rem' }}>
+                                    <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9em', color: '#555' }}>Instagram Page Access Token</label>
+                                    <input
+                                        type="password"
+                                        value={instagramAccessToken}
+                                        onChange={e => setInstagramAccessToken(e.target.value)}
+                                        placeholder="EAA..."
+                                        style={{ width: '100%', padding: '0.8rem', border: '1px solid #ddd', borderRadius: '6px', fontFamily: 'monospace' }}
+                                    />
+                                    <p style={{ fontSize: '0.85em', color: '#888', marginTop: '0.25rem' }}>Required for sending AI replies (Page Settings &gt; Advanced Access).</p>
                                 </div>
 
                                 <div>

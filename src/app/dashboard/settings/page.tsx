@@ -79,7 +79,6 @@ export default function SettingsPage() {
                 if (delivery.radius) setDeliveryRadius(delivery.radius);
                 if (delivery.selfDelivery !== undefined) setSelfDelivery(delivery.selfDelivery);
                 if (delivery.providers) setDeliveryProviders(delivery.providers);
-                if (delivery.instagram_id) setInstagramId(delivery.instagram_id);
             }
             setLoading(false);
         }
@@ -122,8 +121,7 @@ export default function SettingsPage() {
             delivery_settings: {
                 radius: deliveryRadius,
                 selfDelivery,
-                providers: deliveryProviders,
-                instagram_id: instagramId
+                providers: deliveryProviders
             },
             updated_at: new Date().toISOString(),
         };
@@ -228,15 +226,7 @@ export default function SettingsPage() {
                                 />
                             </div>
 
-                            <div>
-                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: '#333' }}>Instagram Page ID</label>
-                                <input
-                                    value={instagramId}
-                                    onChange={e => setInstagramId(e.target.value)}
-                                    placeholder="e.g. 1784140..."
-                                    style={{ width: '100%', padding: '0.8rem', border: '1px solid #ddd', borderRadius: '6px' }}
-                                />
-                            </div>
+
                         </div>
 
                         <div style={{ marginTop: '1.5rem' }}>

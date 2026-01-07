@@ -8,7 +8,10 @@ export default function Home() {
     <div className={styles.container}>
       <header className={styles.header}>
         <div className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Link href="/" className={styles.logo} style={{ textDecoration: 'none' }}>OasisUnited</Link>
+          <Link href="/" className={styles.logo} style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <img src="/logo.png" alt="OasisUnited" style={{ height: '50px', width: 'auto' }} />
+            <span>OasisUnited</span>
+          </Link>
           <nav className={styles.nav}>
             <Link href="/shop/demo" className={styles.navLink}>Demo Store</Link>
             <Link href="/login" className="btn btn-primary">Log In</Link>

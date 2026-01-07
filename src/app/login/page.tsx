@@ -112,7 +112,10 @@ export default function LoginPage() {
     return (
         <div className={styles.container}>
             <header className={styles.header}>
-                <Link href="/" className={styles.logo}>OasisUnited</Link>
+                <Link href="/" className={styles.logo} style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
+                    <img src="/logo.png" alt="OasisUnited" style={{ height: '60px', width: 'auto' }} />
+                    <span style={{ color: '#222', fontWeight: 'bold', fontSize: '1.5rem' }}>OasisUnited</span>
+                </Link>
             </header>
 
             <main className={styles.main}>

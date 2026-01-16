@@ -13,6 +13,12 @@ export default function CRMDashboard() {
                         View Appointments
                     </Link>
                     <Link
+                        href="/dashboard/crm/integrations"
+                        className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+                    >
+                        Integrations
+                    </Link>
+                    <Link
                         href="/dashboard/crm/settings"
                         className="px-4 py-2 bg-gray-100 text-gray-800 rounded hover:bg-gray-200"
                     >

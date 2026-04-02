@@ -7,6 +7,7 @@ export default function GlobalNav() {
 
     const navItems = [
         { label: 'Explore', path: '/marketplace', icon: '🌍' },
+        { label: 'Local', path: '/local', icon: '📍' },
         { label: 'Chat', path: '/messages', icon: '💬' },
         { label: 'Orders', path: '/my-oasis', icon: '🛍️' },
         { label: 'Home', path: '/', icon: '🏠' },

@@ -139,6 +139,42 @@ const EFFINGHAM_SHOPS: Shop[] = [
     ]
   },
   {
+    id: 'subway',
+    name: "Subway",
+    category: "Quick Eats",
+    location: "Ossipee",
+    x: 85, y: 35,
+    icon: '🥖',
+    products: [
+      { name: 'Footlong Sub', price: 11.50 },
+      { name: '6" Sub Combo', price: 8.99 }
+    ]
+  },
+  {
+    id: 'dunkin',
+    name: "Dunkin'",
+    category: "Coffee & Donuts",
+    location: "Effingham Falls",
+    x: 32, y: 75,
+    icon: '☕',
+    products: [
+      { name: 'Iced Coffee (Lg)', price: 3.89 },
+      { name: 'Doz. Donuts', price: 14.00 }
+    ]
+  },
+  {
+    id: 'ace-hardware',
+    name: "Ace Hardware of Ossipee",
+    category: "Hardware",
+    location: "Ossipee",
+    x: 78, y: 55,
+    icon: '🏢',
+    products: [
+      { name: 'Propane Refill', price: 21.00 },
+      { name: 'House Paint (Gal)', price: 42.00 }
+    ]
+  },
+  {
     id: 'hannaford',
     name: "Hannaford",
     category: "Superstore",

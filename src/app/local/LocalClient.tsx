@@ -91,6 +91,18 @@ const EFFINGHAM_SHOPS: Shop[] = [
     ]
   },
   {
+    id: 'artisans',
+    name: "Artisans of the Lakes",
+    category: "Art & Boutique",
+    location: "Wolfeboro",
+    x: 15, y: 75,
+    icon: '🎨',
+    products: [
+      { name: 'Hand-blown Vase', price: 85.00 },
+      { name: 'Local Landscape (Print)', price: 45.00 }
+    ]
+  },
+  {
     id: 'hannaford',
     name: "Hannaford",
     category: "Superstore",

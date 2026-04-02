@@ -58,6 +58,11 @@ alter table public.products enable row level security;
 alter table public.shoutouts enable row level security;
 
 -- Public Read Policies
+drop policy if exists "Everyone can view profiles" on public.profiles;
+drop policy if exists "Everyone can view businesses" on public.businesses;
+drop policy if exists "Everyone can view products" on public.products;
+drop policy if exists "Everyone can view shoutouts" on public.shoutouts;
+
 create policy "Everyone can view profiles" on public.profiles for select using (true);
 create policy "Everyone can view businesses" on public.businesses for select using (true);
 create policy "Everyone can view products" on public.products for select using (true);

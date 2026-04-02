@@ -22,7 +22,6 @@ export const viewport = {
 };
 
 import PayPalProvider from "@/components/PayPalProvider";
-import PwaPrompt from "@/components/PwaPrompt";
 import GlobalNav from "@/components/GlobalNav";
 
 export default function RootLayout({
@@ -36,7 +35,6 @@ export default function RootLayout({
         <PayPalProvider>
           {children}
           <GlobalNav />
-          <PwaPrompt />
         </PayPalProvider>
       </body>
     </html>

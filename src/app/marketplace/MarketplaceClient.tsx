@@ -1,248 +1,209 @@
 "use client";
-import { useState, useEffect } from 'react';
+import { useEffect, useState, Suspense } from 'react';
+import { supabase } from '@/lib/supabase';
+import GlobalSearch from '@/components/GlobalSearch';
+import CategoryNav from '@/components/CategoryNav';
+import DiscoveryFeed from '@/components/DiscoveryFeed';
 import Link from 'next/link';
-import AiDiscoveryModal from '@/components/AiDiscoveryModal';
-import AisRecommendations from '@/components/AisRecommendations';
-import LiveSalesPopup from '@/components/LiveSalesPopup';
 
 interface MarketplaceClientProps {
-    initialProducts: any[];
+    initialFeatured: any;
+    initialShoutouts: any[];
 }
 
-export default function MarketplaceClient({ initialProducts }: MarketplaceClientProps) {
-    const [searchQuery, setSearchQuery] = useState('');
-    const [results, setResults] = useState(initialProducts);
-    const [isSearching, setIsSearching] = useState(false);
+export default function MarketplaceClient({ initialFeatured, initialShoutouts }: MarketplaceClientProps) {
+    const [featured, setFeatured] = useState<any>(initialFeatured);
+    const [shoutouts, setShoutouts] = useState<any[]>(initialShoutouts);
+    const [activeCategory, setActiveCategory] = useState('All');
+    const [loading, setLoading] = useState(false);
 
-    const handleSearch = async (e?: React.FormEvent) => {
-        if (e) e.preventDefault();
-        if (!searchQuery) {
-            setResults(initialProducts);
-            return;
-        }
+    useEffect(() => {
+        // Only fetch if category is not the initial state or we need fresh data
+        if (activeCategory === 'All' && featured === initialFeatured) return;
 
-        setIsSearching(true);
-        try {
-            // Track the search event (Phase 23)
-            const response = await fetch('/api/search/v2', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ query: searchQuery })
-            });
-            const data = await response.json();
-            if (data.results) {
-                setResults(data.results);
+        async function loadCategory() {
+            setLoading(true);
+            try {
+                const res = await fetch(`/api/search?category=${activeCategory}`);
+                const data = await res.json();
+                if (data.featured) {
+                    setFeatured(data.featured);
+                } else if (data.results) {
+                    setFeatured({ businesses: data.results.businesses, products: data.results.products });
+                }
+            } catch (err) {
+                console.error("Search failed:", err);
+            } finally {
+                setLoading(false);
             }
-        } catch (error) {
-            console.error('Search error:', error);
-        } finally {
-            setIsSearching(false);
         }
-    };
+        loadCategory();
+    }, [activeCategory]);
 
     return (
-        <div style={{ paddingBottom: '5rem' }}>
-            {/* Premium Hero / Search Section */}
-            <section style={{
-                padding: '8rem 2rem 4rem',
-                background: 'radial-gradient(circle at top right, #1a1a3a 0%, #050510 60%)',
-                textAlign: 'center'
-            }}>
-                <div className="container">
-                    <h1 style={{
-                        fontSize: '3.5rem',
-                        fontWeight: '800',
-                        marginBottom: '1.5rem',
-                        background: 'linear-gradient(to right, #fff, #a5a5ff)',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent'
-                    }}>
-                        Discover Your Oasis
-                    </h1>
-                    <p style={{
-                        fontSize: '1.2rem',
-                        color: 'rgba(255,255,255,0.7)',
-                        maxWidth: '600px',
-                        margin: '0 auto 3rem'
-                    }}>
-                        Unified commerce for the modern era. Find local favorites or explore new horizons with AI-powered discovery.
-                    </p>
+        <div className="min-h-screen bg-[hsl(var(--background))] text-[hsl(var(--foreground))] selection:bg-[hsl(var(--primary))] selection:text-[hsl(var(--primary-foreground))]">
+            {/* Global Marketplace Hero */}
+            <div className="relative pt-32 pb-48 px-8 overflow-hidden oasis-gradient">
+                <div className="absolute top-0 left-0 w-full h-full pointer-events-none opacity-30"></div>
+                <div className="absolute top-[20%] right-[-10%] w-[50%] h-[60%] bg-[hsl(var(--primary))/0.05] blur-[150px] rounded-full"></div>
 
-                    {/* AI Search Bar */}
-                    <form onSubmit={handleSearch} style={{
-                        maxWidth: '700px',
-                        margin: '0 auto',
-                        position: 'relative',
-                        display: 'flex',
-                        gap: '1rem'
-                    }}>
-                        <div style={{ position: 'relative', flex: 1 }}>
-                            <input
-                                type="text"
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                placeholder="Try 'best espresso' or 'nearby yoga'..."
-                                style={{
-                                    width: '100%',
-                                    padding: '1.2rem 1.5rem',
-                                    borderRadius: '16px',
-                                    border: '1px solid rgba(255,255,255,0.1)',
-                                    backgroundColor: 'rgba(255,255,255,0.05)',
-                                    color: '#fff',
-                                    fontSize: '1.1rem',
-                                    backdropFilter: 'blur(10px)',
-                                    outline: 'none',
-                                    transition: 'all 0.3s ease'
-                                }}
-                                onFocus={(e) => e.currentTarget.style.borderColor = '#6366f1'}
-                                onBlur={(e) => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'}
-                            />
-                            {isSearching && (
-                                <div style={{
-                                    position: 'absolute',
-                                    right: '1.5rem',
-                                    top: '50%',
-                                    transform: 'translateY(-50%)',
-                                    color: '#6366f1'
-                                }}>
-                                    ✨
+                <div className="max-w-7xl mx-auto relative z-10 text-center space-y-12">
+                    <div className="space-y-6">
+                        <div className="inline-flex items-center gap-3 px-4 py-2 bg-[hsl(var(--primary))/0.1] border border-[hsl(var(--primary))/0.2] rounded-full">
+                            <span className="w-1.5 h-1.5 bg-[hsl(var(--primary))] rounded-full animate-pulse"></span>
+                            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-[hsl(var(--primary))]">The Global Oasis</span>
+                        </div>
+                        <h1 className="text-7xl md:text-9xl font-black italic tracking-tighter leading-none">
+                            Discover <span className="text-[hsl(var(--primary))]">Everything.</span>
+                        </h1>
+                        <p className="max-w-xl mx-auto text-[hsl(var(--muted-foreground))] font-medium text-lg leading-relaxed">
+                            Boutiques, treasures, and experiences from the world's most premium independent ecosystem.
+                        </p>
+                    </div>
+
+                    <Suspense fallback={<div className="h-16 w-full max-w-2xl mx-auto bg-white/5 animate-pulse rounded-full"></div>}>
+                        <div className="max-w-xl mx-auto glass p-1 rounded-[3rem]">
+                            <GlobalSearch />
+                        </div>
+                    </Suspense>
+                </div>
+            </div>
+
+            {/* Global Discovery Grid */}
+            <main className="max-w-7xl mx-auto px-8 -mt-24 pb-32 space-y-32">
+                <section className="relative z-50">
+                    <Suspense fallback={<div className="h-16 w-full max-w-2xl mx-auto bg-white/5 animate-pulse rounded-full"></div>}>
+                        <CategoryNav onCategoryChange={setActiveCategory} />
+                    </Suspense>
+                </section>
+
+                <section className="space-y-12 animate-in fade-in slide-in-from-bottom-8 duration-700">
+                    <div className="flex justify-between items-end px-4">
+                        <div className="space-y-2">
+                            <h2 className="text-3xl font-black italic tracking-tight">Oasis Discovery</h2>
+                            <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest px-1">Curated Fresh Arrivals</p>
+                        </div>
+                    </div>
+                    <DiscoveryFeed />
+                </section>
+
+                {(featured.businesses?.length > 0) && (
+                    <section className="space-y-12">
+                        <div className="flex justify-between items-end px-4">
+                            <div className="space-y-2">
+                                <h2 className="text-3xl font-black italic tracking-tight uppercase">Featured {activeCategory !== 'All' ? activeCategory : 'Boutiques'}</h2>
+                                <p className="text-[10px] font-black text-[hsl(var(--primary))] uppercase tracking-widest px-1">Selected for Excellence</p>
+                            </div>
+                        </div>
+
+                        <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 transition-opacity duration-300 ${loading ? 'opacity-50' : 'opacity-100'}`}>
+                            {featured.businesses.map((biz: any) => (
+                                <Link key={biz.id} href={`/shop/${biz.id}`} className="group relative bg-[hsl(var(--card))/0.5] rounded-[2.5rem] p-8 border border-[hsl(var(--border))] hover:bg-[hsl(var(--card))] hover:border-[hsl(var(--primary))/0.3] transition-all overflow-hidden h-64 flex flex-col justify-end">
+                                    <div className="absolute top-8 left-8 w-12 h-12 bg-[hsl(var(--background))] rounded-2xl flex items-center justify-center text-xl font-black italic text-[hsl(var(--primary))] border border-[hsl(var(--border))] group-hover:scale-110 transition-transform shadow-lg">
+                                        {biz.name[0]}
+                                    </div>
+                                    <div className="space-y-1 relative z-10">
+                                        <h3 className="font-bold text-lg group-hover:text-[hsl(var(--primary))] transition-colors truncate">{biz.name}</h3>
+                                        <p className="text-[10px] font-black uppercase tracking-tight text-[hsl(var(--muted-foreground))] truncate">{biz.category}</p>
+                                    </div>
+                                    <div className="absolute top-0 right-0 w-32 h-32 bg-[hsl(var(--primary))/0.05] blur-3xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                </Link>
+                            ))}
+                        </div>
+                    </section>
+                )}
+
+                <section className="bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] rounded-[4rem] p-12 md:p-20 shadow-2xl shadow-[hsl(var(--primary))/0.2] relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 p-12 opacity-10 pointer-events-none grayscale group-hover:grayscale-0 transition-all duration-700">
+                        <span className="text-[200px] italic font-black select-none">📢</span>
+                    </div>
+
+                    <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-16">
+                        <div className="space-y-8">
+                            <div className="space-y-4">
+                                <div className="inline-flex items-center gap-2 opacity-60">
+                                    <span className="w-1.5 h-1.5 bg-[hsl(var(--primary-foreground))] rounded-full"></span>
+                                    <span className="text-[10px] font-black uppercase tracking-widest">Live Platform Updates</span>
                                 </div>
+                                <h2 className="text-6xl font-black italic tracking-tighter leading-tight">Global <br />Shoutouts.</h2>
+                            </div>
+                            <p className="opacity-60 font-medium text-lg max-w-sm italic">See what's happening in your community. Real-time drops, events, and specials from the network.</p>
+                        </div>
+
+                        <div className="space-y-4">
+                            {shoutouts.map((shout: any) => (
+                                <div key={shout.id} className="bg-[hsl(var(--background))/0.1] backdrop-blur-xl p-6 rounded-[2.5rem] border border-[hsl(var(--background))/0.05] flex items-center gap-6 hover:bg-[hsl(var(--background))/0.15] transition-all group/shout cursor-default">
+                                    <div className="w-14 h-14 bg-[hsl(var(--background))/0.1] rounded-2xl flex items-center justify-center text-2xl">
+                                        {shout.type === 'promo' ? '💎' : shout.type === 'alert' ? '✨' : '📝'}
+                                    </div>
+                                    <div className="flex-1 space-y-1">
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-[10px] font-black uppercase tracking-widest opacity-60">{shout.businesses?.name}</span>
+                                            <span className="text-[10px] font-bold uppercase opacity-30">{new Date(shout.created_at).toLocaleDateString()}</span>
+                                        </div>
+                                        <p className="font-bold text-sm tracking-tight leading-relaxed">{shout.content}</p>
+                                    </div>
+                                </div>
+                            ))}
+                            {shoutouts.length === 0 && (
+                                <div className="text-center py-12 opacity-40 italic">Waiting for the next cross-store update...</div>
                             )}
                         </div>
-                        <button
-                            type="submit"
-                            style={{
-                                padding: '0 2rem',
-                                borderRadius: '16px',
-                                border: 'none',
-                                background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)',
-                                color: '#fff',
-                                fontWeight: 'bold',
-                                cursor: 'pointer',
-                                transition: 'transform 0.2s ease'
-                            }}
-                            onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-                            onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
-                        >
-                            Search
-                        </button>
-                    </form>
-                </div>
-            </section>
-
-            {/* Content Results */}
-            <section className="container" style={{ marginTop: '4rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-                    <h2 style={{ fontSize: '1.8rem' }}>
-                        {searchQuery ? `Results for "${searchQuery}"` : 'Trending Now'}
-                    </h2>
-                    <div style={{ display: 'flex', gap: '0.5rem' }}>
-                        {['All', 'Retail', 'Coffee', 'Fitness'].map(cat => (
-                            <button key={cat} style={{
-                                padding: '0.5rem 1.2rem',
-                                borderRadius: '50px',
-                                border: '1px solid rgba(255,255,255,0.1)',
-                                background: cat === 'All' ? 'rgba(255,255,255,0.1)' : 'transparent',
-                                color: '#fff',
-                                fontSize: '0.9rem',
-                                cursor: 'pointer'
-                            }}>{cat}</button>
-                        ))}
                     </div>
-                </div>
+                </section>
 
-                <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-                    gap: '2rem'
-                }}>
-                    {results.map((product) => (
-                        <Link
-                            href={`/shop/${product.business?.slug || product.business_slug || product.business_id}`}
-                            key={product.id}
-                            style={{ textDecoration: 'none', color: 'inherit' }}
-                        >
-                            <div style={{
-                                background: 'rgba(255, 255, 255, 0.03)',
-                                borderRadius: '24px',
-                                border: '1px solid rgba(255, 255, 255, 0.05)',
-                                overflow: 'hidden',
-                                transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-                                backdropFilter: 'blur(10px)'
-                            }}
-                                onMouseOver={(e) => {
-                                    e.currentTarget.style.transform = 'translateY(-10px)';
-                                    e.currentTarget.style.borderColor = 'rgba(99, 102, 241, 0.3)';
-                                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
-                                }}
-                                onMouseOut={(e) => {
-                                    e.currentTarget.style.transform = 'translateY(0)';
-                                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.05)';
-                                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)';
-                                }}
-                            >
-                                <div style={{
-                                    height: '200px',
-                                    backgroundColor: '#1a1a2e',
-                                    backgroundImage: `url(${product.image_url || 'https://via.placeholder.com/400'})`,
-                                    backgroundSize: 'cover',
-                                    backgroundPosition: 'center'
-                                }} />
-                                <div style={{ padding: '1.5rem' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                                        <span style={{
-                                            fontSize: '0.75rem',
-                                            textTransform: 'uppercase',
-                                            letterSpacing: '1px',
-                                            color: '#6366f1',
-                                            fontWeight: 'bold'
-                                        }}>
-                                            {product.business?.name || product.business_name || 'Business'}
-                                        </span>
-                                        <span style={{ color: '#fff', fontWeight: 'bold' }}>${product.price}</span>
-                                    </div>
-                                    <h3 style={{ fontSize: '1.2rem', marginBottom: '0.5rem' }}>{product.name}</h3>
-                                    <p style={{
-                                        fontSize: '0.9rem',
-                                        color: 'rgba(255,255,255,0.5)',
-                                        lineHeight: '1.4',
-                                        marginBottom: '1rem',
-                                        height: '2.8rem',
-                                        overflow: 'hidden',
-                                        display: '-webkit-box',
-                                        WebkitLineClamp: 2,
-                                        WebkitBoxOrient: 'vertical'
-                                    }}>
-                                        {product.description}
-                                    </p>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.4)' }}>
-                                            📍 {product.business?.location || product.business_location || 'Nearby'}
-                                        </span>
-                                        <button style={{
-                                            padding: '0.4rem 1rem',
-                                            borderRadius: '50px',
-                                            border: 'none',
-                                            backgroundColor: '#fff',
-                                            color: '#000',
-                                            fontSize: '0.8rem',
-                                            fontWeight: 'bold',
-                                            cursor: 'pointer'
-                                        }}>
-                                            View Store
-                                        </button>
+                <section className="space-y-12">
+                    <div className="flex justify-between items-end px-4">
+                        <div className="space-y-2">
+                            <h2 className="text-3xl font-black italic tracking-tight uppercase">Trending Treasures</h2>
+                            <p className="text-[10px] font-black text-[hsl(var(--secondary))] uppercase tracking-widest px-1">Global Best Sellers</p>
+                        </div>
+                    </div>
+
+                    <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 transition-opacity duration-300 ${loading ? 'opacity-50' : 'opacity-100'}`}>
+                        {featured.products?.map((product: any) => (
+                            <Link key={product.id} href={`/shop/${product.business_id}`} className="group space-y-4">
+                                <div className="aspect-[4/5] bg-[hsl(var(--card))] rounded-[3rem] overflow-hidden relative border border-[hsl(var(--border))] shadow-2xl transition-all hover:border-[hsl(var(--primary))/0.3]">
+                                    {product.image_url ? (
+                                        <img src={product.image_url} alt={product.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 opacity-80 group-hover:opacity-100" />
+                                    ) : (
+                                        <div className="w-full h-full flex items-center justify-center text-4xl bg-[hsl(var(--background))] opacity-50">📦</div>
+                                    )}
+                                    <div className="absolute bottom-6 left-6 right-6 p-4 bg-[hsl(var(--foreground))/0.9] backdrop-blur-lg rounded-3xl translate-y-20 group-hover:translate-y-0 transition-transform duration-500 shadow-xl">
+                                        <button className="w-full py-3 bg-[hsl(var(--background))] text-[hsl(var(--foreground))] rounded-2xl font-black text-[10px] uppercase tracking-widest">Quick Peek</button>
                                     </div>
                                 </div>
-                            </div>
-                        </Link>
-                    ))}
+                                <div className="px-4 flex justify-between items-start">
+                                    <div className="space-y-1">
+                                        <h3 className="font-bold text-lg leading-tight truncate max-w-[150px]">{product.name}</h3>
+                                        <p className="text-[10px] font-black uppercase text-[hsl(var(--primary))] tracking-tighter italic">From {product.businesses?.name}</p>
+                                    </div>
+                                    <div className="text-xl font-black italic text-[hsl(var(--secondary))]">${Number(product.price).toFixed(2)}</div>
+                                </div>
+                            </Link>
+                        ))}
+                    </div>
+                </section>
+            </main>
+
+            <footer className="max-w-7xl mx-auto px-8 py-32 border-t border-[hsl(var(--border))] grid grid-cols-1 md:grid-cols-4 gap-16 opacity-40">
+                <div className="space-y-6">
+                    <h2 className="text-3xl font-black italic tracking-tighter text-[hsl(var(--foreground))]">Oasis.</h2>
+                    <p className="text-sm font-medium">Elevating local independent boutiques into a global discovery engine.</p>
                 </div>
-            </section>
-
-            <AisRecommendations />
-
-            <AiDiscoveryModal />
-            <LiveSalesPopup />
+                <div className="space-y-4">
+                    <h4 className="text-[10px] font-black uppercase tracking-widest text-[hsl(var(--primary))]">Explore</h4>
+                    <ul className="space-y-2 text-sm font-medium"><li>Top Gems</li><li>New Drops</li><li>Gift Cards</li></ul>
+                </div>
+                <div className="space-y-4">
+                    <h4 className="text-[10px] font-black uppercase tracking-widest text-[hsl(var(--primary))]">Sell</h4>
+                    <ul className="space-y-2 text-sm font-medium"><li>Open a Boutique</li><li>Pricing</li><li>Success Stories</li></ul>
+                </div>
+                <div className="space-y-4">
+                    <h4 className="text-[10px] font-black uppercase tracking-widest text-[hsl(var(--primary))]">Social</h4>
+                    <ul className="space-y-2 text-sm font-medium"><li>Instagram</li><li>Twitter</li><li>Our Journal</li></ul>
+                </div>
+            </footer>
         </div>
     );
 }

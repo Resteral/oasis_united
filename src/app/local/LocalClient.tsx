@@ -103,6 +103,42 @@ const EFFINGHAM_SHOPS: Shop[] = [
     ]
   },
   {
+    id: 'mtn-farm',
+    name: "Mountain View Farm",
+    category: "Farm & Fresh",
+    location: "Effingham",
+    x: 58, y: 30,
+    icon: '🚜',
+    products: [
+      { name: 'Raw Honey (1lb)', price: 12.00 },
+      { name: 'Organic Hay (Bale)', price: 8.50 }
+    ]
+  },
+  {
+    id: 'woodstone',
+    name: "Woodstone Fine Furniture",
+    category: "Hardware & Design",
+    location: "Effingham Falls",
+    x: 35, y: 45,
+    icon: '🛋️',
+    products: [
+      { name: 'Custom Pine Table', price: 850.00 },
+      { name: 'Hand-carved Bowl', price: 35.00 }
+    ]
+  },
+  {
+    id: 'river-hardware',
+    name: "Ossipee River Hardware",
+    category: "Hardware",
+    location: "Ossipee",
+    x: 82, y: 70,
+    icon: '🔧',
+    products: [
+      { name: 'Snow Shovel (HD)', price: 28.99 },
+      { name: 'Generator Oil (Qt)', price: 6.50 }
+    ]
+  },
+  {
     id: 'hannaford',
     name: "Hannaford",
     category: "Superstore",
@@ -209,6 +245,24 @@ export default function LocalClient() {
                   <p className="text-xs font-black uppercase tracking-[0.2em]">Select a shop to <br />explore inventory</p>
                 </div>
               )}
+            </div>
+
+            {/* Local Updates Feed */}
+            <div className="bg-white/5 rounded-[2.5rem] border border-white/10 p-8 space-y-6">
+              <div className="flex justify-between items-center">
+                <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-amber-400 italic">Live Alerts</h3>
+                <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
+              </div>
+              <div className="space-y-4">
+                <div className="p-4 bg-white/5 border-l-2 border-amber-400 rounded-r-xl">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 italic">Now • PNB Eats</p>
+                  <p className="text-[11px] font-medium leading-relaxed italic">Fresh pepperoni coming out in 5 minutes. First come first serve.</p>
+                </div>
+                <div className="p-4 bg-white/5 border-l-2 border-indigo-400 rounded-r-xl">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 italic">10m ago • Road Report</p>
+                  <p className="text-[11px] font-medium leading-relaxed italic">Route 153 clear. Fresh grading near the falls complete.</p>
+                </div>
+              </div>
             </div>
 
             {/* Quick Stats Box */}

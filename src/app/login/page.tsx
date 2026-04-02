@@ -259,7 +259,7 @@ export default function LoginPage() {
                                 )}
 
                                 <button type="submit" className="btn btn-primary" disabled={loading}>
-                                    {loading ? 'Processing...' : (isSignUp ? 'Sign Up' : 'Log In')}
+                                    {loading ? 'Processing...' : (isSignUp ? 'Create My Account' : 'Log In')}
                                 </button>
                             </form>
 
@@ -268,6 +268,13 @@ export default function LoginPage() {
                                     {isSignUp ? 'Log In' : 'Sign Up'}
                                 </button>
                             </p>
+
+                            <div style={{ marginTop: '2rem', paddingTop: '2rem', borderTop: '1px solid #efefef', textAlign: 'center' }}>
+                                <p style={{ fontSize: '0.8rem', color: '#888', marginBottom: '1rem' }}>Just looking around?</p>
+                                <Link href="/local" className="btn" style={{ borderColor: '#4f46e5', color: '#4f46e5', backgroundColor: 'transparent' }}>
+                                    📍 Browse as Guest
+                                </Link>
+                            </div>
                         </>
                     )}
                 </div>

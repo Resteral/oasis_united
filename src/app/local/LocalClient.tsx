@@ -40,19 +40,6 @@ const EFFINGHAM_SHOPS: Shop[] = [
     ]
   },
   {
-    id: 'walts',
-    name: "Walt's Carpentry & Hardware",
-    category: "Hardware",
-    location: "Effingham",
-    x: 62, y: 45,
-    icon: '🔨',
-    products: [
-      { name: 'Custom Built-in Q', price: 1200 },
-      { name: 'Hardware Kit', price: 45.99 },
-      { name: 'Screws (50ct)', price: 8.50 }
-    ]
-  },
-  {
     id: 'wayside',
     name: "Wayside Farm stand",
     category: "Farm & Grocery",
@@ -147,7 +134,9 @@ const EFFINGHAM_SHOPS: Shop[] = [
     icon: '🥖',
     products: [
       { name: 'Footlong Sub', price: 11.50 },
-      { name: '6" Sub Combo', price: 8.99 }
+      { name: '6" Sub Combo', price: 8.99 },
+      { name: 'Cookie (3pk)', price: 2.50 },
+      { name: 'Fountain Soda', price: 2.89 }
     ]
   },
   {
@@ -219,7 +208,10 @@ const EFFINGHAM_SHOPS: Shop[] = [
     icon: '🏎️',
     products: [
       { name: 'Wiper Blades (Pair)', price: 34.00 },
-      { name: 'Motor Oil (5qt)', price: 29.99 }
+      { name: 'Motor Oil (5qt)', price: 29.99 },
+      { name: 'Oil Filter', price: 12.00 },
+      { name: 'Antifreeze', price: 15.50 },
+      { name: 'Brake Pads', price: 65.00 }
     ]
   },
   {
@@ -243,7 +235,9 @@ const EFFINGHAM_SHOPS: Shop[] = [
     icon: '⛽',
     products: [
       { name: 'Regular Fuel (Gal)', price: 3.45 },
-      { name: 'Coffee & Breakfast', price: 6.50 }
+      { name: 'Coffee & Breakfast', price: 6.50 },
+      { name: 'Windshield Fluid', price: 4.89 },
+      { name: 'Bagged Ice', price: 2.99 }
     ]
   },
   {
@@ -391,6 +385,114 @@ const EFFINGHAM_SHOPS: Shop[] = [
     ]
   },
   {
+    id: 'flea-market',
+    name: "Effingham Falls Flea Market",
+    category: "Community Event",
+    location: "Effingham Falls",
+    x: 42, y: 75,
+    icon: '🎪',
+    products: [
+      { name: 'Vendor Entry', price: 25.00 },
+      { name: 'Antique Find', price: 15.00 }
+    ]
+  },
+  {
+    id: 'concerts',
+    name: "Lake Summer Concerts",
+    category: "Live Event",
+    location: "Ossipee Lake",
+    x: 62, y: 15,
+    icon: '🎸',
+    products: [
+      { name: 'Lawn Seat', price: 0 },
+      { name: 'Vortex Pass', price: 15.00 }
+    ]
+  },
+  {
+    id: 'farmers-market',
+    name: "Lakes Region Farmers Market",
+    category: "Community Event",
+    location: "Wolfeboro",
+    x: 18, y: 88,
+    icon: '🧺',
+    products: [
+      { name: 'Organic Honey (Qt)', price: 18.00 },
+      { name: 'Farm-fresh Sourdough', price: 9.00 }
+    ]
+  },
+  {
+    id: 'harley-jacks',
+    name: "Harley Jack's Burgers & Brews",
+    category: "Dining & Bar",
+    location: "Ossipee",
+    x: 72, y: 35,
+    icon: '🍺',
+    products: [
+      { name: 'Jack Burger', price: 16.50 },
+      { name: 'Local Draft', price: 7.00 }
+    ]
+  },
+  {
+    id: 'ossipee-news',
+    name: "Ossipee Mountain News",
+    category: "Local News",
+    location: "West Ossipee",
+    x: 92, y: 10,
+    icon: '📰',
+    products: [
+      { name: 'Weekly Print', price: 2.00 },
+      { name: 'Business Spotlight', price: 45.00 }
+    ]
+  },
+  {
+    id: 'ossipee-house',
+    name: "Ossipee House of Pizza",
+    category: "Dining & Pizza",
+    location: "Ossipee",
+    x: 75, y: 32,
+    icon: '🍕',
+    products: [
+      { name: 'House Special Pizza', price: 18.50 },
+      { name: 'Steak & Cheese Sub', price: 13.00 }
+    ]
+  },
+  {
+    id: 'indian-mound',
+    name: "Indian Mound Golf Club",
+    category: "Sports & Dining",
+    location: "Ossipee",
+    x: 78, y: 38,
+    icon: '⛳',
+    products: [
+      { name: '18 Holes w/ Cart', price: 65.00 },
+      { name: 'Mound Burger', price: 17.50 }
+    ]
+  },
+  {
+    id: 'white-lake',
+    name: "White Lake House Pizza",
+    category: "Dining & Pizza",
+    location: "Tamworth",
+    x: 82, y: 12,
+    icon: '🍕',
+    products: [
+      { name: 'House Special', price: 19.50 },
+      { name: 'Greek Salad', price: 12.00 }
+    ]
+  },
+  {
+    id: 'the-spot',
+    name: "The Spot",
+    category: "Dining & Bar",
+    location: "Effingham",
+    x: 58, y: 72,
+    icon: '🥩',
+    products: [
+      { name: 'Oasis Burger', price: 15.00 },
+      { name: 'Craft Draft', price: 7.00 }
+    ]
+  },
+  {
     id: 'hannaford',
     name: "Hannaford",
     category: "Superstore",
@@ -399,7 +501,14 @@ const EFFINGHAM_SHOPS: Shop[] = [
     icon: '🛒',
     products: [
       { name: 'Ground Beef (lb)', price: 6.99 },
-      { name: 'Fresh Greens', price: 3.50 }
+      { name: 'Fresh Greens', price: 3.50 },
+      { name: 'Milk (Gal)', price: 4.89 },
+      { name: 'Eggs (Doz)', price: 5.50 },
+      { name: 'Chicken (lb)', price: 4.50 },
+      { name: 'Butter (Stk)', price: 6.00 },
+      { name: 'Local Apples', price: 5.99 },
+      { name: 'Bagged Salad', price: 3.99 },
+      { name: 'OJ (52oz)', price: 4.50 }
     ]
   }
 ];
@@ -535,6 +644,16 @@ export default function LocalClient() {
           </div>
         </main>
       </div>
+
+      <footer className="max-w-7xl mx-auto mt-24 mb-12 flex justify-between items-center bg-white/5 p-12 rounded-[4rem] border border-white/10 shadow-3xl">
+        <div className="space-y-2">
+          <h4 className="text-xl font-black italic tracking-tight">Are you a Local Merchant?</h4>
+          <p className="text-sm font-medium text-gray-500 uppercase tracking-widest opacity-60">Manage your discovery profile, inventory & revenue database.</p>
+        </div>
+        <Link href="/dashboard/analytics" className="px-10 py-5 bg-amber-400 text-black rounded-3xl font-black text-xs uppercase tracking-widest hover:scale-105 transition-all shadow-2xl shadow-amber-500/20">
+          Open Merchant Portal →
+        </Link>
+      </footer>
 
       <style jsx>{`
         .pattern-dots {

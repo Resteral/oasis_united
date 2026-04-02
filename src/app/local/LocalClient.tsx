@@ -211,6 +211,186 @@ const EFFINGHAM_SHOPS: Shop[] = [
     ]
   },
   {
+    id: 'oreilly',
+    name: "O'Reilly Auto Parts",
+    category: "Auto Parts",
+    location: "Ossipee",
+    x: 90, y: 40,
+    icon: '🏎️',
+    products: [
+      { name: 'Wiper Blades (Pair)', price: 34.00 },
+      { name: 'Motor Oil (5qt)', price: 29.99 }
+    ]
+  },
+  {
+    id: 'job-lot',
+    name: "Ocean State Job Lot",
+    category: "Discount Retail",
+    location: "Ossipee",
+    x: 75, y: 15,
+    icon: '🎪',
+    products: [
+      { name: 'Bulk Pasta (10lb)', price: 9.50 },
+      { name: 'Gardening Kit', price: 15.00 }
+    ]
+  },
+  {
+    id: 'irving',
+    name: "Irving Gas & Station",
+    category: "Fuel & Convenience",
+    location: "Effingham",
+    x: 40, y: 25,
+    icon: '⛽',
+    products: [
+      { name: 'Regular Fuel (Gal)', price: 3.45 },
+      { name: 'Coffee & Breakfast', price: 6.50 }
+    ]
+  },
+  {
+    id: 'garwoods',
+    name: "Garwoods Restaurant",
+    category: "Dining",
+    location: "Wolfeboro",
+    x: 10, y: 85,
+    icon: '🍔',
+    products: [
+      { name: 'Lobster Roll', price: 32.00 },
+      { name: 'Classic Burger', price: 17.00 }
+    ]
+  },
+  {
+    id: 'rites-of-passage',
+    name: "Rites of Passage",
+    category: "Gift Shop",
+    location: "Wolfeboro",
+    x: 12, y: 65,
+    icon: '🎁',
+    products: [
+      { name: 'Local Souvenir', price: 12.00 },
+      { name: 'Lakeside Candle', price: 24.50 }
+    ]
+  },
+  {
+    id: 'hobbs',
+    name: "Hobbs Tavern & Brewing",
+    category: "Brewery & Dining",
+    location: "West Ossipee",
+    x: 85, y: 15,
+    icon: '🍺',
+    products: [
+      { name: 'Hobbs Burger', price: 18.00 },
+      { name: 'Beer Flight', price: 15.00 }
+    ]
+  },
+  {
+    id: 'smokehouse',
+    name: "Yankee Smokehouse",
+    category: "BBQ Dining",
+    location: "West Ossipee",
+    x: 88, y: 22,
+    icon: '🍖',
+    products: [
+      { name: 'Pulled Pork Plat', price: 21.00 },
+      { name: 'Rack of Ribs', price: 32.00 }
+    ]
+  },
+  {
+    id: 'rosies',
+    name: "Rosie's Restaurant",
+    category: "Breakfast & Lunch",
+    location: "Tamworth/Ossipee",
+    x: 75, y: 8,
+    icon: '🍳',
+    products: [
+      { name: 'Lumberjack Breakfast', price: 14.50 },
+      { name: 'Homemade Pie', price: 6.00 }
+    ]
+  },
+  {
+    id: 'aubuchon',
+    name: "Aubuchon Hardware",
+    category: "Hardware",
+    location: "Moultonborough",
+    x: 10, y: 35,
+    icon: '🏗️',
+    products: [
+      { name: 'Wood Pellets (Bag)', price: 7.99 },
+      { name: 'Drill Bit Set', price: 24.00 }
+    ]
+  },
+  {
+    id: 'sheehans',
+    name: "Sheehan's Lumber Yard",
+    category: "Lumber & Hardware",
+    location: "Ossipee",
+    x: 80, y: 48,
+    icon: '🪵',
+    products: [
+      { name: '2x4x8 Stud', price: 4.89 },
+      { name: 'Plywood (Sheet)', price: 32.00 }
+    ]
+  },
+  {
+    id: 'tractor-supply',
+    name: "Tractor Supply Co.",
+    category: "Farm & Hardware",
+    location: "Ossipee",
+    x: 88, y: 85,
+    icon: '🚜',
+    products: [
+      { name: 'Dog Food (40lb)', price: 42.00 },
+      { name: 'Chicken Feed (50lb)', price: 18.00 }
+    ]
+  },
+  {
+    id: 'cvs',
+    name: "CVS Pharmacy",
+    category: "Pharmacy & Grocery",
+    location: "Ossipee",
+    x: 72, y: 75,
+    icon: '💊',
+    products: [
+      { name: 'Tylenol (100ct)', price: 12.99 },
+      { name: 'Snack Mix', price: 5.50 }
+    ]
+  },
+  {
+    id: 'pizza-barn',
+    name: "Pizza Barn",
+    category: "Quick Eats",
+    location: "Ossipee",
+    x: 70, y: 45,
+    icon: '🍕',
+    products: [
+      { name: 'Large Cheese', price: 15.00 },
+      { name: 'Steak & Cheese', price: 13.50 }
+    ]
+  },
+  {
+    id: 'watsons',
+    name: "Watson's General Store",
+    category: "Grocery",
+    location: "Effingham",
+    x: 55, y: 15,
+    icon: '🍪',
+    products: [
+      { name: 'Warm Cookies', price: 2.00 },
+      { name: 'Coffee (Hot)', price: 2.50 }
+    ]
+  },
+  {
+    id: 'marina',
+    name: "Ossipee Lake Marina",
+    category: "Services & Tech",
+    location: "Effingham",
+    x: 65, y: 10,
+    icon: '⛵',
+    products: [
+      { name: 'Boat Rental (Hr)', price: 120.00 },
+      { name: 'Lake Map', price: 8.00 }
+    ]
+  },
+  {
     id: 'hannaford',
     name: "Hannaford",
     category: "Superstore",
@@ -306,9 +486,16 @@ export default function LocalClient() {
 
                   <button 
                     onClick={() => alert('Receipt Order Phase: Upload a photo or type your list. Our driver will verify prices at ' + selectedShop.name)}
-                    className="mt-4 w-full py-5 bg-indigo-600 text-white rounded-3xl font-black text-xs uppercase tracking-widest text-center hover:bg-indigo-500 transition-colors shadow-2xl shadow-indigo-500/20"
+                    className="mt-4 w-full py-5 bg-white/5 text-white/50 rounded-3xl font-black text-xs uppercase tracking-widest text-center hover:bg-white/10 transition-colors border border-white/10"
                   >
                     🚀 Order via Receipt
+                  </button>
+
+                  <button 
+                    onClick={() => alert('Launching Oasis Quick-Pay... Generating invoice for ' + selectedShop.name)}
+                    className="mt-4 w-full py-5 bg-gradient-to-r from-amber-400 to-amber-500 text-black rounded-3xl font-black text-xs uppercase tracking-widest text-center hover:scale-[1.02] transition-all shadow-2xl shadow-amber-500/20"
+                  >
+                    💎 Secure Oasis Checkout
                   </button>
                 </>
               ) : (

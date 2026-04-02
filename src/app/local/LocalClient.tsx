@@ -175,6 +175,42 @@ const EFFINGHAM_SHOPS: Shop[] = [
     ]
   },
   {
+    id: 'profile-bank',
+    name: "Profile Bank",
+    category: "Banking",
+    location: "Effingham",
+    x: 48, y: 70,
+    icon: '🏦',
+    products: [
+      { name: 'ATM Service', price: 0 },
+      { name: 'Local Business Loan', price: 1 }
+    ]
+  },
+  {
+    id: 'mvsb',
+    name: "Meredith Village Savings Bank",
+    category: "Banking",
+    location: "Ossipee",
+    x: 72, y: 25,
+    icon: '🏧',
+    products: [
+      { name: 'Safe Deposit (Sm)', price: 45.00 },
+      { name: 'Notary Service', price: 0 }
+    ]
+  },
+  {
+    id: 'ossipee-auto',
+    name: "Ossipee Auto & Tire",
+    category: "Auto Repair",
+    location: "Ossipee",
+    x: 88, y: 55,
+    icon: '🔧',
+    products: [
+      { name: 'Oil Change (Synth)', price: 65.00 },
+      { name: 'Tire Rotation', price: 25.00 }
+    ]
+  },
+  {
     id: 'hannaford',
     name: "Hannaford",
     category: "Superstore",

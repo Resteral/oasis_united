@@ -8,9 +8,9 @@ export default function GlobalNav() {
     const navItems = [
         { label: 'Explore', path: '/marketplace', icon: '🌎' },
         { label: 'Chat', path: '/messages', icon: '💬' },
-        { label: 'Dash', path: '/dashboard', icon: '📊' }, // Added Dash link
+        { label: 'Oasis Hub', path: '/hub', icon: '⚡' }, // Added Hub Link
         { label: 'Orders', path: '/my-oasis', icon: '🛍️' },
-        { label: 'Network', path: '/deliverer/dashboard', icon: '🛰️' }, // Added Deliverer link
+        { label: 'Network', path: '/deliverer/dashboard', icon: '🛰️' },
     ];
 
     if (pathname?.startsWith('/admin')) return null;

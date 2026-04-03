@@ -13,6 +13,9 @@ create table if not exists public.profiles (
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
+-- Ensure town column exists if table was already created
+alter table public.profiles add column if not exists town text;
+
 -- BUSINESSES TABLE (Storefront details: Hardware, Restaurants, etc.)
 create table if not exists public.businesses (
   id uuid default uuid_generate_v4() primary key,
@@ -30,6 +33,9 @@ create table if not exists public.businesses (
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
   updated_at timestamp with time zone default timezone('utc'::text, now())
 );
+
+-- Ensure onboarded_by column exists if table was already created
+alter table public.businesses add column if not exists onboarded_by uuid references public.profiles(id);
 
 -- PRODUCTS TABLE (Prices for Groceries, Menu items, Hardware supplies)
 create table if not exists public.products (

@@ -1,10 +1,28 @@
 "use client";
 import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase';
 
 export default function ActiveRoutes() {
-    const liveRoutes = [
-        { id: 1, driver: 'Local Dave', route: 'Effingham Main Loop', status: 'In Transit', active: true },
-        { id: 2, driver: 'Freedom Phil', route: 'Village Supply Run', status: 'Loading', active: true },
+    const [liveRoutes, setLiveRoutes] = useState<any[]>([]);
+
+    useEffect(() => {
+        async function fetchRoutes() {
+            const { data } = await supabase
+                .from('delivery_routes')
+                .select('id, name, deliverer_id, is_active, stops, towns(name), profiles:deliverer_id(full_name)')
+                .eq('is_active', true)
+                .limit(4);
+            
+            if (data) {
+                setLiveRoutes(data);
+            }
+        }
+        fetchRoutes();
+    }, []);
+
+    const displayRoutes = liveRoutes.length > 0 ? liveRoutes : [
+        { id: '1', name: 'Effingham Main Loop', stops: ['PNB Eats', 'Village Gallery'], towns: { name: 'Effingham' }, profiles: { full_name: 'Local Dave' }, is_active: true },
+        { id: '2', name: 'Ossipee Supply Run', stops: ['Whittier Cafe', 'Hardware'], towns: { name: 'Ossipee' }, profiles: { full_name: 'Regional Phil' }, is_active: true },
     ];
 
     return (
@@ -25,18 +43,25 @@ export default function ActiveRoutes() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10">
-                {liveRoutes.map((route) => (
-                    <div key={route.id} className="bg-white/[0.03] backdrop-blur-3xl p-8 rounded-[3rem] border border-white/10 flex items-start gap-6 hover:bg-white/[0.05] hover:border-white/20 transition-all group/route cursor-default group">
-                        <div className="w-16 h-16 bg-white/5 rounded-[1.5rem] flex items-center justify-center text-3xl shrink-0 border border-white/5 group-hover:scale-110 transition-transform">
+                {displayRoutes.map((route) => (
+                    <div key={route.id} className="bg-white/[0.03] backdrop-blur-3xl p-8 rounded-[3rem] border border-white/10 flex items-start gap-6 hover:bg-white/[0.05] hover:border-white/20 transition-all group/route cursor-default">
+                        <div className="w-16 h-16 bg-white/5 rounded-[1.5rem] flex items-center justify-center text-3xl shrink-0 border border-white/5 group-hover/route:scale-110 transition-transform">
                             📍
                         </div>
-                        <div className="flex-1 space-y-2">
+                        <div className="flex-1 space-y-4">
                             <div className="flex justify-between items-center">
-                                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400">{route.driver}</span>
-                                <span className="text-[9px] font-bold uppercase py-1 px-2 bg-indigo-500/10 rounded-full border border-indigo-500/20">{route.status}</span>
+                                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400">{(route as any).profiles?.full_name || 'Network Partner'}</span>
+                                <span className="text-[9px] font-bold uppercase py-1 px-2 bg-indigo-500/10 rounded-full border border-indigo-500/20">Active In {(route as any).towns?.name}</span>
                             </div>
-                            <h3 className="font-bold text-xl tracking-tight leading-snug text-white/90">{route.route}</h3>
-                            <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden mt-2">
+                            <div className="space-y-1">
+                                <h3 className="font-bold text-xl tracking-tight leading-snug text-white/90">{route.name}</h3>
+                                <div className="flex flex-wrap gap-2 pt-2">
+                                    {route.stops?.slice(0, 3).map((stop: string, i: number) => (
+                                        <span key={i} className="text-[8px] font-black uppercase tracking-widest text-white/40">{stop} {i < Math.min(route.stops.length, 3) - 1 ? '→' : ''}</span>
+                                    ))}
+                                </div>
+                            </div>
+                            <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden">
                                 <div className="h-full bg-indigo-500 w-[65%] rounded-full animate-pulse transition-all"></div>
                             </div>
                         </div>

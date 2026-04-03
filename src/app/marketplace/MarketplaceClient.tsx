@@ -105,6 +105,36 @@ export default function MarketplaceClient({ initialFeatured, initialShoutouts }:
                     </section>
                 )}
 
+                {/* Founding Partners / Deliverer Recognition */}
+                <section className="space-y-12">
+                     <div className="flex justify-between items-end px-4">
+                        <div className="space-y-2">
+                            <h2 className="text-4xl font-black italic tracking-tight uppercase">Founding <span className="text-indigo-500">Partners.</span></h2>
+                            <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest px-1">Citizens Building the Global Oasis</p>
+                        </div>
+                    </div>
+
+                    <div className="flex gap-8 overflow-x-auto pb-12 no-scrollbar">
+                        {[
+                            { name: 'Local Dave', role: 'Elite Deliverer', icon: '🚐', stats: '24 Shops Onboarded' },
+                            { name: 'Sarah NH', role: 'Expansion Scout', icon: '🗺️', stats: '8 Towns Opened' },
+                            { name: 'Marcus R.', role: 'Logistics Lead', icon: '🛰️', stats: '12 Active Routes' },
+                            { name: 'Citizen Phil', role: 'Vanguard', icon: '🛡️', stats: '4 Towns Registered' },
+                        ].map((partner) => (
+                            <div key={partner.name} className="flex-shrink-0 w-72 bg-white/[0.02] border border-white/5 rounded-[3rem] p-8 space-y-6 hover:bg-white/[0.04] transition-all group">
+                                <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center text-3xl group-hover:scale-110 transition-transform">{partner.icon}</div>
+                                <div className="space-y-2">
+                                    <h3 className="font-black italic text-xl tracking-tighter">{partner.name}</h3>
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-indigo-400">{partner.role}</p>
+                                </div>
+                                <div className="pt-4 border-t border-white/5">
+                                    <p className="text-[9px] font-bold uppercase tracking-widest opacity-40">{partner.stats}</p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </section>
+
                 {/* Global Shoutouts / Network Updates */}
                 <section className="bg-[hsl(var(--card))] rounded-[4rem] p-12 md:p-24 shadow-3xl border border-white/5 relative overflow-hidden group">
                     <div className="absolute top-0 right-0 p-12 opacity-[0.02] pointer-events-none grayscale group-hover:grayscale-0 group-hover:opacity-10 transition-all duration-1000">

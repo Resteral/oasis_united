@@ -17,8 +17,8 @@ export default function RouteManagement() {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
-        const { data: myTowns } = await supabase.from('towns').select('*').eq('opened_by', user.id);
-        const { data: myRoutes } = await supabase.from('delivery_routes').select('*, towns(name)').eq('driver_id', user.id);
+        const { data: myTowns } = await supabase.from('towns').select('*').eq('added_by', user.id);
+        const { data: myRoutes } = await supabase.from('delivery_routes').select('*, towns(name)').eq('deliverer_id', user.id);
         
         setTowns(myTowns || []);
         setRoutes(myRoutes || []);
@@ -42,7 +42,7 @@ export default function RouteManagement() {
         if (!user) return;
 
         const { error } = await supabase.from('delivery_routes').insert([{
-            driver_id: user.id,
+            deliverer_id: user.id,
             town_id: townId,
             name,
             stops: stops.filter(s => s.trim() !== '')

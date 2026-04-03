@@ -22,7 +22,7 @@ export default function TownRegistrationForm({ onComplete }: { onComplete: () =>
                 .insert([{ 
                     name, 
                     state, 
-                    opened_by: user.id 
+                    added_by: user.id 
                 }]);
 
             if (insertError) throw insertError;

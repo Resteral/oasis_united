@@ -2,12 +2,13 @@
 -- Enable UUID support
 create extension if not exists "uuid-ossp";
 
--- PROFILES TABLE (Public profiles for Users & Business Owners)
+-- PROFILES TABLE (Public profiles for Users, Business Owners, & Deliverers)
 create table if not exists public.profiles (
   id uuid references auth.users not null primary key,
   full_name text,
   avatar_url text,
-  role text check (role in ('business', 'consumer')) default 'consumer',
+  role text check (role in ('business', 'consumer', 'deliverer')) default 'consumer',
+  town text, -- The user's primary town (e.g., Effingham, Freedom)
   subscription_tier text default 'free',
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
@@ -16,11 +17,12 @@ create table if not exists public.profiles (
 create table if not exists public.businesses (
   id uuid default uuid_generate_v4() primary key,
   owner_id uuid references public.profiles(id), -- Nullable for placeholder shops
+  onboarded_by uuid references public.profiles(id), -- The deliverer/citizen who "sold" the platform
   slug text unique not null,
   name text not null,
   description text,
   category text, -- Retail, Restaurant, Hardware, etc.
-  location text,
+  location text, -- Physical address or specific town area
   image_url text,
   integrations jsonb default '{}'::jsonb, -- { twilio: '+1...', instagram: '@...' }
   theme jsonb default '{}'::jsonb,
@@ -51,34 +53,60 @@ create table if not exists public.shoutouts (
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
--- 2. ENABLE ROW LEVEL SECURITY (RLS)
+-- DELIVERER PROFILES (Specialized data for the Delivery Fleet)
+create table if not exists public.deliverer_profiles (
+  id uuid references public.profiles(id) primary key,
+  vehicle_type text check (vehicle_type in ('car', 'bike', 'truck', 'walk')) default 'car',
+  is_active boolean default false,
+  status text check (status in ('available', 'busy', 'offline')) default 'offline',
+  last_known_location point,
+  service_town text references public.profiles(town) -- Deliverers can serve specific towns
+);
+
+-- 4. ENABLE ROW LEVEL SECURITY (RLS)
 alter table public.profiles enable row level security;
 alter table public.businesses enable row level security;
 alter table public.products enable row level security;
 alter table public.shoutouts enable row level security;
+alter table public.deliverer_profiles enable row level security;
 
 -- Public Read Policies
 drop policy if exists "Everyone can view profiles" on public.profiles;
 drop policy if exists "Everyone can view businesses" on public.businesses;
 drop policy if exists "Everyone can view products" on public.products;
 drop policy if exists "Everyone can view shoutouts" on public.shoutouts;
+drop policy if exists "Everyone can view deliverers" on public.deliverer_profiles;
 
 create policy "Everyone can view profiles" on public.profiles for select using (true);
 create policy "Everyone can view businesses" on public.businesses for select using (true);
 create policy "Everyone can view products" on public.products for select using (true);
 create policy "Everyone can view shoutouts" on public.shoutouts for select using (true);
+create policy "Everyone can view deliverers" on public.deliverer_profiles for select using (true);
 
--- 3. NEIGHBORHOOD SEED DATA (Effingham Area Discovery)
--- Using fixed UUIDs for seed relationships
-insert into public.businesses (id, slug, name, category, location, description)
+-- 5. NEIGHBORHOOD SEED DATA (Effingham Area Discovery)
+-- 5a. Create a primary deliverer/agent
+-- Note: In a real app, these would come from auth.users. 
+-- We assume these UUIDs represent previously created Auth users for this demo.
+insert into public.profiles (id, full_name, role, town)
 values 
-  ('a1b2c3d4-e5f6-4a5b-b6c7-d8e9f0a1b2c3', 'pnb-eats', 'PNB Eats', 'Restaurant', 'Effingham', 'Fresh pizza & specialty subs.'),
-  ('b2c3d4e5-f6a7-4b6c-c7d8-e9f0a1b2c3d4', 'boyles-general', 'Boyle''s General Store', 'Grocery', 'Effingham Falls', 'Local staples & artisanal goods.'),
-  ('c3d4e5f6-a7b8-4c7d-d8e9-f0a1b2c3d4e5', 'walts-carpentry', 'Walt''s Carpentry & Hardware', 'Hardware', 'Effingham', 'Custom woodworking & hardware.'),
-  ('d4e5f6a7-b8c9-4d8e-e9f0-a1b2c3d4e5f6', 'wayside-farm', 'Wayside Farm Stand', 'Farm & Grocery', 'Effingham', 'Seasonal fresh produce & dairy.')
-on conflict (slug) do update set name = excluded.name;
+  ('e5f6a7b8-d4c3-4b2a-a198-e7d6c5b4a321', 'Local Dave', 'deliverer', 'Effingham')
+on conflict (id) do update set role = excluded.role;
 
--- Insert product price tracking linked to the seed businesses
+insert into public.deliverer_profiles (id, vehicle_type, status, is_active, service_town)
+values 
+  ('e5f6a7b8-d4c3-4b2a-a198-e7d6c5b4a321', 'truck', 'available', true, 'Effingham')
+on conflict (id) do nothing;
+
+-- 5b. Businesses (Attributed to the deliverer who onboarded them)
+insert into public.businesses (id, slug, name, category, location, description, onboarded_by)
+values 
+  ('a1b2c3d4-e5f6-4a5b-b6c7-d8e9f0a1b2c3', 'pnb-eats', 'PNB Eats', 'Restaurant', 'Effingham', 'Fresh pizza & specialty subs.', 'e5f6a7b8-d4c3-4b2a-a198-e7d6c5b4a321'),
+  ('b2c3d4e5-f6a7-4b6c-c7d8-e9f0a1b2c3d4', 'boyles-general', 'Boyle''s General Store', 'Grocery', 'Effingham Falls', 'Local staples & artisanal goods.', 'e5f6a7b8-d4c3-4b2a-a198-e7d6c5b4a321'),
+  ('c3d4e5f6-a7b8-4c7d-d8e9-f0a1b2c3d4e5', 'walts-carpentry', 'Walt''s Carpentry & Hardware', 'Hardware', 'Effingham', 'Custom woodworking & hardware.', 'e5f6a7b8-d4c3-4b2a-a198-e7d6c5b4a321'),
+  ('d4e5f6a7-b8c9-4d8e-e9f0-a1b2c3d4e5f6', 'wayside-farm', 'Wayside Farm Stand', 'Farm & Grocery', 'Effingham', 'Seasonal fresh produce & dairy.', 'e5f6a7b8-d4c3-4b2a-a198-e7d6c5b4a321')
+on conflict (slug) do update set onboarded_by = excluded.onboarded_by;
+
+-- 5c. Products
 insert into public.products (business_id, name, price, category)
 values
   ('a1b2c3d4-e5f6-4a5b-b6c7-d8e9f0a1b2c3', 'Large Pepperoni Pizza', 18.50, 'Eats'),
@@ -89,7 +117,7 @@ values
   ('d4e5f6a7-b8c9-4d8e-e9f0-a1b2c3d4e5f6', 'Local Eggs (Doz)', 6.00, 'Fresh')
 on conflict do nothing;
 
--- Insert community shoutouts
+-- 5d. Community shoutouts
 insert into public.shoutouts (business_id, type, content)
 values
   ('b2c3d4e5-f6a7-4b6c-c7d8-e9f0a1b2c3d4', 'update', 'Fresh local artisan cheese arriving today at 2 PM!'),

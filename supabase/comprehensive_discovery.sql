@@ -60,7 +60,7 @@ create table if not exists public.deliverer_profiles (
   is_active boolean default false,
   status text check (status in ('available', 'busy', 'offline')) default 'offline',
   last_known_location point,
-  service_town text references public.profiles(town) -- Deliverers can serve specific towns
+  service_town text -- Deliverers can serve specific towns
 );
 
 -- 4. ENABLE ROW LEVEL SECURITY (RLS)

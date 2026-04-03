@@ -11,7 +11,16 @@ export default function MarketplaceHero() {
             <div className="absolute top-[20%] right-[-10%] w-[50%] h-[60%] bg-[hsl(var(--primary))/0.1] blur-[150px] rounded-full"></div>
             <div className="absolute bottom-[-10%] left-[-5%] w-[40%] h-[50%] bg-[hsl(var(--secondary))/0.05] blur-[120px] rounded-full"></div>
 
-            <div className="max-w-7xl mx-auto relative z-10 text-center space-y-12">
+            <div className="max-w-7xl mx-auto relative z-10 text-center space-y-16">
+                
+                {/* Brand Logo Display */}
+                <div className="flex justify-center animate-in fade-in zoom-in duration-1000">
+                    <div className="relative group p-8 bg-white/5 backdrop-blur-3xl rounded-[4rem] border border-white/10 shadow-3xl hover:scale-105 transition-all duration-700">
+                         <img src="/logo.png" alt="Oasis United" className="w-48 h-48 object-contain drop-shadow-[0_0_30px_rgba(255,255,255,0.2)]" />
+                         <div className="absolute -inset-4 bg-indigo-500/10 blur-[80px] rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    </div>
+                </div>
+
                 <div className="space-y-6">
                     <div className="inline-flex items-center gap-3 px-4 py-2 bg-[hsl(var(--primary))/0.1] border border-[hsl(var(--primary))/0.2] rounded-full">
                         <span className="w-1.5 h-1.5 bg-[hsl(var(--primary))] rounded-full animate-pulse"></span>

@@ -1,13 +1,36 @@
 "use client";
+import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 
 export default function TownDiscovery() {
-    // In a real app, these would come from the 'towns' table filtered by most active/onboarded
-    const activeTowns = [
-        { name: 'Effingham', count: 12, flag: '🏡' },
-        { name: 'Freedom', count: 8, flag: '🌳' },
-        { name: 'Ossipee', count: 15, flag: '🏔️' },
-        { name: 'Tamworth', count: 6, flag: '⛪' },
+    const [towns, setTowns] = useState<any[]>([]);
+
+    useEffect(() => {
+        async function loadTowns() {
+            // Fetch towns with their associated business counts
+            const { data } = await supabase
+                .from('towns')
+                .select('name, id, businesses(id)')
+                .limit(4);
+            
+            if (data) {
+                const formatted = data.map(t => ({
+                    name: t.name,
+                    count: t.businesses?.length || 0,
+                    flag: t.name === 'Effingham' ? '🏡' : t.name === 'Freedom' ? '🌳' : t.name === 'Ossipee' ? '🏔️' : '⛪'
+                }));
+                setTowns(formatted);
+            }
+        }
+        loadTowns();
+    }, []);
+
+    const displayTowns = towns.length > 0 ? towns : [
+        { name: 'Effingham', count: 4, flag: '🏡' },
+        { name: 'Freedom', count: 2, flag: '🌳' },
+        { name: 'Ossipee', count: 2, flag: '🏔️' },
+        { name: 'Tamworth', count: 2, flag: '⛪' }
     ];
 
     return (
@@ -21,16 +44,16 @@ export default function TownDiscovery() {
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                {activeTowns.map((town) => (
+                {displayTowns.map((town) => (
                     <Link key={town.name} href={`/search?town=${town.name}`} className="group bg-white/[0.02] border border-white/5 rounded-[3rem] p-10 hover:bg-white/[0.04] transition-all relative overflow-hidden text-center hover:scale-[1.02] active:scale-95 duration-500">
-                        <div className="text-4xl mb-4 grayscale group-hover:grayscale-0 transition-all transform group-hover:scale-125 duration-700">{town.flag}</div>
+                        <div className="text-4xl mb-4 grayscale group-hover:grayscale-0 transition-all transform group-hover:scale-125 duration-700">{town.flag || '📍'}</div>
                         <h3 className="font-black italic text-2xl tracking-tighter">{town.name}</h3>
                         <p className="text-[10px] mt-2 font-black uppercase tracking-[0.2em] text-white/30 group-hover:text-primary transition-colors">{town.count} Boutiques</p>
                         <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                     </Link>
                 ))}
                 
-                <Link href="/register-town" className="group bg-white/[0.01] border border-white/5 border-dashed rounded-[3rem] p-10 hover:bg-white/[0.02] transition-all flex flex-col items-center justify-center text-center opacity-40 hover:opacity-100">
+                <Link href="/deliverer/dashboard" className="group bg-white/[0.01] border border-white/5 border-dashed rounded-[3rem] p-10 hover:bg-white/[0.02] transition-all flex flex-col items-center justify-center text-center opacity-40 hover:opacity-100">
                     <div className="text-2xl mb-4">+</div>
                     <h3 className="font-black italic text-lg tracking-tighter uppercase whitespace-nowrap">Open Your <br />Town</h3>
                 </Link>

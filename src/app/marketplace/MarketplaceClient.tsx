@@ -80,11 +80,60 @@ export default function MarketplaceClient({ initialFeatured, initialShoutouts }:
                 <section className="space-y-12 animate-in fade-in slide-in-from-bottom-8 duration-700">
                     <div className="flex justify-between items-end px-4">
                         <div className="space-y-2">
-                            <h2 className="text-3xl font-black italic tracking-tight">Oasis Discovery</h2>
+                            <h2 className="text-4xl font-black italic tracking-tighter uppercase">{activeCategory === 'All' ? 'Oasis Discovery' : `${activeCategory} Drop.`}</h2>
                             <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest px-1">Curated Fresh Arrivals</p>
+                        </div>
+                        <div className="flex gap-4">
+                            <span className="text-[10px] font-black text-indigo-400/40 uppercase tracking-widest animate-pulse">Live Feed • {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                         </div>
                     </div>
                     <DiscoveryFeed />
+                </section>
+
+                <section className="space-y-12">
+                    <div className="flex justify-between items-end px-4">
+                        <div className="space-y-2">
+                            <h2 className="text-3xl font-black italic tracking-tight uppercase">Neighborhood <span className="text-amber-500 italic">Live.</span></h2>
+                            <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest px-1">Local Business Insights</p>
+                        </div>
+                        <Link href="/local" className="text-[10px] font-black uppercase tracking-widest text-white/30 hover:text-white transition-colors">See Full Map →</Link>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="md:col-span-2 group bg-white/[0.02] rounded-[4rem] p-12 border border-white/5 hover:bg-white/[0.04] transition-all relative overflow-hidden group">
+                           <div className="absolute top-0 right-12 text-[160px] opacity-[0.03] select-none italic font-black group-hover:opacity-10 transition-opacity">
+                              🏠
+                           </div>
+                           <div className="relative z-10 space-y-6">
+                              <div className="inline-flex items-center gap-2 px-3 py-1 bg-amber-400/10 text-amber-400 rounded-full border border-amber-400/20 text-[9px] font-black uppercase">Local Spotlight</div>
+                              <h3 className="text-5xl font-black italic tracking-tighter">Effingham Hub.</h3>
+                              <p className="text-gray-400 max-w-sm text-sm font-medium">Discover 28+ verified physical businesses in the Ossipee/Tamworth regional network. Direct pick-up and local dispatch enabled.</p>
+                              <div className="pt-4 flex gap-4">
+                                 <Link href="/local" className="px-8 py-4 bg-white text-black rounded-3xl font-black text-[10px] uppercase shadow-2xl hover:scale-105 transition-all">Launch Registry</Link>
+                                 <button className="px-8 py-4 border border-white/10 rounded-3xl font-black text-[10px] uppercase hover:bg-white/5 transition-all">Near Me</button>
+                              </div>
+                           </div>
+                        </div>
+
+                        <div className="bg-amber-400 rounded-[4rem] p-10 text-black flex flex-col justify-between shadow-2xl shadow-amber-900/20">
+                           <div className="space-y-4">
+                              <div className="text-[10px] font-black uppercase tracking-widest opacity-60">Verified Partners</div>
+                              <h3 className="text-4xl font-black italic tracking-tighter">Growth <br />Network.</h3>
+                           </div>
+                           <div className="space-y-6 mt-8">
+                              <div className="space-y-2">
+                                 <div className="flex justify-between text-[10px] font-black uppercase tracking-tighter">
+                                    <span>Regional Data Density</span>
+                                    <span>98%</span>
+                                 </div>
+                                 <div className="h-1 bg-black/10 rounded-full overflow-hidden">
+                                    <div className="h-full bg-black w-[98%] rounded-full"></div>
+                                 </div>
+                              </div>
+                              <p className="text-[11px] font-bold uppercase leading-tight opacity-50">Providing real-time logistics for the united lakes community.</p>
+                           </div>
+                        </div>
+                    </div>
                 </section>
 
                 {(featured.businesses?.length > 0) && (
@@ -113,40 +162,43 @@ export default function MarketplaceClient({ initialFeatured, initialShoutouts }:
                     </section>
                 )}
 
-                <section className="bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] rounded-[4rem] p-12 md:p-20 shadow-2xl shadow-[hsl(var(--primary))/0.2] relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 p-12 opacity-10 pointer-events-none grayscale group-hover:grayscale-0 transition-all duration-700">
-                        <span className="text-[200px] italic font-black select-none">📢</span>
+                <section className="bg-[#0c0c0e] text-white rounded-[4rem] p-12 md:p-20 shadow-2xl border border-white/5 relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 p-12 opacity-5 pointer-events-none grayscale group-hover:grayscale-0 group-hover:opacity-20 transition-all duration-1000">
+                        <span className="text-[240px] italic font-black select-none leading-none">📢</span>
                     </div>
+                    <div className="absolute -bottom-32 -left-32 w-96 h-96 bg-indigo-500/10 blur-[120px] rounded-full"></div>
 
-                    <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-16">
+                    <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
                         <div className="space-y-8">
-                            <div className="space-y-4">
-                                <div className="inline-flex items-center gap-2 opacity-60">
-                                    <span className="w-1.5 h-1.5 bg-[hsl(var(--primary-foreground))] rounded-full"></span>
-                                    <span className="text-[10px] font-black uppercase tracking-widest">Live Platform Updates</span>
+                            <div className="space-y-6">
+                                <div className="inline-flex items-center gap-3 px-4 py-2 bg-amber-400/10 border border-amber-400/20 rounded-full">
+                                    <span className="w-1.5 h-1.5 bg-amber-400 rounded-full animate-pulse"></span>
+                                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-amber-400">Live Networking</span>
                                 </div>
-                                <h2 className="text-6xl font-black italic tracking-tighter leading-tight">Global <br />Shoutouts.</h2>
+                                <h2 className="text-7xl font-black italic tracking-tighter leading-none">Global <br />Shoutouts.</h2>
                             </div>
-                            <p className="opacity-60 font-medium text-lg max-w-sm italic">See what's happening in your community. Real-time drops, events, and specials from the network.</p>
+                            <p className="text-gray-400 font-medium text-lg max-w-sm leading-relaxed">Discover updates, drops, and community events from independent boutiques across the world.</p>
                         </div>
 
-                        <div className="space-y-4">
-                            {shoutouts.map((shout: any) => (
-                                <div key={shout.id} className="bg-[hsl(var(--background))/0.1] backdrop-blur-xl p-6 rounded-[2.5rem] border border-[hsl(var(--background))/0.05] flex items-center gap-6 hover:bg-[hsl(var(--background))/0.15] transition-all group/shout cursor-default">
-                                    <div className="w-14 h-14 bg-[hsl(var(--background))/0.1] rounded-2xl flex items-center justify-center text-2xl">
+                        <div className="space-y-6">
+                            {shoutouts.length > 0 ? shoutouts.map((shout: any) => (
+                                <div key={shout.id} className="bg-white/[0.03] backdrop-blur-3xl p-8 rounded-[3rem] border border-white/10 flex items-start gap-6 hover:bg-white/[0.05] hover:border-white/20 transition-all group/shout cursor-default">
+                                    <div className="w-16 h-16 bg-white/5 rounded-[1.5rem] flex items-center justify-center text-3xl shrink-0 border border-white/5">
                                         {shout.type === 'promo' ? '💎' : shout.type === 'alert' ? '✨' : '📝'}
                                     </div>
-                                    <div className="flex-1 space-y-1">
+                                    <div className="flex-1 space-y-2">
                                         <div className="flex justify-between items-center">
-                                            <span className="text-[10px] font-black uppercase tracking-widest opacity-60">{shout.businesses?.name}</span>
-                                            <span className="text-[10px] font-bold uppercase opacity-30">{new Date(shout.created_at).toLocaleDateString()}</span>
+                                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-400">{shout.businesses?.name || 'Local Partner'}</span>
+                                            <span className="text-[9px] font-bold uppercase opacity-30">{new Date(shout.created_at).toLocaleDateString()}</span>
                                         </div>
-                                        <p className="font-bold text-sm tracking-tight leading-relaxed">{shout.content}</p>
+                                        <p className="font-bold text-base tracking-tight leading-snug text-white/90">{shout.content}</p>
                                     </div>
                                 </div>
-                            ))}
-                            {shoutouts.length === 0 && (
-                                <div className="text-center py-12 opacity-40 italic">Waiting for the next cross-store update...</div>
+                            )) : (
+                                <div className="bg-white/[0.02] border border-dashed border-white/10 rounded-[3rem] py-24 px-8 text-center space-y-4">
+                                    <div className="text-4xl opacity-20">📡</div>
+                                    <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/20">Waiting for next transmission...</p>
+                                </div>
                             )}
                         </div>
                     </div>
@@ -156,32 +208,40 @@ export default function MarketplaceClient({ initialFeatured, initialShoutouts }:
                     <div className="flex justify-between items-end px-4">
                         <div className="space-y-2">
                             <h2 className="text-3xl font-black italic tracking-tight uppercase">Trending Treasures</h2>
-                            <p className="text-[10px] font-black text-[hsl(var(--secondary))] uppercase tracking-widest px-1">Global Best Sellers</p>
+                            <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest px-1">Global Best Sellers</p>
                         </div>
                     </div>
 
-                    <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 transition-opacity duration-300 ${loading ? 'opacity-50' : 'opacity-100'}`}>
-                        {featured.products?.map((product: any) => (
-                            <Link key={product.id} href={`/shop/${product.business_id}`} className="group space-y-4">
-                                <div className="aspect-[4/5] bg-[hsl(var(--card))] rounded-[3rem] overflow-hidden relative border border-[hsl(var(--border))] shadow-2xl transition-all hover:border-[hsl(var(--primary))/0.3]">
+                    <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 transition-opacity duration-300 ${loading ? 'opacity-50' : 'opacity-100'}`}>
+                        {featured.products?.length > 0 ? featured.products.map((product: any) => (
+                            <Link key={product.id} href={`/shop/${product.business_id}`} className="group space-y-6">
+                                <div className="aspect-[4/5] bg-[#1a1a1e] rounded-[3.5rem] overflow-hidden relative border border-white/5 shadow-3xl transition-all duration-500 group-hover:border-amber-400/30 group-hover:-translate-y-2">
                                     {product.image_url ? (
-                                        <img src={product.image_url} alt={product.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 opacity-80 group-hover:opacity-100" />
+                                        <img src={product.image_url} alt={product.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000 opacity-80 group-hover:opacity-100" />
                                     ) : (
-                                        <div className="w-full h-full flex items-center justify-center text-4xl bg-[hsl(var(--background))] opacity-50">📦</div>
+                                        <div className="w-full h-full flex items-center justify-center text-4xl bg-white/[0.02] opacity-40 group-hover:scale-110 transition-transform duration-700">💎</div>
                                     )}
-                                    <div className="absolute bottom-6 left-6 right-6 p-4 bg-[hsl(var(--foreground))/0.9] backdrop-blur-lg rounded-3xl translate-y-20 group-hover:translate-y-0 transition-transform duration-500 shadow-xl">
-                                        <button className="w-full py-3 bg-[hsl(var(--background))] text-[hsl(var(--foreground))] rounded-2xl font-black text-[10px] uppercase tracking-widest">Quick Peek</button>
+                                    <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0c] via-transparent to-transparent opacity-60 group-hover:opacity-40 transition-opacity"></div>
+                                    <div className="absolute bottom-10 left-10 right-10 p-5 bg-white/10 backdrop-blur-2xl rounded-[2rem] border border-white/20 translate-y-32 group-hover:translate-y-0 transition-transform duration-700 shadow-2xl">
+                                        <button className="w-full py-4 bg-white text-black rounded-[1.2rem] font-bold text-[11px] uppercase tracking-widest">Discover Now</button>
                                     </div>
                                 </div>
-                                <div className="px-4 flex justify-between items-start">
-                                    <div className="space-y-1">
-                                        <h3 className="font-bold text-lg leading-tight truncate max-w-[150px]">{product.name}</h3>
-                                        <p className="text-[10px] font-black uppercase text-[hsl(var(--primary))] tracking-tighter italic">From {product.businesses?.name}</p>
+                                <div className="px-6 flex justify-between items-end">
+                                    <div className="space-y-3">
+                                        <h3 className="font-black italic text-xl tracking-tighter leading-none group-hover:text-amber-400 transition-colors truncate max-w-[150px]">{product.name}</h3>
+                                        <p className="text-[10px] font-bold uppercase text-gray-500 tracking-widest leading-none">From {product.businesses?.name}</p>
                                     </div>
-                                    <div className="text-xl font-black italic text-[hsl(var(--secondary))]">${Number(product.price).toFixed(2)}</div>
+                                    <div className="text-2xl font-black italic text-white/90">${Number(product.price).toFixed(2)}</div>
                                 </div>
                             </Link>
-                        ))}
+                        )) : (
+                            [1,2,3,4].map(i => (
+                                <div key={i} className="aspect-[4/5] bg-white/5 rounded-[3.5rem] border border-dashed border-white/10 flex items-center justify-center flex-col gap-4 opacity-40">
+                                    <div className="text-3xl">✨</div>
+                                    <p className="text-[9px] font-black uppercase tracking-widest">Awaiting Treasure {i}</p>
+                                </div>
+                            ))
+                        )}
                     </div>
                 </section>
             </main>

@@ -26,9 +26,10 @@ create table if not exists public.towns (
 -- Ensure town column exists if table was already created
 alter table public.profiles add column if not exists town text;
 
--- Update the role check constraint to include 'deliverer'
+-- Update the role check constraint to include 'deliverer' (and be defensive about existing data)
 alter table public.profiles drop constraint if exists profiles_role_check;
-alter table public.profiles add constraint profiles_role_check check (role in ('business', 'consumer', 'deliverer'));
+update public.profiles set role = 'consumer' where role not in ('business', 'consumer', 'deliverer', 'admin', 'staff');
+alter table public.profiles add constraint profiles_role_check check (role in ('business', 'consumer', 'deliverer', 'admin', 'staff'));
 
 -- BUSINESSES TABLE (Storefront details: Hardware, Restaurants, etc.)
 create table if not exists public.businesses (
@@ -122,10 +123,8 @@ create policy "Everyone can view deliverers" on public.deliverer_profiles for se
 create policy "Everyone can view towns" on public.towns for select using (true);
 create policy "Everyone can view routes" on public.delivery_routes for select using (true);
 
--- 5. NEIGHBORHOOD SEED DATA (Effingham Area Discovery)
+-- 5. NEIGHBORHOOD SEED DATA (Regional Discovery Network)
 -- 5a. Create a primary deliverer/agent
--- Note: In a real app, these would come from auth.users. 
--- We assume these UUIDs represent previously created Auth users for this demo.
 insert into public.profiles (id, full_name, role, town)
 values 
   ('e5f6a7b8-d4c3-4b2a-a198-e7d6c5b4a321', 'Local Dave', 'deliverer', 'Effingham')
@@ -136,29 +135,85 @@ values
   ('e5f6a7b8-d4c3-4b2a-a198-e7d6c5b4a321', 'truck', 'available', true, 'Effingham')
 on conflict (id) do nothing;
 
--- 5b. Businesses (Attributed to the deliverer who onboarded them)
-insert into public.businesses (id, slug, name, category, location, description, onboarded_by)
-values 
-  ('a1b2c3d4-e5f6-4a5b-b6c7-d8e9f0a1b2c3', 'pnb-eats', 'PNB Eats', 'Restaurant', 'Effingham', 'Fresh pizza & specialty subs.', 'e5f6a7b8-d4c3-4b2a-a198-e7d6c5b4a321'),
-  ('b2c3d4e5-f6a7-4b6c-c7d8-e9f0a1b2c3d4', 'boyles-general', 'Boyle''s General Store', 'Grocery', 'Effingham Falls', 'Local staples & artisanal goods.', 'e5f6a7b8-d4c3-4b2a-a198-e7d6c5b4a321'),
-  ('c3d4e5f6-a7b8-4c7d-d8e9-f0a1b2c3d4e5', 'walts-carpentry', 'Walt''s Carpentry & Hardware', 'Hardware', 'Effingham', 'Custom woodworking & hardware.', 'e5f6a7b8-d4c3-4b2a-a198-e7d6c5b4a321'),
-  ('d4e5f6a7-b8c9-4d8e-e9f0-a1b2c3d4e5f6', 'wayside-farm', 'Wayside Farm Stand', 'Farm & Grocery', 'Effingham', 'Seasonal fresh produce & dairy.', 'e5f6a7b8-d4c3-4b2a-a198-e7d6c5b4a321')
-on conflict (slug) do update set onboarded_by = excluded.onboarded_by;
-
--- 5c. Products
-insert into public.products (business_id, name, price, category)
+-- 5b. Towns Registration
+insert into public.towns (name, state, added_by)
 values
-  ('a1b2c3d4-e5f6-4a5b-b6c7-d8e9f0a1b2c3', 'Large Pepperoni Pizza', 18.50, 'Eats'),
-  ('a1b2c3d4-e5f6-4a5b-b6c7-d8e9f0a1b2c3', 'Breakfast Sub', 12.99, 'Eats'),
-  ('b2c3d4e5-f6a7-4b6c-c7d8-e9f0a1b2c3d4', 'Local Honey (16oz)', 9.00, 'Grocery'),
-  ('b2c3d4e5-f6a7-4b6c-c7d8-e9f0a1b2c3d4', 'Milk (Gal)', 4.89, 'Grocery'),
-  ('c3d4e5f6-a7b8-4c7d-d8e9-f0a1b2c3d4e5', 'Custom Hardware Kit', 45.99, 'Hardware'),
-  ('d4e5f6a7-b8c9-4d8e-e9f0-a1b2c3d4e5f6', 'Local Eggs (Doz)', 6.00, 'Fresh')
-on conflict do nothing;
+  ('Effingham', 'NH', 'e5f6a7b8-d4c3-4b2a-a198-e7d6c5b4a321'),
+  ('Freedom', 'NH', 'e5f6a7b8-d4c3-4b2a-a198-e7d6c5b4a321'),
+  ('Ossipee', 'NH', 'e5f6a7b8-d4c3-4b2a-a198-e7d6c5b4a321'),
+  ('Tamworth', 'NH', 'e5f6a7b8-d4c3-4b2a-a198-e7d6c5b4a321'),
+  ('Sandwich', 'NH', 'e5f6a7b8-d4c3-4b2a-a198-e7d6c5b4a321')
+on conflict (name, state) do nothing;
 
--- 5d. Community shoutouts
+-- 5c. Use a DO block to link businesses to newly created town IDs accurately
+do $$
+declare
+  effingham_id uuid;
+  freedom_id uuid;
+  ossipee_id uuid;
+  tamworth_id uuid;
+  sandwich_id uuid;
+begin
+  select id into effingham_id from public.towns where name = 'Effingham' limit 1;
+  select id into freedom_id from public.towns where name = 'Freedom' limit 1;
+  select id into ossipee_id from public.towns where name = 'Ossipee' limit 1;
+  select id into tamworth_id from public.towns where name = 'Tamworth' limit 1;
+  select id into sandwich_id from public.towns where name = 'Sandwich' limit 1;
+
+  -- Original Effingham Businesses
+  insert into public.businesses (slug, name, category, location, town_id, onboarded_by, description)
+  values 
+    ('pnb-eats', 'PNB Eats', 'Restaurant', 'Effingham', effingham_id, 'e5f6a7b8-d4c3-4b2a-a198-e7d6c5b4a321', 'Fresh pizza & specialty subs.'),
+    ('boyles-general', 'Boyle''s General Store', 'Grocery', 'Effingham Falls', effingham_id, 'e5f6a7b8-d4c3-4b2a-a198-e7d6c5b4a321', 'Local staples & artisanal goods.'),
+    ('walts-carpentry', 'Walt''s Carpentry & Hardware', 'Hardware', 'Effingham', effingham_id, 'e5f6a7b8-d4c3-4b2a-a198-e7d6c5b4a321', 'Custom woodworking & hardware.'),
+    ('wayside-farm', 'Wayside Farm Stand', 'Farm & Grocery', 'Effingham', effingham_id, 'e5f6a7b8-d4c3-4b2a-a198-e7d6c5b4a321', 'Seasonal fresh produce & dairy.')
+  on conflict (slug) do update set town_id = excluded.town_id;
+
+  -- Freedom Businesses
+  insert into public.businesses (slug, name, category, location, town_id, onboarded_by, description)
+  values 
+    ('freedom-gallery', 'Village Art Gallery', 'Art & Decor', 'Freedom Village', freedom_id, 'e5f6a7b8-d4c3-4b2a-a198-e7d6c5b4a321', 'Local NH artisan crafts and fine art pieces.'),
+    ('berry-bay-supplies', 'Berry Bay Marina & Store', 'Outdoor & Grocery', 'Freedom', freedom_id, 'e5f6a7b8-d4c3-4b2a-a198-e7d6c5b4a321', 'Lakeside supplies, bait, and quick bites.')
+  on conflict (slug) do nothing;
+
+  -- Ossipee Businesses
+  insert into public.businesses (slug, name, category, location, town_id, onboarded_by, description)
+  values 
+    ('whittier-creek-cafe', 'Whittier Creek Cafe', 'Bistro', 'West Ossipee', ossipee_id, 'e5f6a7b8-d4c3-4b2a-a198-e7d6c5b4a321', 'Organic coffee and mountainview breakfast.'),
+    ('ossipee-mount-hardware', 'Ossipee Mountain Hardware', 'Hardware', 'Center Ossipee', ossipee_id, 'e5f6a7b8-d4c3-4b2a-a198-e7d6c5b4a321', 'Generational hardware and home repair.')
+  on conflict (slug) do nothing;
+
+  -- Tamworth Businesses
+  insert into public.businesses (slug, name, category, location, town_id, onboarded_by, description)
+  values 
+    ('tamworth-distilling', 'Tamworth Distilling', 'Spirits', 'Tamworth Village', tamworth_id, 'e5f6a7b8-d4c3-4b2a-a198-e7d6c5b4a321', 'World-class wilderness spirits and botanicals.'),
+    ('the-barnstormers', 'Barnstormers Theatre Shop', 'Gifts', 'Tamworth', tamworth_id, 'e5f6a7b8-d4c3-4b2a-a198-e7d6c5b4a321', 'Curated theatrical gifts and local memorabilia.')
+  on conflict (slug) do nothing;
+
+end $$;
+
+-- 5d. Use slugs to seed products mapping accurately to businesses
+do $$
+declare
+  pnb_id uuid;
+  boyles_id uuid;
+  walts_id uuid;
+begin
+  select id into pnb_id from public.businesses where slug = 'pnb-eats';
+  select id into boyles_id from public.businesses where slug = 'boyles-general';
+  select id into walts_id from public.businesses where slug = 'walts-carpentry';
+
+  insert into public.products (business_id, name, price, category)
+  values
+    (pnb_id, 'Large Pepperoni Pizza', 18.50, 'Eats'),
+    (pnb_id, 'Breakfast Sub', 12.99, 'Eats'),
+    (boyles_id, 'Local Honey (16oz)', 9.00, 'Grocery'),
+    (boyles_id, 'Milk (Gal)', 4.89, 'Grocery'),
+    (walts_id, 'Custom Hardware Kit', 45.99, 'Hardware')
+  on conflict do nothing;
+end $$;
+
+-- 5e. Shoutouts
 insert into public.shoutouts (business_id, type, content)
-values
-  ('b2c3d4e5-f6a7-4b6c-c7d8-e9f0a1b2c3d4', 'update', 'Fresh local artisan cheese arriving today at 2 PM!'),
-  ('d4e5f6a7-b8c9-4d8e-e9f0-a1b2c3d4e5f6', 'promo', 'BOGO on all heirloom tomatoes this weekend only.')
+select id, 'update', 'Fresh local artisan cheese arriving today at 2 PM!' from public.businesses where slug = 'boyles-general'
 on conflict do nothing;

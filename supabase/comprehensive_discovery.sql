@@ -16,6 +16,10 @@ create table if not exists public.profiles (
 -- Ensure town column exists if table was already created
 alter table public.profiles add column if not exists town text;
 
+-- Update the role check constraint to include 'deliverer'
+alter table public.profiles drop constraint if exists profiles_role_check;
+alter table public.profiles add constraint profiles_role_check check (role in ('business', 'consumer', 'deliverer'));
+
 -- BUSINESSES TABLE (Storefront details: Hardware, Restaurants, etc.)
 create table if not exists public.businesses (
   id uuid default uuid_generate_v4() primary key,

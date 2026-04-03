@@ -13,6 +13,16 @@ create table if not exists public.profiles (
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
+-- TOWNS TABLE (Centrally registered towns or towns added by deliverers)
+create table if not exists public.towns (
+  id uuid default uuid_generate_v4() primary key,
+  name text not null,
+  state text,
+  added_by uuid references public.profiles(id), -- The driver who "opened" this town
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  unique(name, state)
+);
+
 -- Ensure town column exists if table was already created
 alter table public.profiles add column if not exists town text;
 
@@ -30,6 +40,7 @@ create table if not exists public.businesses (
   description text,
   category text, -- Retail, Restaurant, Hardware, etc.
   location text, -- Physical address or specific town area
+  town_id uuid references public.towns(id), -- Linking business to a specific town entity
   image_url text,
   integrations jsonb default '{}'::jsonb, -- { twilio: '+1...', instagram: '@...' }
   theme jsonb default '{}'::jsonb,
@@ -38,8 +49,9 @@ create table if not exists public.businesses (
   updated_at timestamp with time zone default timezone('utc'::text, now())
 );
 
--- Ensure onboarded_by column exists if table was already created
+-- Ensure onboarded_by and town_id columns exist if table was already created
 alter table public.businesses add column if not exists onboarded_by uuid references public.profiles(id);
+alter table public.businesses add column if not exists town_id uuid references public.towns(id);
 
 -- PRODUCTS TABLE (Prices for Groceries, Menu items, Hardware supplies)
 create table if not exists public.products (
@@ -70,7 +82,18 @@ create table if not exists public.deliverer_profiles (
   is_active boolean default false,
   status text check (status in ('available', 'busy', 'offline')) default 'offline',
   last_known_location point,
-  service_town text -- Deliverers can serve specific towns
+  service_town text -- Legacy text field
+);
+
+-- DELIVERY ROUTES (Customized paths or zones defined by drivers)
+create table if not exists public.delivery_routes (
+  id uuid default uuid_generate_v4() primary key,
+  deliverer_id uuid references public.profiles(id) not null,
+  town_id uuid references public.towns(id) not null,
+  name text not null, -- e.g., "Effingham Main Loop"
+  stops jsonb default '[]'::jsonb, -- Ordered list of location points or business IDs
+  is_active boolean default true,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
 -- 4. ENABLE ROW LEVEL SECURITY (RLS)
@@ -79,6 +102,8 @@ alter table public.businesses enable row level security;
 alter table public.products enable row level security;
 alter table public.shoutouts enable row level security;
 alter table public.deliverer_profiles enable row level security;
+alter table public.towns enable row level security;
+alter table public.delivery_routes enable row level security;
 
 -- Public Read Policies
 drop policy if exists "Everyone can view profiles" on public.profiles;
@@ -86,12 +111,16 @@ drop policy if exists "Everyone can view businesses" on public.businesses;
 drop policy if exists "Everyone can view products" on public.products;
 drop policy if exists "Everyone can view shoutouts" on public.shoutouts;
 drop policy if exists "Everyone can view deliverers" on public.deliverer_profiles;
+drop policy if exists "Everyone can view towns" on public.towns;
+drop policy if exists "Everyone can view routes" on public.delivery_routes;
 
 create policy "Everyone can view profiles" on public.profiles for select using (true);
 create policy "Everyone can view businesses" on public.businesses for select using (true);
 create policy "Everyone can view products" on public.products for select using (true);
 create policy "Everyone can view shoutouts" on public.shoutouts for select using (true);
 create policy "Everyone can view deliverers" on public.deliverer_profiles for select using (true);
+create policy "Everyone can view towns" on public.towns for select using (true);
+create policy "Everyone can view routes" on public.delivery_routes for select using (true);
 
 -- 5. NEIGHBORHOOD SEED DATA (Effingham Area Discovery)
 -- 5a. Create a primary deliverer/agent

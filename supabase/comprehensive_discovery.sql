@@ -608,6 +608,7 @@ begin
 end;
 $$ language plpgsql;
 
+drop trigger if exists on_business_onboarding on public.businesses;
 create trigger on_business_onboarding
 after insert on public.businesses
 for each row execute function public.trigger_seed_business_inventory();

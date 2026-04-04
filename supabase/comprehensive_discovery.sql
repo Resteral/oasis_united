@@ -118,6 +118,13 @@ drop policy if exists "Everyone can view routes" on public.delivery_routes;
 create policy "Everyone can view profiles" on public.profiles for select using (true);
 create policy "Everyone can view businesses" on public.businesses for select using (true);
 create policy "Everyone can view products" on public.products for select using (true);
+create policy "Owners manage own products" on public.products for all using (
+    exists (select 1 from public.businesses where id = business_id and owner_id = auth.uid())
+);
+create policy "Admins manage all products" on public.products for all using (
+    exists (select 1 from public.profiles where id = auth.uid() and role = 'admin')
+);
+
 create policy "Everyone can view shoutouts" on public.shoutouts for select using (true);
 create policy "Everyone can view deliverers" on public.deliverer_profiles for select using (true);
 create policy "Everyone can view towns" on public.towns for select using (true);

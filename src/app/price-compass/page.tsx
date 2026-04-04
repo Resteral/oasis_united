@@ -9,14 +9,39 @@ export default function PriceCompassPage() {
     const [loading, setLoading] = useState(false);
     const [neighborTowns, setNeighborTowns] = useState<any[]>([]);
     const [activeTown, setActiveTown] = useState<string | null>(null);
+    const [isAdmin, setIsAdmin] = useState(false);
 
     useEffect(() => {
+        supabase.auth.getUser().then(({ data: { user } }) => {
+            if (user) {
+                supabase.from('profiles').select('role').eq('id', user.id).single().then(({ data }) => {
+                    if (data?.role === 'admin') setIsAdmin(true);
+                });
+            }
+        });
+
         // Load local towns to filter comparison
         supabase.from('towns').select('*').limit(10).then(({ data }) => {
             setNeighborTowns(data || []);
             if (data?.[0]) setActiveTown(data[0].name);
         });
     }, []);
+
+    const updatePrice = async (productId: string, newPrice: string) => {
+        const floatPrice = parseFloat(newPrice);
+        if (isNaN(floatPrice)) return;
+
+        const { error } = await supabase
+            .from('products')
+            .update({ price: floatPrice })
+            .eq('id', productId);
+        
+        if (!error) {
+            setResults(prev => prev.map(p => p.id === productId ? { ...p, price: floatPrice } : p));
+        } else {
+            alert("Administrative price override failed: " + error.message);
+        }
+    };
 
     const searchPrices = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -125,6 +150,15 @@ export default function PriceCompassPage() {
                                     <div className="bg-black/5 p-12 rounded-[3.5rem] border border-black/5 backdrop-blur-md flex flex-col items-center gap-6">
                                         <p className="text-[10px] font-black uppercase tracking-[0.4em] opacity-40">Lowest Unit Price</p>
                                         <span className="text-9xl font-black italic tracking-tighter">${cheapest.price.toFixed(2)}</span>
+                                        {isAdmin && (
+                                            <button 
+                                                onClick={() => {
+                                                    const p = prompt("Administrative Price Override ($):", cheapest.price.toString());
+                                                    if (p) updatePrice(cheapest.id, p);
+                                                }}
+                                                className="px-6 py-2 bg-black/20 border border-black/30 rounded-xl text-[8px] font-black uppercase tracking-widest hover:bg-black hover:text-white transition-all shadow-xl"
+                                            > Edit Global Lowest </button>
+                                        )}
                                         <Link href={`/shop/${cheapest.business_id}`} className="px-12 py-5 bg-black text-white font-black uppercase tracking-widest text-[11px] rounded-full hover:scale-105 active:scale-95 transition-all">Claim at Boutique</Link>
                                     </div>
                                 </div>
@@ -145,7 +179,18 @@ export default function PriceCompassPage() {
                                             <h4 className="text-3xl font-black italic tracking-tighter uppercase leading-tight group-hover:text-amber-400 transition-colors">{product.name}</h4>
                                             <p className="text-[10px] font-black uppercase tracking-widest text-indigo-400">{product.businesses?.name}</p>
                                         </div>
-                                        <div className="text-4xl font-black italic tracking-tighter opacity-90">${product.price.toFixed(2)}</div>
+                                        <div className="text-4xl font-black italic tracking-tighter opacity-90 flex flex-col items-end">
+                                            <span>${product.price.toFixed(2)}</span>
+                                            {isAdmin && (
+                                                <button 
+                                                    onClick={() => {
+                                                        const p = prompt("Administrative Price Override ($):", product.price.toString());
+                                                        if (p) updatePrice(product.id, p);
+                                                    }}
+                                                    className="mt-2 px-6 py-2 bg-rose-500/10 border border-rose-500/30 text-rose-500 rounded-xl text-[8px] font-black uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all shadow-xl shadow-rose-900/10"
+                                                > Edit Regional Price </button>
+                                            )}
+                                        </div>
                                     </div>
                                     
                                     <div className="space-y-6 relative z-10">

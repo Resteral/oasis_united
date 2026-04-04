@@ -31,26 +31,29 @@ export async function GET(req: Request) {
         });
     }
 
+    // 1. Search Products
     let productQuery = supabase
         .from('products')
-        .select('*, businesses(id, name, theme, location, logo_url)')
+        .select('*, businesses!inner(*)')
         .limit(limit);
 
     if (query) {
         if (isZip) {
-            // Signal detected as a ZIP location
             productQuery = productQuery.ilike('businesses.location', `%${query}%`);
         } else {
             productQuery = productQuery.ilike('name', `%${query}%`);
         }
     }
-
     if (category && category !== 'All') {
         productQuery = productQuery.ilike('category', `%${category}%`);
     }
 
     const { data: products } = await productQuery;
 
+    // 2. Extract Business IDs from matching products
+    const businessIdsFromProducts = Array.from(new Set((products || []).map(p => p.business_id)));
+
+    // 3. Search Businesses (Direct name match OR sells matching product)
     let businessQuery = supabase
         .from('businesses')
         .select('*')
@@ -58,14 +61,16 @@ export async function GET(req: Request) {
 
     if (query) {
         if (isZip) {
-            // Priority filtering by Territory Zip Code
             businessQuery = businessQuery.ilike('location', `%${query}%`);
         } else {
-            businessQuery = businessQuery.ilike('name', `%${query}%`);
+            // Priority: Businesses with matching name OR Businesses with matching products
+            if (businessIdsFromProducts.length > 0) {
+                businessQuery = businessQuery.or(`name.ilike.%${query}%,id.in.(${businessIdsFromProducts.join(',')})`);
+            } else {
+                businessQuery = businessQuery.ilike('name', `%${query}%`);
+            }
         }
-    }
-
-    if (category && category !== 'All') {
+    } else if (category && category !== 'All') {
         businessQuery = businessQuery.ilike('category', `%${category}%`);
     }
 

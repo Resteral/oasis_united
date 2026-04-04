@@ -131,6 +131,13 @@ begin
     if not exists (select 1 from information_schema.columns where table_name = 'orders' and column_name = 'channel') then
         alter table public.orders add column channel text check (channel in ('web', 'sms', 'instagram', 'offline')) default 'web';
     end if;
+    if not exists (select 1 from information_schema.columns where table_name = 'orders' and column_name = 'table_number') then
+        alter table public.orders add column table_number text;
+    end if;
+    
+    -- Update type column to have a check constraint if possible (defensively)
+    alter table public.orders drop constraint if exists orders_type_check;
+    alter table public.orders add constraint orders_type_check check (type in ('takeout', 'shipping', 'inhouse', 'pickup', 'delivery'));
 end $$;
 
 alter table public.orders enable row level security;

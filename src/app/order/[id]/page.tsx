@@ -80,10 +80,10 @@ export default function OrderPage() {
                     {/* Brand Header */}
                     <div className="p-12 text-center border-b border-gray-50" style={{ backgroundColor: theme.backgroundColor }}>
                         <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 text-3xl shadow-inner border border-gray-100 bg-white">
-                            {order.type === 'pickup' ? '🛍️' : '🚚'}
+                            {order.type === 'takeout' ? '🛍️' : order.type === 'inhouse' ? '🍽️' : '🚚'}
                         </div>
                         <h1 className="text-3xl font-black text-gray-900 tracking-tight">Success!</h1>
-                        <p className="text-gray-500 mt-2 font-medium">Your order from <span className="text-indigo-600 font-bold">{business?.name}</span> is confirmed.</p>
+                        <p className="text-gray-500 mt-2 font-medium">Your {order.type} order from <span className="text-indigo-600 font-bold">{business?.name}</span> is confirmed.</p>
 
                         <div className="mt-8 inline-flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-700 rounded-full text-xs font-black uppercase tracking-widest">
                             <span className="relative flex h-2 w-2">
@@ -126,7 +126,7 @@ export default function OrderPage() {
                         <div className="bg-gray-50/50 p-8 rounded-3xl space-y-3 border border-gray-100/50">
                             <div className="flex justify-between text-sm text-gray-500 font-medium tracking-tight">
                                 <span>Subtotal</span>
-                                <span>${(order.total - (order.type === 'pickup' ? 0 : (order.total > 0 ? (order.total - order.items.reduce((acc: number, item: any) => acc + (item.price * item.quantity), 0)) : 0))).toFixed(2)}</span>
+                                <span>${(order.total - (order.type === 'shipping' ? (order.total - order.items.reduce((acc: number, item: any) => acc + (item.price * item.quantity), 0)) : 0)).toFixed(2)}</span>
                             </div>
                             {order.type === 'shipping' && (
                                 <div className="flex justify-between text-sm text-gray-500 font-medium tracking-tight">
@@ -150,9 +150,11 @@ export default function OrderPage() {
                                 </div>
                             </div>
                             <div className="space-y-3">
-                                <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{order.type === 'pickup' ? 'Pickup Location' : 'Delivery Address'}</h4>
+                                <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{order.type === 'takeout' ? 'Pickup Location' : order.type === 'inhouse' ? 'Table Assignment' : 'Delivery Address'}</h4>
                                 <p className="text-sm text-gray-600 font-medium leading-relaxed italic">
-                                    {order.type === 'pickup' ? (business?.location || 'Store address not set') : order.address}
+                                    {order.type === 'takeout' ? (business?.location || 'Store address not set') : 
+                                     order.type === 'inhouse' ? `Table #${order.table_number || 'TBD'}` : 
+                                     order.address}
                                 </p>
                             </div>
                         </div>

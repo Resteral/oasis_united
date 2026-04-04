@@ -6,8 +6,9 @@ export type Order = {
     customerName: string;
     items: any[];
     total: number;
-    type: 'pickup' | 'delivery' | 'shipping';
+    type: 'takeout' | 'delivery' | 'shipping' | 'inhouse';
     address?: string;
+    tableNumber?: string;
     phone?: string;
 };
 

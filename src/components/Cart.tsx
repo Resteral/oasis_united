@@ -6,6 +6,7 @@ import styles from './Cart.module.css';
 import { AutomationService } from '@/services/automation';
 import { supabase } from '@/lib/supabase';
 import { trackEvent } from '@/services/analytics';
+import SeatingArrangement from './SeatingArrangement';
 
 interface CartItem {
     id: string;
@@ -25,10 +26,11 @@ export default function Cart({ businessId, items, setItems }: CartProps) {
     const [isOpen, setIsOpen] = useState(false);
 
     // Order State
-    const [orderType, setOrderType] = useState<'pickup' | 'shipping'>('pickup');
+    const [orderType, setOrderType] = useState<'takeout' | 'shipping' | 'inhouse'>('takeout');
     const [customerName, setCustomerName] = useState('');
     const [customerContact, setCustomerContact] = useState('');
     const [address, setAddress] = useState('');
+    const [tableNumber, setTableNumber] = useState('');
     const [isProcessing, setIsProcessing] = useState(false);
     const [vendorTier, setVendorTier] = useState('free');
     const [userPoints, setUserPoints] = useState(0);
@@ -119,6 +121,10 @@ export default function Cart({ businessId, items, setItems }: CartProps) {
             alert("Please enter your shipping address");
             return;
         }
+        if (orderType === 'inhouse' && !tableNumber) {
+            alert("Please enter your table number for in-house service");
+            return;
+        }
 
         setIsProcessing(true);
 
@@ -134,7 +140,8 @@ export default function Cart({ businessId, items, setItems }: CartProps) {
                     items,
                     total,
                     type: orderType,
-                    address: orderType === 'shipping' ? address : undefined
+                    address: orderType === 'shipping' ? address : undefined,
+                    tableNumber: orderType === 'inhouse' ? tableNumber : undefined
                 }),
             });
 
@@ -160,6 +167,7 @@ export default function Cart({ businessId, items, setItems }: CartProps) {
             setCustomerName('');
             setCustomerContact('');
             setAddress('');
+            setTableNumber('');
         } catch (err: any) {
             console.error("Checkout failed:", err);
             alert("Checkout failed: " + err.message);
@@ -238,16 +246,22 @@ export default function Cart({ businessId, items, setItems }: CartProps) {
                             <div className={styles.footer}>
                                 <div className={styles.toggleGroup}>
                                     <button
-                                        className={`${styles.toggleBtn} ${orderType === 'pickup' ? styles.active : ''}`}
-                                        onClick={() => setOrderType('pickup')}
+                                        className={`${styles.toggleBtn} ${orderType === 'inhouse' ? styles.active : ''}`}
+                                        onClick={() => setOrderType('inhouse')}
                                     >
-                                        Pickup
+                                        In-house
+                                    </button>
+                                    <button
+                                        className={`${styles.toggleBtn} ${orderType === 'takeout' ? styles.active : ''}`}
+                                        onClick={() => setOrderType('takeout')}
+                                    >
+                                        Takeout
                                     </button>
                                     <button
                                         className={`${styles.toggleBtn} ${orderType === 'shipping' ? styles.active : ''}`}
                                         onClick={() => setOrderType('shipping')}
                                     >
-                                        Shipping {vendorTier === 'free' ? '(+$10)' : '(FREE)'}
+                                        Delivery {vendorTier === 'free' ? '(+$10)' : '(FREE)'}
                                     </button>
                                 </div>
 
@@ -276,6 +290,24 @@ export default function Cart({ businessId, items, setItems }: CartProps) {
                                             value={address}
                                             onChange={(e) => setAddress(e.target.value)}
                                         />
+                                    )}
+                                    {orderType === 'inhouse' && (
+                                        <div className="mt-4 border-t border-white/5 pt-8 space-y-8 animate-in fade-in slide-in-from-top-4 duration-500">
+                                            <SeatingArrangement 
+                                                businessId={businessId} 
+                                                onTableSelect={setTableNumber} 
+                                                selectedTable={tableNumber} 
+                                            />
+                                            {tableNumber && (
+                                                <div className="p-8 bg-amber-400 rounded-[2.5rem] flex items-center justify-between border-2 border-amber-300 shadow-2xl shadow-amber-400/20 translate-y-2 animate-in slide-in-from-bottom-2 duration-300">
+                                                    <div className="flex flex-col gap-1">
+                                                        <span className="text-[9px] font-black uppercase tracking-widest text-black/40 italic">Confirmed Seating</span>
+                                                        <span className="text-3xl font-black italic tracking-tighter text-black uppercase">Table {tableNumber}</span>
+                                                    </div>
+                                                    <div className="w-12 h-12 bg-black/10 rounded-full flex items-center justify-center text-2xl border border-black/5">🍽️</div>
+                                                </div>
+                                            )}
+                                        </div>
                                     )}
                                 </div>
 
@@ -322,7 +354,7 @@ export default function Cart({ businessId, items, setItems }: CartProps) {
                                 </div>
 
                                 <div className={styles.actions}>
-                                    {customerName && (orderType === 'pickup' || address) ? (
+                                    {customerName && (orderType !== 'shipping' || address) && (orderType !== 'inhouse' || tableNumber) ? (
                                         <div style={{ marginTop: '1rem' }}>
                                             <PayPalButtons
                                                 style={{ layout: "vertical" }}

@@ -14,13 +14,18 @@ export default function HubPage() {
 
       <main className="max-w-7xl mx-auto px-8 pt-32 pb-48 relative z-10 space-y-24">
         
-        <div className="space-y-6 max-w-2xl">
-          <div className="inline-flex items-center gap-3 px-4 py-2 bg-indigo-500/10 border border-indigo-500/20 rounded-full">
-            <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse"></span>
-            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-500 underline decoration-indigo-500/30">Oasis Command Hub</span>
+        <div className="flex flex-col md:flex-row gap-12 items-start md:items-end group animate-in slide-in-from-top duration-1000">
+          <div className="w-24 h-24 bg-white/5 border border-white/10 rounded-[2rem] p-4 group-hover:scale-110 transition-transform shadow-3xl">
+             <img src="/logo.png" alt="Oasis United" className="w-full h-full object-contain brightness-0 invert opacity-80" />
           </div>
-          <h1 className="text-7xl md:text-9xl font-black italic tracking-tighter leading-none uppercase">The <br />Central <br />Hub.</h1>
-          <p className="text-gray-400 font-medium text-xl leading-relaxed">Your unified dashboard for commerce, logistics, and network expansion.</p>
+          <div className="space-y-6 max-w-2xl">
+            <div className="inline-flex items-center gap-3 px-4 py-2 bg-indigo-500/10 border border-indigo-500/20 rounded-full">
+              <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse"></span>
+              <span className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-500 underline decoration-indigo-500/30">Oasis Command Hub</span>
+            </div>
+            <h1 className="text-7xl md:text-9xl font-black italic tracking-tighter leading-none uppercase">The <br />Central <br />Hub.</h1>
+            <p className="text-gray-400 font-medium text-xl leading-relaxed">Your unified dashboard for commerce, logistics, and network expansion.</p>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">

@@ -4,8 +4,9 @@ import Link from 'next/link';
 
 export default function OrderDashboard() {
     const [orders, setOrders] = useState([
-        { id: '#4401', user: 'Sean @ Effingham', type: 'Receipt Order', status: 'Verifying', items: '2x4 Lumber, Hardware Kit', time: '2m ago' },
-        { id: '#4400', user: 'Maria @ Wolfeboro', type: 'Instant Pay', status: 'Dispatched', items: 'Lobster Roll, Candle', time: '15m ago' },
+        { id: '#4401', user: 'Sean @ Effingham', type: 'In-house', status: 'Dining', items: '2x4 Lumber, Hardware Kit', time: '2m ago', table: '04' },
+        { id: '#4402', user: 'James @ Freedom', type: 'Takeout', status: 'Preparing', items: 'Lobster Roll, Soda', time: '5m ago' },
+        { id: '#4400', user: 'Maria @ Wolfeboro', type: 'Delivery', status: 'Dispatched', items: 'Lobster Roll, Candle', time: '15m ago' },
     ]);
 
     return (
@@ -49,18 +50,18 @@ export default function OrderDashboard() {
                             <div key={order.id} className="bg-white/5 border border-white/10 rounded-[2.5rem] p-8 flex items-center justify-between group hover:bg-white/[0.07] transition-all">
                                 <div className="flex items-center gap-8">
                                     <div className="w-16 h-16 bg-white/5 rounded-3xl flex items-center justify-center text-2xl border border-white/10 italic">
-                                        {order.type === 'Receipt Order' ? '📸' : '💎'}
+                                        {order.type === 'In-house' ? '🍽️' : order.type === 'Takeout' ? '🛍️' : '🚚'}
                                     </div>
                                     <div>
                                         <div className="flex items-center gap-3 mb-1">
                                             <span className="font-black italic text-lg">{order.id}</span>
                                             <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${
-                                                order.status === 'Verifying' ? 'bg-amber-400 text-black' : 'bg-indigo-600 text-white'
+                                                order.status === 'Verifying' || order.status === 'Dining' ? 'bg-amber-400 text-black' : 'bg-indigo-600 text-white'
                                             }`}>
                                                 {order.status}
                                             </span>
                                         </div>
-                                        <div className="text-xs font-medium text-gray-400">{order.user} &bull; {order.time}</div>
+                                        <div className="text-xs font-medium text-gray-400">{order.user} &bull; {order.time} {order.table && `&bull; Table ${order.table}`}</div>
                                     </div>
                                 </div>
 
@@ -71,7 +72,11 @@ export default function OrderDashboard() {
 
                                 <div className="flex items-center gap-4">
                                     <button className="px-6 py-4 bg-white/5 border border-white/10 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-white/10 transition-all">Inspect</button>
-                                    <button className="px-6 py-4 bg-white text-black rounded-2xl font-black text-[10px] uppercase tracking-widest hover:opacity-90 transition-all shadow-xl">Dispatch Driver</button>
+                                    <button className={`px-6 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-xl ${
+                                        order.type === 'Delivery' ? 'bg-white text-black hover:opacity-90' : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                                    }`}>
+                                        {order.type === 'Delivery' ? 'Dispatch Driver' : order.type === 'In-house' ? 'Ready for Table' : 'Mark Ready'}
+                                    </button>
                                 </div>
                             </div>
                         ))}

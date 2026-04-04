@@ -218,7 +218,70 @@ begin
   on conflict do nothing;
 end $$;
 
--- 5e. Shoutouts
+-- 221. ORDERS TABLE (Core Commerce Engine)
+create table if not exists public.orders (
+  id uuid default uuid_generate_v4() primary key,
+  business_id uuid references public.businesses(id) not null,
+  consumer_id uuid references public.profiles(id), -- Nullable if guest checkout
+  customer_name text,
+  customer_contact text, -- Phone number or social handle
+  channel text check (channel in ('web', 'sms', 'instagram', 'offline')) default 'web',
+  status text check (status in ('pending', 'completed', 'cancelled', 'in-house')) default 'pending', 
+  total numeric not null,
+  items jsonb, -- Snapshot of cart items: [{id, name, price, quantity}]
+  type text check (type in ('pickup', 'shipping', 'delivery', 'in-house')) default 'pickup',
+  address text,
+  table_number text, -- LINK: Physical seating assignment
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+-- 222. SEATING LAYOUTS (Architect Mode storage)
+create table if not exists public.seating_layouts (
+  id uuid default uuid_generate_v4() primary key,
+  business_id uuid references public.businesses(id) not null unique,
+  layout_json jsonb not null default '[]'::jsonb, -- Array of Table objects: {id, number, capacity, x, y, rotation}
+  updated_at timestamp with time zone default timezone('utc'::text, now())
+);
+
+-- 223. MESSAGES TABLE (AI Context & History)
+create table if not exists public.messages (
+    id uuid default uuid_generate_v4() primary key,
+    business_id uuid references public.businesses(id),
+    customer_contact text not null, -- Phone or Handle
+    channel text not null,
+    direction text check (direction in ('inbound', 'outbound')),
+    content text,
+    created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+-- 224. RLS FOR COMMERCE & ARCHITECTURE
+alter table public.orders enable row level security;
+alter table public.seating_layouts enable row level security;
+alter table public.messages enable row level security;
+
+-- Orders: Owner select own, User select own, Anyone insert
+create policy "Owners view own orders" on public.orders for select using (
+    exists (select 1 from public.businesses where id = business_id and owner_id = auth.uid())
+);
+create policy "Users view own orders" on public.orders for select using (auth.uid() = consumer_id);
+create policy "Public insert orders" on public.orders for insert with check (true);
+
+-- Seating: Public view, Owner manage
+create policy "Public view layouts" on public.seating_layouts for select using (true);
+create policy "Owners insert layout" on public.seating_layouts for insert with check (
+    exists (select 1 from public.businesses where id = business_id and owner_id = auth.uid())
+);
+create policy "Owners update layout" on public.seating_layouts for update using (
+    exists (select 1 from public.businesses where id = business_id and owner_id = auth.uid())
+);
+
+-- Messages: Owner manage
+create policy "Owners manage messages" on public.messages for select using (
+    exists (select 1 from public.businesses where id = business_id and owner_id = auth.uid())
+);
+
+-- 225. SEED DATA FINISHING TOUCHES
+-- (Shoutouts were here)
 insert into public.shoutouts (business_id, type, content)
 select id, 'update', 'Fresh local artisan cheese arriving today at 2 PM!' from public.businesses where slug = 'boyles-general'
 on conflict do nothing;

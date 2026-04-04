@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import FieldManual from '@/components/hub/FieldManual';
 
 export const metadata = {
   title: 'Oasis Hub | Command Center',
@@ -52,6 +53,8 @@ export default function HubPage() {
           </Link>
 
         </div>
+        
+        <FieldManual />
 
         <section className="pt-24 border-t border-white/5 grid grid-cols-1 md:grid-cols-2 gap-24 items-center">
             <div className="space-y-8">

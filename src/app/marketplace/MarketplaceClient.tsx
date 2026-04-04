@@ -18,6 +18,7 @@ export default function MarketplaceClient({ initialFeatured, initialShoutouts }:
     const [featured, setFeatured] = useState<any>(initialFeatured);
     const [shoutouts] = useState<any[]>(initialShoutouts);
     const [activeCategory, setActiveCategory] = useState('All');
+    const [trendingView, setTrendingView] = useState<'Items' | 'Sellers'>('Items');
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
@@ -179,44 +180,96 @@ export default function MarketplaceClient({ initialFeatured, initialShoutouts }:
                     </div>
                 </section>
 
-                {/* Trending Grid */}
+                {/* Trending Grid with Merchant/Items Toggles */}
                 <section className="space-y-12 pb-32">
-                    <div className="flex justify-between items-end px-4">
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-8 px-4">
                         <div className="space-y-2">
                             <h2 className="text-4xl font-black italic tracking-tight uppercase">Trending <span className="text-amber-500 italic font-black">Drops.</span></h2>
                             <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest px-1">Independently Sourced Treasures</p>
                         </div>
+
+                        {/* View Switcher Toggles */}
+                        <div className="flex bg-white/5 p-1.5 rounded-[2rem] border border-white/5">
+                            {['Items', 'Sellers'].map((view) => (
+                                <button
+                                    key={view}
+                                    onClick={() => setTrendingView(view as 'Items' | 'Sellers')}
+                                    className={`px-8 py-3 rounded-full text-[9px] font-black uppercase tracking-widest transition-all ${
+                                        trendingView === view 
+                                        ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/20' 
+                                        : 'text-amber-500/40 hover:text-white'
+                                    }`}
+                                >
+                                    {view}
+                                </button>
+                            ))}
+                        </div>
                     </div>
 
-                    <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12 transition-opacity duration-300 ${loading ? 'opacity-50' : 'opacity-100'}`}>
-                        {featured.products?.length > 0 ? featured.products.map((product: any) => (
-                            <Link key={product.id} href={`/shop/${product.business_id}`} className="group space-y-8">
-                                <div className="aspect-[4/5] bg-white/[0.02] rounded-[4rem] overflow-hidden relative border border-white/5 transition-all duration-700 group-hover:border-amber-400/30 group-hover:-translate-y-4 shadow-3xl">
-                                    {product.image_url ? (
-                                        <img src={product.image_url} alt={product.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000 opacity-60 group-hover:opacity-100" />
-                                    ) : (
-                                        <div className="w-full h-full flex items-center justify-center text-5xl bg-white/[0.01] opacity-20 group-hover:scale-125 transition-transform duration-1000">💎</div>
-                                    )}
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-80 group-hover:opacity-40 transition-opacity"></div>
-                                    <div className="absolute bottom-12 left-12 right-12 p-1 translate-y-32 group-hover:translate-y-0 transition-transform duration-700">
-                                        <button className="w-full py-5 bg-white text-black rounded-[1.5rem] font-black text-[12px] uppercase tracking-widest shadow-2xl">Discover</button>
+                    <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12 transition-all duration-500 ${loading ? 'opacity-50 scale-95' : 'opacity-100 scale-100'}`}>
+                        {trendingView === 'Items' ? (
+                            featured.products?.length > 0 ? featured.products.map((product: any) => (
+                                <Link key={product.id} href={`/shop/${product.business_id}`} className="group space-y-8 animate-in fade-in zoom-in duration-500">
+                                    <div className="aspect-[4/5] bg-white/[0.02] rounded-[4rem] overflow-hidden relative border border-white/5 transition-all duration-700 group-hover:border-amber-400/30 group-hover:-translate-y-4 shadow-3xl">
+                                        {product.image_url ? (
+                                            <img src={product.image_url} alt={product.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000 opacity-60 group-hover:opacity-100" />
+                                        ) : (
+                                            <div className="w-full h-full flex items-center justify-center text-5xl bg-white/[0.01] opacity-20 group-hover:scale-125 transition-transform duration-1000">💎</div>
+                                        )}
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-80 group-hover:opacity-40 transition-opacity"></div>
+                                        <div className="absolute bottom-12 left-12 right-12 p-1 translate-y-32 group-hover:translate-y-0 transition-transform duration-700">
+                                            <button className="w-full py-5 bg-white text-black rounded-[1.5rem] font-black text-[12px] uppercase tracking-widest shadow-2xl">Discover</button>
+                                        </div>
                                     </div>
-                                </div>
-                                <div className="px-8 flex justify-between items-end">
-                                    <div className="space-y-4">
-                                        <h3 className="font-black italic text-2xl tracking-tighter leading-none group-hover:text-amber-400 transition-colors truncate max-w-[180px]">{product.name}</h3>
-                                        <p className="text-[10px] font-bold uppercase text-gray-500 tracking-widest leading-none">Drop from {product.businesses?.name}</p>
+                                    <div className="px-8 flex justify-between items-end">
+                                        <div className="space-y-4">
+                                            <h3 className="font-black italic text-2xl tracking-tighter leading-none group-hover:text-amber-400 transition-colors truncate max-w-[180px]">{product.name}</h3>
+                                            <p className="text-[10px] font-bold uppercase text-gray-500 tracking-widest leading-none">Drop from {product.businesses?.name}</p>
+                                        </div>
+                                        <div className="text-3xl font-black italic text-white/90 tracking-tighter">${Number(product.price).toFixed(2)}</div>
                                     </div>
-                                    <div className="text-3xl font-black italic text-white/90 tracking-tighter">${Number(product.price).toFixed(2)}</div>
-                                </div>
-                            </Link>
-                        )) : (
-                            [1,2,3,4].map(i => (
-                                <div key={i} className="aspect-[4/5] bg-white/5 rounded-[4rem] border border-dashed border-white/10 flex items-center justify-center flex-col gap-6 opacity-20">
-                                    <div className="text-4xl animate-bounce">✨</div>
-                                    <p className="text-[10px] font-black uppercase tracking-[0.3em]">Awaiting Discovery</p>
-                                </div>
-                            ))
+                                </Link>
+                            )) : (
+                                [1,2,3,4].map(i => (
+                                    <div key={i} className="aspect-[4/5] bg-white/5 rounded-[4rem] border border-dashed border-white/10 flex items-center justify-center flex-col gap-6 opacity-20">
+                                        <div className="text-4xl animate-bounce">✨</div>
+                                        <p className="text-[10px] font-black uppercase tracking-[0.3em]">Awaiting Discovery</p>
+                                    </div>
+                                ))
+                            )
+                        ) : (
+                            /* Sellers View - People selling stuff */
+                            featured.businesses?.length > 0 ? featured.businesses.slice(0, 4).map((biz: any) => (
+                                <Link key={biz.id} href={`/shop/${biz.id}`} className="group relative bg-[#1a1a1e] rounded-[4rem] p-12 border border-white/5 hover:border-amber-500/30 transition-all overflow-hidden h-[450px] flex flex-col items-center text-center shadow-3xl hover:scale-105 duration-700 animate-in slide-in-from-bottom-12">
+                                     <div className="w-32 h-32 bg-amber-500/10 rounded-[2.5rem] flex items-center justify-center text-5xl font-black italic text-amber-500 border border-amber-500/20 mb-8 group-hover:scale-110 transition-transform shadow-2xl">
+                                        {biz.name[0]}
+                                    </div>
+                                    <div className="space-y-6 flex-1">
+                                        <div className="space-y-2">
+                                            <h3 className="font-black italic text-3xl tracking-tighter group-hover:text-amber-500 transition-colors">{biz.name}</h3>
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-amber-500/40">{biz.location}</p>
+                                        </div>
+                                        <p className="text-sm font-medium text-gray-400 line-clamp-2 px-4">{biz.description || 'Verified Independent Merchant in the Oasis United network.'}</p>
+                                        
+                                        <div className="pt-8 flex flex-wrap justify-center gap-2">
+                                            {biz.category.split('&').map((cat: string) => (
+                                                <span key={cat} className="text-[8px] font-black uppercase tracking-widest px-3 py-1.5 bg-white/5 rounded-full border border-white/5">{cat.trim()}</span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div className="w-full pt-8 border-t border-white/5">
+                                        <span className="text-[10px] font-black uppercase tracking-widest text-amber-500">Visit Boutique →</span>
+                                    </div>
+                                    <div className="absolute top-0 right-0 w-48 h-48 bg-amber-500/5 blur-[80px] opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                </Link>
+                            )) : (
+                                [1,2,3,4].map(i => (
+                                    <div key={i} className="h-[450px] bg-white/5 rounded-[4rem] border border-dashed border-white/10 flex items-center justify-center flex-col gap-6 opacity-20">
+                                        <div className="text-4xl">👨‍🌾</div>
+                                        <p className="text-[10px] font-black uppercase tracking-[0.3em]">Finding Sellers</p>
+                                    </div>
+                                ))
+                            )
                         )}
                     </div>
                 </section>

@@ -3,9 +3,12 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import { PayPalButtons } from '@paypal/react-paypal-js';
+import SeatingMap from '@/components/merchant/SeatingMap';
+import TeamManager from '@/components/merchant/TeamManager';
 
 export default function SettingsPage() {
     const router = useRouter();
+    const [activeTab, setActiveTab] = useState<'profile' | 'floorplan' | 'team'>('profile');
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
     const [businessId, setBusinessId] = useState<string | null>(null);
@@ -145,14 +148,53 @@ export default function SettingsPage() {
                 <h1 className="text-4xl font-black text-gray-900 tracking-tight uppercase italic">Management Control</h1>
                 <p className="mt-2 text-lg text-gray-500 font-medium">Configure your store characteristics, logistics, and digital footprint.</p>
             </div>
+            <div className="flex justify-center mb-16">
+                <nav className="flex gap-2 p-1.5 bg-white/10 backdrop-blur-3xl rounded-full border border-white/5">
+                    <button 
+                        onClick={() => setActiveTab('profile')}
+                        className={`px-10 py-4 rounded-full font-black uppercase tracking-widest text-[10px] transition-all ${
+                            activeTab === 'profile' ? 'bg-indigo-600 text-white shadow-xl' : 'text-white/40 hover:text-white/60'
+                        }`}
+                    >
+                        ⚙️ Store Profile
+                    </button>
+                    {(category === 'Restaurant' || category === 'Cafe') && (
+                        <button 
+                            onClick={() => setActiveTab('floorplan')}
+                            className={`px-10 py-4 rounded-full font-black uppercase tracking-widest text-[10px] transition-all ${
+                                activeTab === 'floorplan' ? 'bg-emerald-500 text-white shadow-xl' : 'text-white/40 hover:text-white/60'
+                            }`}
+                        >
+                            🪑 Interactive Seating
+                        </button>
+                    )}
+                    <button 
+                        onClick={() => setActiveTab('team')}
+                        className={`px-10 py-4 rounded-full font-black uppercase tracking-widest text-[10px] transition-all ${
+                            activeTab === 'team' ? 'bg-indigo-400 text-white shadow-xl' : 'text-white/40 hover:text-white/60'
+                        }`}
+                    >
+                        👥 Team Command
+                    </button>
+                </nav>
+            </div>
 
-            <form onSubmit={handleSave} className="space-y-12">
-                {/* General Settings */}
-                <div className="bg-white p-10 rounded-[3rem] border border-gray-100 space-y-8 shadow-sm">
-                    <div className="flex items-center gap-3 border-b border-gray-50 pb-6">
-                        <span className="text-2xl">🏬</span>
-                        <h2 className="text-2xl font-black italic uppercase tracking-tight text-gray-900">Core Profile</h2>
-                    </div>
+            {activeTab === 'floorplan' ? (
+                <div className="bg-black/90 p-12 md:p-20 rounded-[5rem] border border-white/10 shadow-3xl">
+                    <SeatingMap businessId={businessId || ''} />
+                </div>
+            ) : activeTab === 'team' ? (
+                <div className="bg-[#fbfcff] p-12 md:p-20 rounded-[5rem] border border-gray-100 shadow-3xl">
+                    <TeamManager businessId={businessId || ''} />
+                </div>
+            ) : (
+                <form onSubmit={handleSave} className="space-y-12">
+                    {/* General Settings */}
+                    <div className="bg-white p-10 rounded-[3rem] border border-gray-100 space-y-8 shadow-sm">
+                        <div className="flex items-center gap-3 border-b border-gray-50 pb-6">
+                            <span className="text-2xl">🏬</span>
+                            <h2 className="text-2xl font-black italic uppercase tracking-tight text-gray-900">Core Profile</h2>
+                        </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <div className="space-y-2">
                             <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest">Business Name</label>
@@ -226,6 +268,7 @@ export default function SettingsPage() {
                     </button>
                 </div>
             </form>
+            )}
         </div>
     );
 }

@@ -256,7 +256,7 @@ export default function GlobalSearch() {
                                     {results.products.map((p: any) => (
                                         <Link
                                             key={p.id}
-                                            href={`/shop/${p.business_id}`}
+                                            href={`/shop/${p.business_id}?buy=${p.id}`}
                                             onClick={() => setIsOpen(false)}
                                             className="group flex gap-6 p-8 rounded-[3rem] bg-white/[0.03] border border-white/5 hover:border-amber-400/30 transition-all"
                                         >

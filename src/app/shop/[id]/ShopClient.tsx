@@ -1,7 +1,8 @@
 "use client";
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import styles from './page.module.css';
 import { supabase } from '@/lib/supabase';
+import { useSearchParams } from 'next/navigation';
 import Cart from '@/components/Cart';
 import ChatInterface from '@/components/ChatInterface';
 import ReviewModal from '@/components/ReviewModal';
@@ -21,7 +22,16 @@ interface ShopClientProps {
     posts: any[];
 }
 
-export default function ShopClient({ business, products, posts }: ShopClientProps) {
+export default function ShopClient(props: ShopClientProps) {
+    return (
+        <Suspense fallback={<div className="min-h-screen bg-[#0a0a0b] flex items-center justify-center p-20 animate-pulse text-white/20 font-black uppercase tracking-[0.5em]">Synchronizing Inventory...</div>}>
+            <ShopClientInner {...props} />
+        </Suspense>
+    );
+}
+
+function ShopClientInner({ business, products, posts }: ShopClientProps) {
+    const searchParams = useSearchParams();
     const [cartItems, setCartItems] = useState<CartItem[]>([]);
     const theme = business.theme || { primaryColor: '#000000', backgroundColor: '#ffffff' };
     const [isMessageModalOpen, setIsMessageModalOpen] = useState(false);
@@ -37,6 +47,20 @@ export default function ShopClient({ business, products, posts }: ShopClientProp
         };
         loadUser();
     }, []);
+
+    useEffect(() => {
+        const buyId = searchParams.get('buy');
+        if (buyId && products.length > 0) {
+            const product = products.find(p => p.id === buyId);
+            if (product) {
+                // Pre-add to cart only if not already added
+                setCartItems(prev => {
+                    if (prev.some(i => i.id === buyId)) return prev;
+                    return [...prev, { id: product.id, name: product.name, price: Number(product.price), quantity: 1 }];
+                });
+            }
+        }
+    }, [searchParams, products]);
 
     useEffect(() => {
         const checkFollowStatus = async () => {

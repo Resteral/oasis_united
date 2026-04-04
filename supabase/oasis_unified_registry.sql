@@ -102,6 +102,7 @@ CREATE TABLE IF NOT EXISTS public.route_stops (
     route_id UUID REFERENCES public.delivery_routes(id) ON DELETE CASCADE NOT NULL,
     business_id UUID REFERENCES public.businesses(id) ON DELETE CASCADE NOT NULL,
     order_index INTEGER DEFAULT 0,
+    is_marketing_partner BOOLEAN DEFAULT false,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 

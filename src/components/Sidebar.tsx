@@ -1,25 +1,41 @@
 "use client";
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useState, useEffect } from 'react';
 import styles from './Sidebar.module.css';
 
 const navItems = [
-    { label: 'Overview', href: '/dashboard', icon: '📊' },
-    { label: 'Recent Orders', href: '/dashboard/orders', icon: '📋' },
+    { label: 'Merchant Dashboard', href: '/dashboard/orders', icon: '📋' },
     { label: 'Seating & Layout', href: '/dashboard/seating', icon: '🍽️' },
+    { label: 'Security (MFA)', href: '/dashboard/settings/security', icon: '🔒' },
+    { label: 'Regional Network', href: '/dashboard/fleet', icon: '🛰️' },
+    { label: 'Network Marketing', href: '/dashboard/marketing', icon: '📡' },
+    { label: 'Products', href: '/dashboard/products', icon: '📦' },
     { label: 'Team / Staff', href: '/dashboard/staff', icon: '🛡️' },
     { label: 'CRM / Customers', href: '/dashboard/crm', icon: '👥' },
     { label: 'Messages', href: '/dashboard/messages', icon: '💬' },
-    { label: 'Products', href: '/dashboard/products', icon: '📦' },
-    { label: 'Fleet Marketing', href: '/dashboard/marketing', icon: '📡' },
-    { label: 'Fleet Route', href: '/dashboard/fleet', icon: '🛰️' },
     { label: 'Posts & Events', href: '/dashboard/posts', icon: '📢' },
+    { label: 'Financials', href: '/dashboard', icon: '📊' },
     { label: 'Settings', href: '/dashboard/settings', icon: '⚙️' },
-    { label: 'Security (MFA)', href: '/dashboard/settings/security', icon: '🔒' },
 ];
 
 export default function Sidebar() {
     const pathname = usePathname();
+    const [dim, setDim] = useState(false);
+
+    useEffect(() => {
+        const isDim = localStorage.getItem('oasis-dim') === 'true';
+        setDim(isDim);
+        if (isDim) document.documentElement.classList.add('dim-mode');
+    }, []);
+
+    const toggleDim = () => {
+        const next = !dim;
+        setDim(next);
+        localStorage.setItem('oasis-dim', next.toString());
+        if (next) document.documentElement.classList.add('dim-mode');
+        else document.documentElement.classList.remove('dim-mode');
+    };
 
     return (
         <aside className={styles.sidebar}>
@@ -28,7 +44,7 @@ export default function Sidebar() {
             </Link>
 
             <div className="mt-8 mb-4 px-4">
-                <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Store Management</p>
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Regional Control</p>
             </div>
 
             <nav className={styles.nav}>
@@ -47,16 +63,24 @@ export default function Sidebar() {
                     );
                 })}
             </nav>
+
             <div className={styles.footer}>
-                <div className="flex items-center gap-3 p-2 bg-gray-50 rounded-2xl border border-gray-100">
+                <div className="flex items-center gap-3 p-2 bg-gray-50/50 rounded-2xl border border-gray-100/10">
                     <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-black text-xs shadow-lg">
                         BO
                     </div>
                     <div className="flex-1 overflow-hidden">
-                        <div className="text-xs font-black text-gray-900 truncate">Business Owner</div>
-                        <div className="text-[10px] font-bold text-gray-400 truncate uppercase tracking-tighter">Premium Vendor</div>
+                        <div className="text-xs font-black text-white truncate">Oasis Admin</div>
+                        <div className="text-[10px] font-bold text-gray-400 truncate uppercase tracking-tighter">Sovereign Node</div>
                     </div>
                 </div>
+                
+                <button 
+                    onClick={toggleDim}
+                    className="mt-4 w-full py-3 bg-white/5 border border-white/10 rounded-xl text-[8px] font-black uppercase tracking-[0.3em] flex items-center justify-center gap-2 hover:bg-white/10 transition-all text-white/40 hover:text-white"
+                >
+                    {dim ? '🌕 Normal Mode' : '🌑 Dim Mode (OLED)'}
+                </button>
             </div>
         </aside>
     );

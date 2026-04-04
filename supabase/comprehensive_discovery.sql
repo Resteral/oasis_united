@@ -63,7 +63,8 @@ create table if not exists public.products (
   name text not null,
   description text,
   price numeric not null,
-  stock integer default 0,tegory text,
+  stock integer default 0,
+  category text,
   image_url text,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
@@ -117,7 +118,11 @@ drop policy if exists "Everyone can view towns" on public.towns;
 drop policy if exists "Everyone can view routes" on public.delivery_routes;
 
 create policy "Everyone can view profiles" on public.profiles for select using (true);
+create policy "Users manage own profile" on public.profiles for all using (auth.uid() = id);
+
 create policy "Everyone can view businesses" on public.businesses for select using (true);
+create policy "Owners manage own business" on public.businesses for all using (auth.uid() = owner_id);
+
 create policy "Everyone can view products" on public.products for select using (true);
 create policy "Owners manage own products" on public.products for all using (
     exists (select 1 from public.businesses where id = business_id and owner_id = auth.uid())

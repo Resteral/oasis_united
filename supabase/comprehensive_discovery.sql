@@ -53,6 +53,7 @@ create table if not exists public.businesses (
 -- Ensure onboarded_by and town_id columns exist if table was already created
 alter table public.businesses add column if not exists onboarded_by uuid references public.profiles(id);
 alter table public.businesses add column if not exists town_id uuid references public.towns(id);
+alter table public.businesses add column if not exists store_features jsonb default '{}'::jsonb;
 
 -- PRODUCTS TABLE (Prices for Groceries, Menu items, Hardware supplies)
 create table if not exists public.products (

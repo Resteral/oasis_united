@@ -441,7 +441,8 @@ create table if not exists public.orders (
   items jsonb, -- Snapshot of cart items: [{id, name, price, quantity}]
   type text check (type in ('pickup', 'shipping', 'delivery', 'in-house')) default 'pickup',
   address text,
-  table_number text, -- LINK: Physical seating assignment
+  table_number text, -- Legacy/Manual label
+  table_id uuid references public.seating_layouts(id), -- ATOMIC LINK: Physical seating assignment
   deliverer_id uuid references public.profiles(id), -- The citizen/agent handling fulfillment
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );

@@ -30,6 +30,8 @@ export default function SeatingArrangement({ businessId, onUnitSelect, selectedU
     const [draggedUnitId, setDraggedUnitId] = useState<string | null>(null);
     const [activeReceipt, setActiveReceipt] = useState<any | null>(null);
     const [productSelector, setProductSelector] = useState<string | null>(null);
+    const [orderSelector, setOrderSelector] = useState<string | null>(null);
+    const [pendingOrders, setPendingOrders] = useState<any[]>([]);
     const [configUnitId, setConfigUnitId] = useState<string | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
 
@@ -92,23 +94,60 @@ export default function SeatingArrangement({ businessId, onUnitSelect, selectedU
         if (merchantMode) {
             if (unit.type === 'table') {
                 if (unit.status === 'occupied' || unit.status === 'reserved') {
+                    // 🛰️ Fetch Active Receipt Node
                     const { data: order } = await supabase
                         .from('orders')
                         .select('*')
                         .eq('business_id', businessId)
-                        .eq('table_number', unit.label)
+                        .or(`table_id.eq.${unit.id},table_number.eq.${unit.label}`)
                         .neq('status', 'completed')
+                        .neq('status', 'cancelled')
                         .order('created_at', { ascending: false })
                         .limit(1)
                         .single();
                     if (order) setActiveReceipt(order);
-                } else {
-                    const next = unit.status === 'available' ? 'occupied' : 'available';
-                    setUnits(prev => prev.map(u => u.id === unit.id ? { ...u, status: next as any } : u));
+                    else {
+                        // Reset status if no order found (Autonomous Cleanup)
+                        updateUnit(unit.id, { status: 'available' });
+                    }
+                } else if (unit.status === 'available') {
+                    // 📡 Initiate Order Linking Sequence
+                    const { data: pending } = await supabase
+                        .from('orders')
+                        .select('*')
+                        .eq('business_id', businessId)
+                        .eq('status', 'pending')
+                        .is('table_id', null)
+                        .order('created_at', { ascending: false });
+                    setPendingOrders(pending || []);
+                    setOrderSelector(unit.id);
                 }
             }
         } else if (onUnitSelect) {
             onUnitSelect(unit);
+        }
+    };
+
+    const linkOrderToTable = async (orderId: string) => {
+        if (!orderSelector) return;
+        const unit = units.find(u => u.id === orderSelector);
+        if (!unit) return;
+
+        const { error } = await supabase
+            .from('orders')
+            .update({ 
+                table_id: unit.id, // Primary link
+                table_number: unit.label, // Legacy link
+                type: 'in-house',
+                status: 'processing' 
+            })
+            .eq('id', orderId);
+
+        if (!error) {
+            updateUnit(unit.id, { status: 'occupied' });
+            setOrderSelector(null);
+        } else {
+            alert('Protocol Failure: Node Link Aborted.');
         }
     };
 
@@ -312,35 +351,55 @@ export default function SeatingArrangement({ businessId, onUnitSelect, selectedU
                 </div>
             )}
 
-            {/* Product Selector */}
-            {productSelector && (
-                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-6">
-                    <div className="bg-zinc-900 border border-white/10 w-full max-w-md rounded-[2.5rem] p-10 space-y-8 shadow-3xl animate-in zoom-in-95 duration-300">
-                        <div className="space-y-2 text-center">
-                            <h4 className="text-3xl font-black italic tracking-tighter uppercase text-white">Assign Shelf.</h4>
-                            <p className="text-[10px] font-black text-white/40 uppercase tracking-widest">Link product SKU to virtual shelf axis.</p>
+            {/* Order Selector (Link Pending Order to Table) */}
+            {orderSelector && (
+                <div className="fixed inset-0 bg-black/90 backdrop-blur-xl z-[200] flex items-center justify-center p-6 animate-in fade-in zoom-in-95 duration-500">
+                    <div className="bg-[#0a0a0b] border border-white/10 w-full max-w-[440px] rounded-[3.5rem] p-12 space-y-10 shadow-3xl relative overflow-hidden">
+                        <div className="absolute top-0 right-0 p-12 opacity-[0.03] pointer-events-none">
+                            <span className="text-[200px] font-black italic select-none leading-none">📋</span>
                         </div>
-                        <div className="max-h-80 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
-                            {inventory.length > 0 ? inventory.map((product) => (
+
+                        <div className="text-center space-y-3 relative z-10">
+                            <h4 className="text-4xl font-black italic tracking-tighter uppercase text-white leading-none">Assign Hub.</h4>
+                            <p className="text-[10px] font-black text-amber-400 uppercase tracking-widest leading-none bg-amber-400/10 px-4 py-2 rounded-full inline-block italic">Link Order Node to Unit: {units.find(u => u.id === orderSelector)?.label}</p>
+                        </div>
+
+                        <div className="max-h-[400px] overflow-y-auto space-y-3 pr-2 custom-scrollbar relative z-10">
+                            {pendingOrders.length > 0 ? pendingOrders.map((order) => (
                                 <button 
-                                    key={product.id}
-                                    onClick={() => assignProduct(product.id)}
-                                    className="w-full p-6 bg-white/5 border border-white/10 rounded-2xl flex justify-between items-center hover:bg-white/10 hover:border-amber-400/30 transition-all group"
+                                    key={order.id}
+                                    onClick={() => linkOrderToTable(order.id)}
+                                    className="w-full p-8 bg-white/5 border border-white/10 rounded-3xl flex justify-between items-center hover:bg-indigo-600/20 hover:border-indigo-400/30 transition-all group"
                                 >
                                     <div className="flex flex-col items-start gap-1">
-                                        <span className="text-xs font-black uppercase text-white/80 group-hover:text-amber-400 transition-colors">{product.name}</span>
-                                        <span className="text-[8px] font-bold text-white/20 uppercase tracking-widest">{product.category}</span>
+                                        <div className="flex items-center gap-3">
+                                            <span className="text-xl font-black uppercase text-white/80 group-hover:text-indigo-400 transition-colors italic tracking-tighter leading-none">{order.customer_name || 'Guest'}</span>
+                                            <span className="text-[9px] font-black text-white/20 bg-white/5 px-2 py-0.5 rounded-full">{order.items?.length || 0} Items</span>
+                                        </div>
+                                        <span className="text-[9px] font-bold text-white/30 uppercase tracking-widest mt-1 italic">{new Date(order.created_at).toLocaleTimeString()}</span>
                                     </div>
-                                    <span className="text-lg font-black text-white/60 italic">${product.price}</span>
+                                    <div className="text-right flex flex-col items-end">
+                                        <span className="text-2xl font-black text-amber-400 italic tracking-tighter leading-none">${Number(order.total).toFixed(2)}</span>
+                                        <span className="text-[8px] font-black text-white/20 uppercase tracking-widest mt-1">Pending Link</span>
+                                    </div>
                                 </button>
                             )) : (
-                                <p className="text-[10px] text-white/20 italic text-center py-12">No inventory nodes found.</p>
+                                <div className="p-16 text-center bg-white/[0.02] border border-dashed border-white/10 rounded-[3rem] space-y-6">
+                                    <div className="text-5xl opacity-10 grayscale">🛒</div>
+                                    <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/20 leading-relaxed italic">No un-linked 'Web' or 'Pending' orders found for this Oasis node.</p>
+                                </div>
                             )}
                         </div>
-                        <button 
-                            onClick={() => setProductSelector(null)}
-                            className="w-full py-4 bg-white/5 border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest text-white/40 hover:bg-white/10 hover:text-white"
-                        > Cancel Structural Linking </button>
+
+                        <div className="pt-4 flex flex-col gap-3">
+                            <button 
+                                onClick={() => setOrderSelector(null)}
+                                className="w-full py-6 bg-white/5 border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-white transition-all shadow-xl"
+                            > 
+                                Cancel Linking Sequence 
+                            </button>
+                            <p className="text-[8px] font-bold text-white/10 uppercase tracking-[0.3em] text-center italic">Secure commerce anchor via Oasis Port Protocol.</p>
+                        </div>
                     </div>
                 </div>
             )}

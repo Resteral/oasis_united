@@ -19,7 +19,9 @@ create table if not exists public.profiles (
 );
 
 -- 10. PRODUCTS TEMPLATE (Smart Node Provisioning Registry)
-create table if not exists public.products_template (
+-- Force a clean seed to ensure high-density schema accuracy
+drop table if exists public.products_template cascade;
+create table public.products_template (
   id uuid default uuid_generate_v4() primary key,
   category text, 
   name text,

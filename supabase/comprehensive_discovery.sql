@@ -145,8 +145,14 @@ create table if not exists public.deliverer_profiles (
   is_active boolean default false,
   status text check (status in ('available', 'busy', 'offline')) default 'offline',
   last_known_location point,
-  service_town text -- Legacy text field
+  service_town text, -- Legacy text field
+  contact_phone text,
+  contact_email text
 );
+
+-- Evolution: Synchronize fleet contact info
+alter table public.deliverer_profiles add column if not exists contact_phone text;
+alter table public.deliverer_profiles add column if not exists contact_email text;
 
 -- DELIVERY ROUTES (Customized paths or zones defined by drivers)
 create table if not exists public.delivery_routes (
@@ -169,21 +175,18 @@ alter table public.towns enable row level security;
 alter table public.delivery_routes enable row level security;
 
 -- CLEANUP DEPLOYMENT (Protocol sanitization)
-do $$ 
-begin
-    drop policy if exists "Everyone can view profiles" on public.profiles;
-    drop policy if exists "Users manage own profile" on public.profiles;
-    drop policy if exists "Everyone can view businesses" on public.businesses;
-    drop policy if exists "Owners manage own business" on public.businesses;
-    drop policy if exists "Everyone can view products" on public.products;
-    drop policy if exists "Owners manage own products" on public.products;
-    drop policy if exists "Admins manage all products" on public.products;
-    drop policy if exists "Everyone can view shoutouts" on public.shoutouts;
-    drop policy if exists "Everyone can view deliverers" on public.deliverer_profiles;
-    drop policy if exists "Everyone can view towns" on public.towns;
-    drop policy if exists "Authenticated can insert towns" on public.towns;
-    drop policy if exists "Everyone can view routes" on public.delivery_routes;
-end $$;
+drop policy if exists "Everyone can view profiles" on public.profiles;
+drop policy if exists "Users manage own profile" on public.profiles;
+drop policy if exists "Everyone can view businesses" on public.businesses;
+drop policy if exists "Owners manage own business" on public.businesses;
+drop policy if exists "Everyone can view products" on public.products;
+drop policy if exists "Owners manage own products" on public.products;
+drop policy if exists "Admins manage all products" on public.products;
+drop policy if exists "Everyone can view shoutouts" on public.shoutouts;
+drop policy if exists "Everyone can view deliverers" on public.deliverer_profiles;
+drop policy if exists "Everyone can view towns" on public.towns;
+drop policy if exists "Authenticated can insert towns" on public.towns;
+drop policy if exists "Everyone can view routes" on public.delivery_routes;
 
 -- ATOMIC POLICY DEPLOYMENT
 create policy "Everyone can view profiles" on public.profiles for select using (true);

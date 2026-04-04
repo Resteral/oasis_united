@@ -92,14 +92,33 @@ export default function LiveTracking({ orderId }: LiveTrackingProps) {
                 </div>
 
                 {order.deliverer_id && (
-                    <div className="bg-white/5 backdrop-blur-3xl px-10 py-6 rounded-[2.5rem] border border-white/5 flex items-center gap-6">
-                        <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center text-4xl shadow-xl grayscale">
-                            🚚
+                    <div className="flex flex-col md:flex-row gap-6">
+                        <div className="bg-white/5 backdrop-blur-3xl px-10 py-6 rounded-[2.5rem] border border-white/5 flex items-center gap-6">
+                            <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center text-4xl shadow-xl grayscale">
+                                🚚
+                            </div>
+                            <div className="space-y-1">
+                                <span className="text-[10px] font-black uppercase tracking-widest text-white/30 italic leading-none">Oasis Agent Assigned</span>
+                                <p className="text-lg font-black italic uppercase tracking-tight text-indigo-400">Transit In Progress</p>
+                            </div>
                         </div>
-                        <div className="space-y-1">
-                            <span className="text-[10px] font-black uppercase tracking-widest text-white/30 italic leading-none">Oasis Agent Assigned</span>
-                            <p className="text-lg font-black italic uppercase tracking-tight text-indigo-400">Transit In Progress</p>
-                        </div>
+
+                        {order.deliverer_profiles && (
+                            <div className="flex gap-3 h-fit mt-auto">
+                                {order.deliverer_profiles.contact_phone && (
+                                    <a href={`tel:${order.deliverer_profiles.contact_phone}`} className="p-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 rounded-3xl hover:bg-emerald-500/20 transition-colors flex flex-col items-center gap-1 group">
+                                        <span className="text-2xl group-hover:scale-110 transition-transform">📞</span>
+                                        <span className="text-[8px] font-black uppercase tracking-widest">Call Agent</span>
+                                    </a>
+                                )}
+                                {order.deliverer_profiles.contact_email && (
+                                    <a href={`mailto:${order.deliverer_profiles.contact_email}`} className="p-4 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 rounded-3xl hover:bg-indigo-500/20 transition-colors flex flex-col items-center gap-1 group">
+                                        <span className="text-2xl group-hover:scale-110 transition-transform">✉️</span>
+                                        <span className="text-[8px] font-black uppercase tracking-widest">Email</span>
+                                    </a>
+                                )}
+                            </div>
+                        )}
                     </div>
                 )}
             </header>

@@ -109,7 +109,15 @@ export default function Cart({ businessId, items, setItems }: CartProps) {
     };
 
     const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-    const shippingCost = orderType === 'shipping' ? (vendorTier === 'free' ? 10.00 : 0) : 0;
+    
+    let shippingCost = 0;
+    if (orderType === 'shipping') {
+        if (vendorTier === 'silver' || vendorTier === 'free') shippingCost = 10.00;
+        else if (vendorTier === 'gold') shippingCost = 5.00;
+        else if (vendorTier === 'platinum') shippingCost = 0.00;
+        else shippingCost = 10.00;
+    }
+    
     const total = Math.max(0, subtotal + shippingCost - discount);
 
     const handleCheckout = async () => {
@@ -261,7 +269,7 @@ export default function Cart({ businessId, items, setItems }: CartProps) {
                                         className={`${styles.toggleBtn} ${orderType === 'shipping' ? styles.active : ''}`}
                                         onClick={() => setOrderType('shipping')}
                                     >
-                                        Delivery {vendorTier === 'free' ? '(+$10)' : '(FREE)'}
+                                        Delivery {vendorTier === 'platinum' ? '(FREE)' : (vendorTier === 'gold' ? '(+$5)' : '(+$10)')}
                                     </button>
                                 </div>
 

@@ -181,6 +181,7 @@ begin
     drop policy if exists "Everyone can view shoutouts" on public.shoutouts;
     drop policy if exists "Everyone can view deliverers" on public.deliverer_profiles;
     drop policy if exists "Everyone can view towns" on public.towns;
+    drop policy if exists "Authenticated can insert towns" on public.towns;
     drop policy if exists "Everyone can view routes" on public.delivery_routes;
 end $$;
 

@@ -283,6 +283,19 @@ after insert on public.towns
 for each row execute function public.seed_new_town_infrastructure();
 
 -- 202. INVENTORY LOGISTICS (Supply Chain Tracking)
+create or replace function decrement_stock(p_product_id uuid, p_quantity int)
+returns void as $$
+begin
+  update public.products
+  set stock = stock - p_quantity
+  where id = p_product_id and stock >= p_quantity;
+  
+  if not found then
+    raise exception 'Insufficient stock for product %', p_product_id;
+  end if;
+end;
+$$ language plpgsql;
+
 create table if not exists public.inventory_logistics (
   id uuid default uuid_generate_v4() primary key,
   business_id uuid references public.businesses(id) not null,

@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import Cart from '@/components/Cart';
 
 export default function BusinessProfilePage() {
     const { id } = useParams();
@@ -10,6 +11,7 @@ export default function BusinessProfilePage() {
     const [products, setProducts] = useState<any[]>([]);
     const [stats, setStats] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    const [cartItems, setCartItems] = useState<any[]>([]);
 
     useEffect(() => {
         if (!id) return;
@@ -44,6 +46,16 @@ export default function BusinessProfilePage() {
         fetchStoreData();
     }, [id]);
 
+    const handleAddToCart = (product: any) => {
+        setCartItems(prev => {
+            const existing = prev.find(item => item.id === product.id);
+            if (existing) {
+                return prev.map(item => item.id === product.id ? { ...item, quantity: (item.quantity || 1) + 1 } : item);
+            }
+            return [...prev, { ...product, quantity: 1 }];
+        });
+    };
+
     if (loading) return (
         <div className="min-h-screen bg-[#0a0a0b] flex items-center justify-center p-20">
             <div className="text-white font-black animate-pulse uppercase tracking-[0.5em] flex flex-col items-center gap-8">
@@ -63,6 +75,7 @@ export default function BusinessProfilePage() {
 
     return (
         <div className="min-h-screen bg-[#0a0a0b] text-white selection:bg-amber-400 selection:text-black pb-48">
+            <Cart businessId={id as string} items={cartItems} setItems={setCartItems} />
             {/* Immersive Shop Hero */}
             <section className="relative h-[65vh] flex items-end p-10 md:p-20 overflow-hidden group">
                 <div className="absolute inset-0 z-0 bg-gradient-to-t from-[#0a0a0b] via-black/40 to-transparent"></div>
@@ -199,7 +212,10 @@ export default function BusinessProfilePage() {
                                             <p className="text-[10px] font-black uppercase tracking-widest text-white/30 italic">{p.category || 'REGIONAL ASSET'}</p>
                                         </div>
                                         <p className="text-xs font-medium text-white/40 line-clamp-2 leading-relaxed opacity-0 group-hover:opacity-100 transition-all duration-700">{p.description || 'Verified local independent drop from ' + (business.name)}.</p>
-                                        <button className="w-full py-4 bg-white text-black rounded-2xl font-black text-[10px] uppercase tracking-widest opacity-0 group-hover:opacity-100 translate-y-4 group-hover:translate-y-0 transition-all duration-700 shadow-xl">
+                                        <button 
+                                            onClick={() => handleAddToCart(p)}
+                                            className="w-full py-4 bg-white text-black rounded-2xl font-black text-[10px] uppercase tracking-widest opacity-0 group-hover:opacity-100 translate-y-4 group-hover:translate-y-0 transition-all duration-700 shadow-xl"
+                                        >
                                             Add to Oasis Cart
                                         </button>
                                     </div>

@@ -2,10 +2,11 @@
 import { useState, Suspense } from 'react';
 import TownRegistrationForm from '@/components/deliverer/TownRegistrationForm';
 import RouteManagement from '@/components/deliverer/RouteManagement';
+import LiveFleetPulse from '@/components/delivery/LiveFleetPulse';
 import Link from 'next/link';
 
 export default function DelivererDashboardClient() {
-    const [activeTab, setActiveTab] = useState<'towns' | 'routes'>('towns');
+    const [activeTab, setActiveTab] = useState<'towns' | 'routes' | 'pulse'>('towns');
 
     return (
         <div className="min-h-screen bg-[hsl(var(--background))] text-[hsl(var(--foreground))] selection:bg-[hsl(var(--primary))] selection:text-[hsl(var(--primary-foreground))] pb-48">
@@ -27,16 +28,16 @@ export default function DelivererDashboardClient() {
                         <p className="max-w-xl text-[hsl(var(--muted-foreground))] font-medium text-lg leading-relaxed italic">The independent dashboard for logistics masters, territory owners, and regional expansionists.</p>
                     </div>
 
-                    <nav className="flex gap-4 p-1 glass-dark rounded-[1.5rem] w-fit">
-                        {['towns', 'routes'].map((tab) => (
+                    <nav className="flex gap-4 p-1 glass-dark rounded-[1.5rem] w-fit overflow-x-auto">
+                        {['towns', 'routes', 'pulse'].map((tab) => (
                             <button 
                                 key={tab}
                                 onClick={() => setActiveTab(tab as any)}
-                                className={`px-10 py-5 rounded-[1.2rem] font-black uppercase tracking-widest text-[10px] transition-all ${
+                                className={`px-10 py-5 rounded-[1.2rem] font-black uppercase tracking-widest text-[10px] transition-all whitespace-nowrap ${
                                     activeTab === tab ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-900/20 shadow-indigo-600/40' : 'text-white/40 hover:text-white/80'
                                 }`}
                             >
-                                {tab === 'towns' ? '🛰️ Town Hubs' : '🚚 Deployment Routes'}
+                                {tab === 'towns' ? '🛰️ Town Hubs' : tab === 'routes' ? '🚚 Deployment Routes' : '⚡ Live Fleet Pulse'}
                             </button>
                         ))}
                     </nav>
@@ -67,8 +68,10 @@ export default function DelivererDashboardClient() {
                                 </div>
                             </div>
                         </div>
-                    ) : (
+                    ) : activeTab === 'routes' ? (
                         <RouteManagement />
+                    ) : (
+                        <LiveFleetPulse />
                     )}
 
                     <section className="bg-indigo-600 rounded-[4rem] p-12 md:p-24 shadow-3xl relative overflow-hidden group">

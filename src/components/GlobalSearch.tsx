@@ -27,14 +27,35 @@ export default function GlobalSearch() {
                 }
             }
 
-            // Fetch businesses in the user's town as "Nearby Legends"
+            // 📍 Coordinate-based Discovery (SerpApi)
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(async (pos) => {
+                    const { latitude, longitude } = pos.coords;
+                    const res = await fetch(`/api/places?query=shops&lat=${latitude}&lng=${longitude}`);
+                    const data = await res.json();
+                    if (data.results) {
+                        const external = data.results.map((p: any) => ({
+                            id: p.place_id,
+                            name: p.name,
+                            location: p.formatted_address,
+                            category: 'Global Network',
+                            isExternal: true,
+                            rating: p.rating,
+                            status: p.open_state
+                        }));
+                        setNearbyBusinesses(prev => [...prev, ...external].slice(0, 8));
+                    }
+                });
+            }
+
+            // Fetch internal businesses in the user's town
             const { data: nearby } = await supabase
                 .from('businesses')
                 .select('id, name, category, location, image_url')
                 .ilike('location', `%${town}%`)
                 .limit(4);
 
-             setNearbyBusinesses(nearby || []);
+             setNearbyBusinesses(prev => [...(nearby || []), ...prev].slice(0, 8));
         };
 
         fetchInitialDiscovery();
@@ -245,9 +266,16 @@ export default function GlobalSearch() {
                                             <div className="flex-1 flex flex-col justify-between py-2">
                                                 <div className="space-y-1">
                                                     <h4 className="text-xl font-black italic uppercase tracking-tighter leading-none group-hover:text-amber-400 transition-colors truncate">{p.name}</h4>
-                                                    <p className="text-[9px] font-black uppercase tracking-widest text-white/20 italic">at {p.businesses?.name || 'Authorized Boutique'}</p>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-[9px] font-black uppercase tracking-widest text-amber-500 italic">Available at {p.businesses?.name || 'Local Merchant'}</span>
+                                                        <span className="w-1 h-1 bg-white/20 rounded-full"></span>
+                                                        <span className="text-[9px] font-black uppercase tracking-widest text-white/40">{p.businesses?.location || 'Nearby'}</span>
+                                                    </div>
                                                 </div>
-                                                <p className="text-2xl font-black italic tracking-tighter text-amber-500">${Number(p.price).toFixed(2)}</p>
+                                                <div className="flex justify-between items-end">
+                                                    <p className="text-2xl font-black italic tracking-tighter text-white">${Number(p.price).toFixed(2)}</p>
+                                                    <span className="text-[8px] font-black uppercase tracking-[0.2em] text-white/20 group-hover:text-amber-400 transition-colors">View Store →</span>
+                                                </div>
                                             </div>
                                         </Link>
                                     ))}

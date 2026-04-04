@@ -2,6 +2,10 @@
 -- Enable UUID support
 create extension if not exists "uuid-ossp";
 
+-- PRE-FLIGHT: Clean legacy constraints for 'Discovery Mode'
+alter table if exists public.profiles drop constraint if exists profiles_id_fkey;
+alter table if exists public.deliverer_profiles drop constraint if exists deliverer_profiles_id_fkey;
+
 -- PROFILES TABLE (Public profiles for Users, Business Owners, & Deliverers)
 -- Note: 'references auth.users' is omitted here to allow for mock data seeding without manual user creation.
 create table if not exists public.profiles (

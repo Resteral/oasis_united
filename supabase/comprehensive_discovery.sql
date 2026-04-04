@@ -246,6 +246,28 @@ do $$
     on conflict do nothing;
   end $$;
 
+-- 202. INVENTORY LOGISTICS (Supply Chain Tracking)
+create table if not exists public.inventory_logistics (
+  id uuid default uuid_generate_v4() primary key,
+  business_id uuid references public.businesses(id) not null,
+  product_id uuid references public.products(id),
+  tracking_id text unique,
+  source_node text, -- Where the import is coming from (e.g., "Ossipee Hub")
+  destination_node uuid references public.towns(id),
+  status text check (status in ('pending', 'transit', 'delivered', 'intake')) default 'pending',
+  quantity integer not null,
+  eta timestamp with time zone,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+alter table public.inventory_logistics enable row level security;
+create policy "Owners view own logistics" on public.inventory_logistics for select using (
+    exists (select 1 from public.businesses where id = business_id and owner_id = auth.uid())
+);
+create policy "Admins manage all logistics" on public.inventory_logistics for all using (
+    exists (select 1 from public.profiles where id = auth.uid() and role = 'admin')
+);
+
 -- 221. ORDERS TABLE (Core Commerce Engine)
 create table if not exists public.orders (
   id uuid default uuid_generate_v4() primary key,

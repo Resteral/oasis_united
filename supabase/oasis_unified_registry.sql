@@ -155,7 +155,7 @@ BEGIN
     EXECUTE 'CREATE POLICY "Public businesses view" ON public.businesses FOR SELECT USING (true)';
     
     DROP POLICY IF EXISTS "Owners manage own business" ON public.businesses;
-    EXECUTE 'CREATE POLICY "Owners manage own business" ON public.businesses FOR ALL USING (auth.uid() = owner_id)';
+    EXECUTE 'CREATE POLICY "Owners manage own business" ON public.businesses FOR ALL USING (auth.uid() = owner_id) WITH CHECK (auth.uid() = owner_id)';
     
     DROP POLICY IF EXISTS "Custodians manage town businesses" ON public.businesses;
     EXECUTE 'CREATE POLICY "Custodians manage town businesses" ON public.businesses FOR ALL USING (EXISTS (SELECT 1 FROM public.town_custodians tc WHERE tc.town_id = businesses.town_id AND tc.deliverer_id = auth.uid()))';
@@ -165,7 +165,7 @@ BEGIN
     EXECUTE 'CREATE POLICY "Public products view" ON public.products FOR SELECT USING (true)';
     
     DROP POLICY IF EXISTS "Owners manage own products" ON public.products;
-    EXECUTE 'CREATE POLICY "Owners manage own products" ON public.products FOR ALL USING (EXISTS (SELECT 1 FROM public.businesses b WHERE b.id = products.business_id AND b.owner_id = auth.uid()))';
+    EXECUTE 'CREATE POLICY "Owners manage own products" ON public.products FOR ALL USING (EXISTS (SELECT 1 FROM public.businesses b WHERE b.id = products.business_id AND b.owner_id = auth.uid())) WITH CHECK (EXISTS (SELECT 1 FROM public.businesses b WHERE b.id = products.business_id AND b.owner_id = auth.uid()))';
     
     DROP POLICY IF EXISTS "Custodians manage town products" ON public.products;
     EXECUTE 'CREATE POLICY "Custodians manage town products" ON public.products FOR ALL USING (EXISTS (SELECT 1 FROM public.businesses b JOIN public.town_custodians tc ON b.town_id = tc.town_id WHERE b.id = products.business_id AND tc.deliverer_id = auth.uid()))';
@@ -174,15 +174,21 @@ BEGIN
     DROP POLICY IF EXISTS "Consumers view own orders" ON public.orders;
     EXECUTE 'CREATE POLICY "Consumers view own orders" ON public.orders FOR SELECT USING (auth.uid() = consumer_id)';
     
+    DROP POLICY IF EXISTS "Consumers can place orders" ON public.orders;
+    EXECUTE 'CREATE POLICY "Consumers can place orders" ON public.orders FOR INSERT WITH CHECK (auth.uid() = consumer_id)';
+    
     DROP POLICY IF EXISTS "Businesses view received orders" ON public.orders;
     EXECUTE 'CREATE POLICY "Businesses view received orders" ON public.orders FOR SELECT USING (EXISTS (SELECT 1 FROM public.businesses b WHERE b.id = orders.business_id AND b.owner_id = auth.uid()))';
     
-    -- 5. Logistics
+    -- 5. Logistics & Governance
     DROP POLICY IF EXISTS "Manage own routes" ON public.delivery_routes;
-    EXECUTE 'CREATE POLICY "Manage own routes" ON public.delivery_routes FOR ALL USING (auth.uid() = deliverer_id)';
+    EXECUTE 'CREATE POLICY "Manage own routes" ON public.delivery_routes FOR ALL USING (auth.uid() = deliverer_id) WITH CHECK (auth.uid() = deliverer_id)';
     
     DROP POLICY IF EXISTS "Manage own wait status" ON public.active_waiting;
-    EXECUTE 'CREATE POLICY "Manage own wait status" ON public.active_waiting FOR ALL USING (auth.uid() = deliverer_id)';
+    EXECUTE 'CREATE POLICY "Manage own wait status" ON public.active_waiting FOR ALL USING (auth.uid() = deliverer_id) WITH CHECK (auth.uid() = deliverer_id)';
+    
+    DROP POLICY IF EXISTS "Manage own custodianship" ON public.town_custodians;
+    EXECUTE 'CREATE POLICY "Manage own custodianship" ON public.town_custodians FOR ALL USING (auth.uid() = deliverer_id) WITH CHECK (auth.uid() = deliverer_id)';
     
     DROP POLICY IF EXISTS "Town custodians are public" ON public.town_custodians;
     EXECUTE 'CREATE POLICY "Town custodians are public" ON public.town_custodians FOR SELECT USING (true)';

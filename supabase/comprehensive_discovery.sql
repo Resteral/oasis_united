@@ -3,12 +3,13 @@
 create extension if not exists "uuid-ossp";
 
 -- PROFILES TABLE (Public profiles for Users, Business Owners, & Deliverers)
+-- Note: 'references auth.users' is omitted here to allow for mock data seeding without manual user creation.
 create table if not exists public.profiles (
-  id uuid references auth.users not null primary key,
+  id uuid primary key, 
   full_name text,
   avatar_url text,
-  role text check (role in ('business', 'consumer', 'deliverer')) default 'consumer',
-  town text, -- The user's primary town (e.g., Effingham, Freedom)
+  role text check (role in ('business', 'consumer', 'deliverer', 'admin', 'staff')) default 'consumer',
+  town text,
   subscription_tier text default 'free',
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );

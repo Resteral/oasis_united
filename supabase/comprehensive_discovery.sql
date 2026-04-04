@@ -323,15 +323,8 @@ do $$
   end $$;
 
 -- 205. REGIONAL PRODUCT TEMPLATES (Autonomous Pricing)
-create table if not exists public.products_template (
-    id uuid default uuid_generate_v4() primary key,
-    name text not null,
-    base_price numeric not null,
-    category text,
-    description text
-);
-
-insert into public.products_template (name, base_price, category, description)
+-- Integrated with 'Oracle Hub' at Line 21
+insert into public.products_template (name, price, category, description)
 values 
     ('Local Milk (Gal)', 4.89, 'Grocery', 'Fresh regional dairy from the Oasis network.'),
     ('Artisan Bread (Loaf)', 5.50, 'Grocery', 'Stone-ground independent bakery staple.'),
@@ -348,7 +341,7 @@ returns trigger as $$
 begin
   -- Auto-populate products based on category match
   insert into public.products (business_id, name, price, category, description)
-  select new.id, name, base_price, category, description
+  select new.id, name, price, category, description
   from public.products_template
   where products_template.category = new.category;
 

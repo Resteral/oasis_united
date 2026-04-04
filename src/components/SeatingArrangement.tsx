@@ -28,24 +28,49 @@ export default function SeatingArrangement({ businessId, onTableSelect, selected
 
     useEffect(() => {
         async function loadSeating() {
-            // In a real app, we'd fetch this from a 'seating_layouts' table
-            // For now, we use a enhanced mock that can be saved/updated
-             const mockTables: Table[] = [
-                { id: '1', number: '01', capacity: 2, status: 'available', x: 20, y: 20, rotation: 0 },
-                { id: '2', number: '02', capacity: 2, status: 'occupied', x: 50, y: 20, rotation: 0 },
-                { id: '3', number: '03', capacity: 4, status: 'available', x: 80, y: 20, rotation: 0 },
-                { id: '4', number: '04', capacity: 4, status: 'available', x: 20, y: 50, rotation: 45 },
-                { id: '5', number: '05', capacity: 6, status: 'reserved', x: 50, y: 50, rotation: 0 },
-                { id: '6', number: '06', capacity: 4, status: 'available', x: 80, y: 50, rotation: -15 },
-                { id: '7', number: '07', capacity: 2, status: 'available', x: 20, y: 80, rotation: 0 },
-                { id: '8', number: '08', capacity: 2, status: 'available', x: 50, y: 80, rotation: 90 },
-                { id: '9', number: '09', capacity: 8, status: 'available', x: 80, y: 80, rotation: 0 },
-            ];
-            setTables(mockTables);
+            setLoading(true);
+            const { data, error } = await supabase
+                .from('seating_layouts')
+                .select('layout_json')
+                .eq('business_id', businessId)
+                .single();
+            
+            if (data && data.layout_json) {
+                setTables(data.layout_json);
+            } else {
+                const mockTables: Table[] = [
+                    { id: '1', number: '01', capacity: 2, status: 'available', x: 20, y: 20, rotation: 0 },
+                    { id: '2', number: '02', capacity: 2, status: 'occupied', x: 50, y: 20, rotation: 0 },
+                    { id: '3', number: '03', capacity: 4, status: 'available', x: 80, y: 20, rotation: 0 },
+                    { id: '4', number: '04', capacity: 4, status: 'available', x: 20, y: 50, rotation: 45 },
+                    { id: '5', number: '05', capacity: 6, status: 'reserved', x: 50, y: 50, rotation: 0 },
+                    { id: '6', number: '06', capacity: 4, status: 'available', x: 80, y: 50, rotation: -15 },
+                    { id: '7', number: '07', capacity: 2, status: 'available', x: 20, y: 80, rotation: 0 },
+                    { id: '8', number: '08', capacity: 2, status: 'available', x: 50, y: 80, rotation: 90 },
+                    { id: '9', number: '09', capacity: 8, status: 'available', x: 80, y: 80, rotation: 0 },
+                ];
+                setTables(mockTables);
+            }
             setLoading(false);
         }
         loadSeating();
     }, [businessId]);
+
+    const saveLayout = async () => {
+        const { error } = await supabase
+            .from('seating_layouts')
+            .upsert({ 
+                business_id: businessId, 
+                layout_json: tables,
+                updated_at: new Date().toISOString()
+            });
+        
+        if (!error) {
+            setIsEditing(false);
+        } else {
+            alert("Protocol Failure: Unable to persist structural changes.");
+        }
+    };
 
     const handleTableAction = async (table: Table) => {
         if (isEditing) return;
@@ -117,29 +142,33 @@ export default function SeatingArrangement({ businessId, onTableSelect, selected
         setTables(prev => prev.map(t => t.id === draggedTableId ? { ...t, x, y } : t));
     };
 
-    if (loading) return <div className="animate-pulse text-[10px] font-black uppercase tracking-widest text-white/20 text-center py-10">Mapping Floor Plan...</div>;
+    if (loading) return <div className="animate-pulse text-[10px] font-black uppercase tracking-widest text-white/20 text-center py-20">Syncing Structural Grid...</div>;
 
     return (
-        <div className="space-y-6 select-none">
-            <div className="flex justify-between items-center px-4">
+        <div className="space-y-8 select-none">
+            {/* High-Visibility Architect Controls */}
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center px-4 py-8 bg-white/5 rounded-[2rem] border border-white/5 gap-6">
                 <div className="flex flex-col gap-1">
-                    <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40">
-                        {merchantMode ? (isEditing ? 'Architect Mode: Editing Layout' : 'Live Seating Management') : 'Select Your Table'}
-                    </h3>
-                    <p className="text-[9px] font-bold text-indigo-400 uppercase tracking-widest">
-                        {isEditing ? 'Drag to position • Click 🔄 to rotate' : 'Click busy table to view Receipt'}
+                    <div className="flex items-center gap-2">
+                        <span className={`w-2 h-2 rounded-full ${isEditing ? 'bg-amber-400 animate-pulse shadow-[0_0_10px_rgba(251,191,36,0.5)]' : 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]'}`}></span>
+                        <h3 className="text-xs font-black uppercase tracking-[0.4em] text-white/60">
+                            {merchantMode ? (isEditing ? 'Architect Mode: Structural Adjustment' : 'Tactical Display: Operations') : 'Find Your Seat'}
+                        </h3>
+                    </div>
+                    <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest mt-1">
+                        {isEditing ? 'Drag nodes to reposition • Click 🔄 to rotate axis' : 'Click busy node to review live order telemetry'}
                     </p>
                 </div>
                 
                 {merchantMode && (
-                    <div className="flex gap-3">
+                    <div className="flex gap-4">
                         {isEditing ? (
                             <>
-                                <button onClick={handleAddTable} className="px-4 py-2 bg-emerald-500/20 border border-emerald-500/30 text-emerald-500 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-emerald-500/30 transition-all">+ Add Table</button>
-                                <button onClick={() => setIsEditing(false)} className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-[9px] font-black uppercase tracking-widest shadow-lg shadow-indigo-500/20">Save Layout</button>
+                                <button onClick={handleAddTable} className="px-8 py-4 bg-white/5 border border-white/10 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all">+ Add Unit</button>
+                                <button onClick={saveLayout} className="px-10 py-4 bg-amber-400 text-black rounded-xl text-[10px] font-black uppercase tracking-widest shadow-2xl shadow-amber-400/20 hover:scale-105 active:scale-95 transition-all">Save Architecture</button>
                             </>
                         ) : (
-                            <button onClick={() => setIsEditing(true)} className="px-4 py-2 bg-white/5 border border-white/10 text-white/60 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-white/10 transition-all">Edit Map</button>
+                            <button onClick={() => setIsEditing(true)} className="px-10 py-4 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-2xl shadow-indigo-600/30 hover:bg-indigo-500 transition-all">Enter Architect Mode</button>
                         )}
                     </div>
                 )}

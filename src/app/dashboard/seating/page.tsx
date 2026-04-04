@@ -49,8 +49,7 @@ export default function SeatingManagementPage() {
                     <p className="text-gray-500 font-medium text-lg max-w-lg">Manage your boutique's interactive seating layout in real-time. Toggle table occupancy and optimize for your citizens.</p>
                 </div>
                 <div className="flex gap-4">
-                    <button className="px-10 py-5 bg-white/5 border border-white/10 rounded-[1.5rem] font-black text-[10px] uppercase tracking-[0.2em] hover:bg-white/10 transition-all">Edit Layout</button>
-                    <button className="px-10 py-5 bg-indigo-600 rounded-[1.5rem] font-black text-[10px] uppercase tracking-[0.2em] shadow-3xl shadow-indigo-500/20 hover:scale-105 active:scale-95 transition-all">Export Report</button>
+                    <button className="px-10 py-5 bg-indigo-600 rounded-[1.5rem] font-black text-[10px] uppercase tracking-[0.2em] shadow-3xl shadow-indigo-500/20 hover:scale-105 active:scale-95 transition-all">Export Operations Report</button>
                 </div>
             </header>
 

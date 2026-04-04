@@ -263,18 +263,55 @@ do $$
     on conflict do nothing;
   end $$;
 
--- 5e. AUTOMATED REGIONAL SEEDING (Trigger for New Towns)
--- This ensures that when a driver/citizen "opens" a new town, default discovery nodes are created.
+-- 205. REGIONAL PRODUCT TEMPLATES (Autonomous Pricing)
+create table if not exists public.products_template (
+    id uuid default uuid_generate_v4() primary key,
+    name text not null,
+    base_price numeric not null,
+    category text,
+    description text
+);
+
+insert into public.products_template (name, base_price, category, description)
+values 
+    ('Local Milk (Gal)', 4.89, 'Grocery', 'Fresh regional dairy from the Oasis network.'),
+    ('Artisan Bread (Loaf)', 5.50, 'Grocery', 'Stone-ground independent bakery staple.'),
+    ('Wildflower Honey (16oz)', 9.00, 'Grocery', 'Locally sourced Northern NH honey.'),
+    ('Regional Hardware Kit', 45.00, 'Hardware', 'Essential municipal maintenance tools.')
+on conflict do nothing;
+
+-- 5e. AUTOMATED REGIONAL SEEDING (Autonomous Onboarding Engine)
 create or replace function public.seed_new_town_infrastructure()
 returns trigger as $$
+declare
+  new_biz_id uuid;
 begin
-  -- Example: When a town is added, we could auto-create a 'General Store' or 'Tavern' node
-  -- For now, we will log the expansion in the regional shoutouts
+  -- 1. Automate Boutique Provisioning
+  insert into public.businesses (slug, name, category, location, town_id, onboarded_by, description)
+  values (
+    lower(replace(new.name, ' ', '-')) || '-provision-node',
+    'The ' || new.name || ' General Store',
+    'Provisions & Hub',
+    new.name,
+    new.id,
+    new.added_by,
+    'Autonomous municipal discovery node for essential regional provisions.'
+  )
+  returning id into new_biz_id;
+
+  -- 2. Autonomous Price Matching (Populate from Regional Template)
+  insert into public.products (business_id, name, price, category, description)
+  select new_biz_id, name, base_price, category, description
+  from public.products_template;
+
+  -- 3. Broadcast Municipal Arrival
   insert into public.shoutouts (business_id, type, content)
-  select id, 'alert', 'A NEW DISCOVERY NODE HAS BEEN OPENED IN ' || upper(new.name) || '! Welcome to the network.'
-  from public.businesses 
-  where role = 'admin' 
-  limit 1;
+  values (
+    new_biz_id,
+    'alert',
+    'A NEW MUNICIPAL DISCOVERY NODE HAS BEEN OPENED IN ' || upper(new.name) || '! Essential provisions are now price-matched and open for transit.'
+  );
+
   return new;
 end;
 $$ language plpgsql;

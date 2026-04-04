@@ -31,7 +31,7 @@ export default function FieldManual() {
             steps: [
                 'Go to "Express Network" in the Command Hub.',
                 'Register a new town if the territory is unexplored.',
-                'Establish a delivery loop linking all onboarded stores.',
+                'Select "Registered Businesses" as sequenced stops for your route.',
                 'Activate the route to go live on the Public Marketplace.'
             ]
         }

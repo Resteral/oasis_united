@@ -70,9 +70,16 @@ create table if not exists public.products (
   stock integer default 0,
   category text,
   image_url text,
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
-  unique (business_id, name)
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
+
+-- Ensure Atomic Price Anchor for Upserts
+do $$ 
+begin
+    if not exists (select 1 from pg_constraint where conname = 'products_business_id_name_key') then
+        alter table public.products add constraint products_business_id_name_key unique (business_id, name);
+    end if;
+end $$;
 
 -- GLOBAL SHOUTOUTS TABLE (Real-time community updates & promos)
 create table if not exists public.shoutouts (

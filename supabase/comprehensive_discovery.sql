@@ -28,6 +28,10 @@ create table if not exists public.products_template (
   image_url text
 );
 
+-- Evolution: Dynamically synchronize Oracle columns
+alter table public.products_template add column if not exists price numeric;
+alter table public.products_template add column if not exists image_url text;
+
 -- Seed Intelligence for Smart Provisioning
 insert into public.products_template (category, name, price, description)
 values 

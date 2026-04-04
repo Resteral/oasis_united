@@ -70,7 +70,8 @@ create table if not exists public.products (
   stock integer default 0,
   category text,
   image_url text,
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  unique (business_id, name)
 );
 
 -- GLOBAL SHOUTOUTS TABLE (Real-time community updates & promos)
@@ -260,7 +261,9 @@ do $$
       (hobbs_id, 'Bang Bang Shrimp', 18.00, 'Apps'),
       (hobbs_id, 'Hobbs Classic Burger', 18.00, 'Entree'),
       (hobbs_id, 'Large Specialty Pizza', 15.00, 'Pizza')
-    on conflict do nothing;
+    on conflict (business_id, name) do update set 
+      price = excluded.price,
+      category = excluded.category;
   end $$;
 
 -- 205. REGIONAL PRODUCT TEMPLATES (Autonomous Pricing)

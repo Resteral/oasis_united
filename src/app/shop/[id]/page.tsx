@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import Cart from '@/components/Cart';
+import AddProductModal from '@/components/merchant/AddProductModal';
 
 export default function BusinessProfilePage() {
     const { id } = useParams();
@@ -12,39 +13,48 @@ export default function BusinessProfilePage() {
     const [stats, setStats] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [cartItems, setCartItems] = useState<any[]>([]);
+    const [currentUser, setCurrentUser] = useState<any>(null);
+
+    const fetchStoreData = async () => {
+        if (!id) return;
+        setLoading(true);
+        const { data: biz } = await supabase
+            .from('businesses')
+            .select('*, towns(name, state)')
+            .eq('id', id)
+            .single();
+
+        const { data: prods } = await supabase
+            .from('products')
+            .select('*')
+            .eq('business_id', id)
+            .order('created_at', { ascending: false });
+
+        // Fetch some dynamic stats if migration exists
+        const { data: dailyStats } = await supabase
+            .from('daily_business_stats')
+            .select('total_views')
+            .eq('business_id', id)
+            .single();
+
+        setBusiness(biz);
+        setProducts(prods || []);
+        setStats(dailyStats || { total_views: 0 });
+        setLoading(false);
+    };
 
     useEffect(() => {
-        if (!id) return;
-
-        async function fetchStoreData() {
-            setLoading(true);
-            const { data: biz } = await supabase
-                .from('businesses')
-                .select('*, towns(name, state)')
-                .eq('id', id)
-                .single();
-
-            const { data: prods } = await supabase
-                .from('products')
-                .select('*')
-                .eq('business_id', id)
-                .order('created_at', { ascending: false });
-
-            // Fetch some dynamic stats if migration exists
-            const { data: dailyStats } = await supabase
-                .from('daily_business_stats')
-                .select('total_views')
-                .eq('business_id', id)
-                .single();
-
-            setBusiness(biz);
-            setProducts(prods || []);
-            setStats(dailyStats || { total_views: 0 });
-            setLoading(false);
-        }
-
         fetchStoreData();
+
+        // Get current user for owner check
+        const fetchUser = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            setCurrentUser(user);
+        };
+        fetchUser();
     }, [id]);
+
+    const isOwner = currentUser?.id === business?.owner_id;
 
     const handleAddToCart = (product: any) => {
         setCartItems(prev => {
@@ -168,6 +178,15 @@ export default function BusinessProfilePage() {
 
                     {/* Social/Integration Pulse */}
                     <div className="flex flex-col gap-4">
+                        {isOwner && (
+                            <div className="mb-6 p-8 bg-indigo-600/5 border border-indigo-500/10 rounded-[3rem] space-y-6">
+                                <div className="space-y-1">
+                                    <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-400 italic">Merchant Console</h4>
+                                    <p className="text-[8px] font-black uppercase text-white/20 tracking-widest pl-0.5">Autonomous Inventory Node Initiation</p>
+                                </div>
+                                <AddProductModal businessId={business.id} onSuccess={fetchStoreData} />
+                            </div>
+                        )}
                         <Link href={`/shop/${business.id}/order`} className="w-full py-6 bg-amber-400 text-black rounded-[2rem] font-black text-xs uppercase tracking-widest text-center hover:scale-[1.02] shadow-2xl shadow-amber-400/20 transition-all">
                            🚀 Initiate Order Protocol
                         </Link>

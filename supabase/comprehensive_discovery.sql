@@ -193,6 +193,7 @@ create policy "Admins manage all products" on public.products for all using (
 create policy "Everyone can view shoutouts" on public.shoutouts for select using (true);
 create policy "Everyone can view deliverers" on public.deliverer_profiles for select using (true);
 create policy "Everyone can view towns" on public.towns for select using (true);
+create policy "Authenticated can insert towns" on public.towns for insert with check (auth.uid() is not null);
 create policy "Everyone can view routes" on public.delivery_routes for select using (true);
 
 -- 5. NEIGHBORHOOD SEED DATA (Regional Discovery Network)

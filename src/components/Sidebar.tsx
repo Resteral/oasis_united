@@ -12,6 +12,7 @@ const navItems = [
     { label: 'Messages', href: '/dashboard/messages', icon: '💬' },
     { label: 'Products', href: '/dashboard/products', icon: '📦' },
     { label: 'Fleet Marketing', href: '/dashboard/marketing', icon: '📡' },
+    { label: 'Fleet Route', href: '/dashboard/fleet', icon: '🛰️' },
     { label: 'Posts & Events', href: '/dashboard/posts', icon: '📢' },
     { label: 'Settings', href: '/dashboard/settings', icon: '⚙️' },
     { label: 'Security (MFA)', href: '/dashboard/settings/security', icon: '🔒' },

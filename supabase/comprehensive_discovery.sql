@@ -96,6 +96,8 @@ create table if not exists public.businesses (
 alter table public.businesses add column if not exists onboarded_by uuid references public.profiles(id);
 alter table public.businesses add column if not exists town_id uuid references public.towns(id);
 alter table public.businesses add column if not exists store_features jsonb default '{}'::jsonb;
+alter table public.businesses add column if not exists lat numeric;
+alter table public.businesses add column if not exists lng numeric;
 
 -- PRODUCTS TABLE (Prices for Groceries, Menu items, Hardware supplies)
 create table if not exists public.products (
@@ -576,6 +578,17 @@ begin
 end;
 $$ language plpgsql;
 
+create or replace function public.get_route_stops(p_route_id uuid)
+returns table (id uuid, name text, category text, location text, image_url text) as $$
+begin
+    return query
+    select b.id, b.name, b.category, b.location, b.image_url
+    from public.businesses b
+    join public.delivery_routes r on b.id = any(array(select jsonb_array_elements_text(r.stops)::uuid))
+    where r.id = p_route_id;
+end;
+$$ language plpgsql;
+
 create or replace function public.trigger_seed_business_inventory()
 returns trigger as $$
 begin
@@ -619,6 +632,16 @@ begin
   update public.businesses set integrations = '{"phone": "(603) 539-2500"}'::jsonb, store_features = store_features || '{"tier": "Founding Partner"}'::jsonb where slug = 'boyles-general';
   update public.businesses set integrations = '{"phone": "(603) 231-1042"}'::jsonb, store_features = store_features || '{"tier": "Founding Partner"}'::jsonb where slug = 'walts-carpentry';
   
+  -- Calibrate Regional Discovery Nodes (GPS)
+  update public.businesses set lat = 43.7612, lng = -71.0134 where slug = 'pnb-eats';
+  update public.businesses set lat = 43.7590, lng = -71.0150 where slug = 'boyles-general';
+  update public.businesses set lat = 43.7620, lng = -71.0120 where slug = 'walts-carpentry';
+  update public.businesses set lat = 43.7123, lng = -71.1189 where slug = 'yankee-smokehouse';
+  update public.businesses set lat = 43.7110, lng = -71.1210 where slug = 'jakes-seafood';
+  update public.businesses set lat = 43.7135, lng = -71.1170 where slug = 'hobbs-tavern';
+  update public.businesses set lat = 43.8115, lng = -71.0422 where slug = 'freedom-gallery';
+  update public.businesses set lat = 43.8100, lng = -71.0450 where slug = 'berry-bay-supplies';
+
   -- Ossipee & Freedom Contacts
   update public.businesses set integrations = '{"phone": "(603) 539-7427"}'::jsonb where slug = 'yankee-smokehouse';
   update public.businesses set integrations = '{"phone": "(603) 539-3371"}'::jsonb where slug = 'jakes-seafood';

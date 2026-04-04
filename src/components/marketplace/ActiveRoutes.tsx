@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import Link from 'next/link';
 
 export default function ActiveRoutes() {
     const [liveRoutes, setLiveRoutes] = useState<any[]>([]);
@@ -56,8 +57,14 @@ export default function ActiveRoutes() {
                             <div className="space-y-1">
                                 <h3 className="font-bold text-xl tracking-tight leading-snug text-white/90">{route.name}</h3>
                                 <div className="flex flex-wrap gap-2 pt-2">
-                                    {route.stops?.slice(0, 3).map((stop: string, i: number) => (
-                                        <span key={i} className="text-[8px] font-black uppercase tracking-widest text-white/40">{stop} {i < Math.min(route.stops.length, 3) - 1 ? '→' : ''}</span>
+                                    {route.stops?.slice(0, 3).map((stop: any, i: number) => (
+                                        <Link 
+                                            key={i} 
+                                            href={typeof stop === 'object' ? `/shop/${stop.id}` : '#'}
+                                            className={`text-[8px] font-black uppercase tracking-widest ${typeof stop === 'object' ? 'text-indigo-400 hover:text-white underline' : 'text-white/40'}`}
+                                        >
+                                            {typeof stop === 'object' ? stop.name : stop} {i < Math.min(route.stops.length, 3) - 1 ? '→' : ''}
+                                        </Link>
                                     ))}
                                 </div>
                             </div>

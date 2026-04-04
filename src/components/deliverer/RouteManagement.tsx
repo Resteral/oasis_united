@@ -4,13 +4,14 @@ import { supabase } from '@/lib/supabase';
 
 export default function RouteManagement() {
     const [towns, setTowns] = useState<any[]>([]);
+    const [businesses, setBusinesses] = useState<any[]>([]);
     const [routes, setRoutes] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     
     // Form state
     const [name, setName] = useState('');
     const [townId, setTownId] = useState('');
-    const [stops, setStops] = useState<string[]>(['']);
+    const [stops, setStops] = useState<{id: string, name: string}[]>([]);
     
     const fetchMyNetwork = async () => {
         setLoading(true);
@@ -29,10 +30,25 @@ export default function RouteManagement() {
         fetchMyNetwork();
     }, []);
 
-    const addStop = () => setStops([...stops, '']);
-    const updateStop = (val: string, idx: number) => {
+    // Fetch businesses when town changes
+    useEffect(() => {
+        if (!townId) {
+            setBusinesses([]);
+            return;
+        }
+        async function fetchBusinesses() {
+            const { data } = await supabase.from('businesses').select('id, name').eq('town_id', townId);
+            setBusinesses(data || []);
+        }
+        fetchBusinesses();
+    }, [townId]);
+
+    const addStop = () => setStops([...stops, {id: '', name: ''}]);
+    const updateStop = (bizId: string, idx: number) => {
+        const biz = businesses.find(b => b.id === bizId);
+        if (!biz) return;
         const newStops = [...stops];
-        newStops[idx] = val;
+        newStops[idx] = { id: biz.id, name: biz.name };
         setStops(newStops);
     };
 
@@ -41,16 +57,18 @@ export default function RouteManagement() {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
+        const filteredStops = stops.filter(s => s.id !== '');
+
         const { error } = await supabase.from('delivery_routes').insert([{
             deliverer_id: user.id,
             town_id: townId,
             name,
-            stops: stops.filter(s => s.trim() !== '')
+            stops: filteredStops
         }]);
 
         if (!error) {
             setName('');
-            setStops(['']);
+            setStops([]);
             fetchMyNetwork();
         }
     };
@@ -90,27 +108,30 @@ export default function RouteManagement() {
                                     placeholder="Morning Coffee Run"
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
-                                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 focus:ring-2 focus:ring-indigo-500/50 outline-none transition-all placeholder:text-white/20 font-bold"
+                                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 focus:ring-2 focus:ring-indigo-500/50 outline-none transition-all placeholder:text-white/20 font-bold text-white"
                                 />
                             </div>
                         </div>
 
                         <div className="space-y-4">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-indigo-400 ml-4">Discovery Stops (Business Names)</label>
+                            <label className="text-[10px] font-black uppercase tracking-widest text-indigo-400 ml-4">Discovery Stops (Registered Businesses)</label>
                             {stops.map((stop, idx) => (
-                                <input 
+                                <select 
                                     key={idx}
-                                    type="text"
-                                    placeholder={`Stop #${idx + 1}`}
-                                    value={stop}
+                                    required
+                                    value={stop.id}
                                     onChange={(e) => updateStop(e.target.value, idx)}
-                                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 focus:ring-2 focus:ring-indigo-500/50 outline-none transition-all placeholder:text-white/20 font-bold"
-                                />
+                                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 focus:ring-2 focus:ring-indigo-500/50 outline-none transition-all font-bold text-white"
+                                >
+                                    <option value="" className="bg-[#0c0c0e]">-- Select Store --</option>
+                                    {businesses.map(b => <option key={b.id} value={b.id} className="bg-[#0c0c0e]">{b.name}</option>)}
+                                </select>
                             ))}
                             <button 
                                 type="button" 
                                 onClick={addStop}
-                                className="px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/5 flex items-center gap-2 rounded-2xl text-[9px] font-black uppercase tracking-widest transition-all"
+                                disabled={!townId}
+                                className="px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/5 flex items-center gap-2 rounded-2xl text-[9px] font-black uppercase tracking-widest transition-all disabled:opacity-30"
                             >
                                 ➕ Add Sequence Stop
                             </button>
@@ -140,8 +161,8 @@ export default function RouteManagement() {
                                 <span className={r.is_active ? "w-2 h-2 bg-green-500 rounded-full shadow-[0_0_10px_rgba(34,197,94,0.5)]" : "w-2 h-2 bg-gray-600 rounded-full"}></span>
                              </div>
                              <div className="flex flex-wrap gap-2 pt-2">
-                                {r.stops.map((s: string, i: number) => (
-                                    <span key={i} className="text-[8px] font-black uppercase tracking-widest px-2 py-1 bg-white/5 rounded-md border border-white/5">{s}</span>
+                                {r.stops?.map((s: any, i: number) => (
+                                    <span key={i} className="text-[8px] font-black uppercase tracking-widest px-2 py-1 bg-white/5 rounded-md border border-white/5">{s.name || s}</span>
                                 ))}
                              </div>
                         </div>

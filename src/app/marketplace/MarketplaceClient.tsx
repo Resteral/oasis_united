@@ -9,7 +9,7 @@ import MarketplaceHero from '@/components/marketplace/MarketplaceHero';
 import TownDiscovery from '@/components/marketplace/TownDiscovery';
 import ActiveRoutes from '@/components/marketplace/ActiveRoutes';
 import LogisticsQueue from '@/components/LogisticsQueue';
-
+import FleetAdTicker from '@/components/marketplace/FleetAdTicker';
 interface MarketplaceClientProps {
     initialFeatured: any;
     initialShoutouts: any[];
@@ -209,7 +209,9 @@ export default function MarketplaceClient({ initialFeatured, initialShoutouts }:
                             </div>
                         </section>
 
-                        {/* Marketplace Recognition */}
+                        {/* Fleet Ad Network / Campaign Clock */}
+                        <FleetAdTicker />
+
                         <div className="bg-amber-400 p-12 rounded-[4rem] text-black space-y-6 shadow-2xl shadow-amber-400/20 group hover:scale-[1.02] transition-all">
                             <h3 className="text-2xl font-black italic tracking-tighter shadow-sm leading-none uppercase">Scale Your Discovery.</h3>
                             <p className="text-[10px] font-black uppercase tracking-widest leading-relaxed opacity-60">Broadcast your independent boutique across the unified Oasis regional network.</p>

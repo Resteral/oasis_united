@@ -434,6 +434,7 @@ create table if not exists public.fleet_ads (
   target_town_id uuid references public.towns(id), -- Geo-fencing for ads
   is_active boolean default true,
   display_duration integer default 15, -- How many seconds to show the ad in the rotation
+  campaign_expires_at timestamp with time zone default (now() + interval '30 days'), -- The 'Advertising Clock' for contract expiry
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 

@@ -548,16 +548,16 @@ begin
   -- 286. MOBILE VANGUARDS (Storefrontless Advocacy)
   insert into public.businesses (slug, name, category, location, town_id, onboarded_by, description)
   values 
-    ('mike-handyman', 'Handyman Mike', 'Service', 'Effingham', effingham_id, 'e5f6a7b8-d4c3-4b2a-a198-e7d6c5b4a321', 'Regional artisan repairs and plumbing. Mobile primary node.'),
-    ('sarah-garden', 'Sarah''s Garden Consult', 'Consulting', 'Freedom', freedom_id, 'e5f6a7b8-d4c3-4b2a-a198-e7d6c5b4a321', 'Expert organic gardening and homestead design.')
+    ('structural-repairs', 'Structural Repair Node', 'Service', 'Effingham', effingham_id, 'e5f6a7b8-d4c3-4b2a-a198-e7d6c5b4a321', 'Regional artisan repairs and plumbing. Mobile primary node.'),
+    ('homestead-systems', 'Holistic Homestead Systems', 'Consulting', 'Freedom', freedom_id, 'e5f6a7b8-d4c3-4b2a-a198-e7d6c5b4a321', 'Expert organic gardening and homestead design.')
   on conflict (slug) do nothing;
 
   insert into public.fleet_ads (business_id, headline, display_duration)
-  select id, 'Reliable Regional Repairs. Mobile Service.', 15 from public.businesses where slug = 'mike-handyman'
+  select id, 'Reliable Regional Repairs. Mobile Service.', 15 from public.businesses where slug = 'structural-repairs'
   on conflict do nothing;
 
   insert into public.fleet_ads (business_id, headline, display_duration)
-  select id, 'Transform Your Garden. Regional Homesteading.', 12 from public.businesses where slug = 'sarah-garden'
+  select id, 'Transform Your Garden. Regional Homesteading.', 12 from public.businesses where slug = 'homestead-systems'
   on conflict do nothing;
 end $$;
 

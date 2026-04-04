@@ -22,8 +22,8 @@ export default function ActiveRoutes() {
     }, []);
 
     const displayRoutes = liveRoutes.length > 0 ? liveRoutes : [
-        { id: '1', name: 'Effingham Main Loop', stops: ['PNB Eats', 'Village Gallery'], towns: { name: 'Effingham' }, profiles: { full_name: 'Local Dave' }, is_active: true },
-        { id: '2', name: 'Ossipee Supply Run', stops: ['Whittier Cafe', 'Hardware'], towns: { name: 'Ossipee' }, profiles: { full_name: 'Regional Phil' }, is_active: true },
+        { id: '1', name: 'Effingham Main Loop', stops: ['PNB Eats', 'Village Gallery'], towns: { name: 'Effingham' }, profiles: { full_name: 'Agent Alpha' }, is_active: true },
+        { id: '2', name: 'Ossipee Supply Run', stops: ['Whittier Cafe', 'Hardware'], towns: { name: 'Ossipee' }, profiles: { full_name: 'Dispatch 7' }, is_active: true },
     ];
 
     return (

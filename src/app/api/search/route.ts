@@ -7,8 +7,10 @@ export async function GET(req: Request) {
     const category = searchParams.get('category');
     const limit = parseInt(searchParams.get('limit') || '20');
 
+    // 🕵️ Discovery Mode: Detect Zip Codes (5-digit pattern)
+    const isZip = query && /^\d{5}$/.test(query);
+
     if (!query && !category) {
-        // Return featured items if no search query
         const { data: featuredBusinesses } = await supabase
             .from('businesses')
             .select('*')
@@ -35,14 +37,19 @@ export async function GET(req: Request) {
         .limit(limit);
 
     if (query) {
-        productQuery = productQuery.ilike('name', `%${query}%`);
+        if (isZip) {
+            // Signal detected as a ZIP location
+            productQuery = productQuery.ilike('businesses.location', `%${query}%`);
+        } else {
+            productQuery = productQuery.ilike('name', `%${query}%`);
+        }
     }
 
     if (category && category !== 'All') {
         productQuery = productQuery.ilike('category', `%${category}%`);
     }
 
-    const { data: products, error: pError } = await productQuery;
+    const { data: products } = await productQuery;
 
     let businessQuery = supabase
         .from('businesses')
@@ -50,17 +57,23 @@ export async function GET(req: Request) {
         .limit(limit);
 
     if (query) {
-        businessQuery = businessQuery.ilike('name', `%${query}%`);
+        if (isZip) {
+            // Priority filtering by Territory Zip Code
+            businessQuery = businessQuery.ilike('location', `%${query}%`);
+        } else {
+            businessQuery = businessQuery.ilike('name', `%${query}%`);
+        }
     }
 
     if (category && category !== 'All') {
         businessQuery = businessQuery.ilike('category', `%${category}%`);
     }
 
-    const { data: businesses, error: bError } = await businessQuery;
+    const { data: businesses } = await businessQuery;
 
     return NextResponse.json({
         success: true,
+        is_zip_search: isZip,
         results: {
             products: products || [],
             businesses: businesses || []

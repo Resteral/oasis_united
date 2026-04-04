@@ -23,6 +23,7 @@ export const viewport = {
 
 import PayPalProvider from "@/components/PayPalProvider";
 import GlobalNav from "@/components/GlobalNav";
+import PWARegister from "@/components/PWARegister";
 
 export default function RootLayout({
   children,
@@ -32,6 +33,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${outfit.variable} font-sans`}>
+        <PWARegister />
         <PayPalProvider>
           {children}
           <GlobalNav />

@@ -50,10 +50,16 @@ export default function GlobalSearch() {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
+    const [isZipSearch, setIsZipSearch] = useState(false);
+
     useEffect(() => {
         const delayDebounceFn = setTimeout(async () => {
             if (query.trim().length > 1) {
                 setLoading(true);
+                // Detect zip
+                const isZip = /^\d{5}$/.test(query);
+                setIsZipSearch(isZip);
+
                 let res;
                 if (isAiMode) {
                     res = await fetch('/api/search/v2', {
@@ -97,6 +103,7 @@ export default function GlobalSearch() {
                 setLoading(false);
             } else {
                 setResults({ products: [], businesses: [] });
+                setIsZipSearch(false);
                 if (query.length === 0) setIsOpen(false);
             }
         }, 500);
@@ -111,15 +118,17 @@ export default function GlobalSearch() {
                 <div className="absolute inset-y-0 left-8 flex items-center pointer-events-none gap-4">
                     <div className="relative">
                         <span className={`text-2xl transition-all duration-700 block ${loading || isAiMode ? 'animate-pulse scale-110' : 'grayscale group-hover/search:grayscale-0'}`}>
-                           {isAiMode ? '🤖' : loading ? '📡' : '🛰️'}
+                           {isAiMode ? '🤖' : isZipSearch ? '📍' : loading ? '📡' : '🛰️'}
                         </span>
                         {loading && (
                             <div className="absolute inset-0 border-2 border-amber-400 rounded-full animate-ping opacity-20 scale-150"></div>
                         )}
                     </div>
-                    {isAiMode && (
+                    {(isAiMode || isZipSearch) && (
                         <div className="flex flex-col">
-                           <span className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-400 animate-pulse">AI Agent Active</span>
+                           <span className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-400 animate-pulse">
+                              {isAiMode ? 'AI Agent Active' : 'Zip Territory Locked'}
+                           </span>
                         </div>
                     )}
                 </div>

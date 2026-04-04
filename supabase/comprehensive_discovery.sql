@@ -346,9 +346,16 @@ begin
   select id into walts_id from public.businesses where slug = 'walts-carpentry';
 
   -- Update Business Integration & Partner Tier Details
-  update public.businesses set integrations = '{"phone": "(603) 539-7700"}'::jsonb, store_features = store_features || '{"tier": "Founding Partner"}'::jsonb where id = pnb_id;
-  update public.businesses set integrations = '{"phone": "(603) 539-2500"}'::jsonb, store_features = store_features || '{"tier": "Founding Partner"}'::jsonb where id = boyles_id;
-  update public.businesses set integrations = '{"phone": "(603) 231-1042"}'::jsonb, store_features = store_features || '{"tier": "Founding Partner"}'::jsonb where id = walts_id;
+  update public.businesses set integrations = '{"phone": "(603) 539-7700"}'::jsonb, store_features = store_features || '{"tier": "Founding Partner"}'::jsonb where slug = 'pnb-eats';
+  update public.businesses set integrations = '{"phone": "(603) 539-2500"}'::jsonb, store_features = store_features || '{"tier": "Founding Partner"}'::jsonb where slug = 'boyles-general';
+  update public.businesses set integrations = '{"phone": "(603) 231-1042"}'::jsonb, store_features = store_features || '{"tier": "Founding Partner"}'::jsonb where slug = 'walts-carpentry';
+  
+  -- Ossipee & Freedom Contacts
+  update public.businesses set integrations = '{"phone": "(603) 539-7427"}'::jsonb where slug = 'yankee-smokehouse';
+  update public.businesses set integrations = '{"phone": "(603) 539-3371"}'::jsonb where slug = 'jakes-seafood';
+  update public.businesses set integrations = '{"phone": "(603) 539-2000"}'::jsonb where slug = 'hobbs-tavern';
+  update public.businesses set integrations = '{"phone": "(603) 539-6014"}'::jsonb where slug = 'freedom-gallery';
+  update public.businesses set integrations = '{"phone": "(603) 539-0110"}'::jsonb where slug = 'berry-bay-supplies';
 
   insert into public.fleet_ads (business_id, headline, display_duration, image_url)
   values

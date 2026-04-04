@@ -39,7 +39,7 @@ export async function GET(req: Request) {
     }
 
     if (category && category !== 'All') {
-        productQuery = productQuery.eq('category', category);
+        productQuery = productQuery.ilike('category', `%${category}%`);
     }
 
     const { data: products, error: pError } = await productQuery;
@@ -54,7 +54,7 @@ export async function GET(req: Request) {
     }
 
     if (category && category !== 'All') {
-        businessQuery = businessQuery.eq('category', category);
+        businessQuery = businessQuery.ilike('category', `%${category}%`);
     }
 
     const { data: businesses, error: bError } = await businessQuery;

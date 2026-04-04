@@ -123,6 +123,9 @@ export default function OnboardingPage() {
                                         <option>Cafe</option>
                                         <option>Hardware</option>
                                         <option>Groceries</option>
+                                        <option>Beauty</option>
+                                        <option>Art</option>
+                                        <option>Tech</option>
                                     </select>
                                 </div>
 

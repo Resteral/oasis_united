@@ -13,11 +13,7 @@ export default function OnboardingPage() {
     const [slug, setSlug] = useState('');
     const [category, setCategory] = useState('Retail');
     const [userId, setUserId] = useState<string | null>(null);
-
-    // Store Features
-    const [seatingType, setSeatingType] = useState('none');
-    const [seatingCapacity, setSeatingCapacity] = useState('');
-    const [wifi, setWifi] = useState(false);
+    const [smartPreview, setSmartPreview] = useState<any[]>([]);
 
     useEffect(() => {
         supabase.auth.getUser().then(({ data: { user } }) => {
@@ -25,6 +21,20 @@ export default function OnboardingPage() {
             else router.push('/login');
         });
     }, [router]);
+
+    // 📡 Oasis Smart Oracle: Fetch predicted inventory
+    useEffect(() => {
+        async function fetchOracle() {
+            const { data } = await supabase.from('products_template').select('*').eq('category', category);
+            if (data) setSmartPreview(data);
+        }
+        fetchOracle();
+    }, [category]);
+
+    // Store Features
+    const [seatingType, setSeatingType] = useState('none');
+    const [seatingCapacity, setSeatingCapacity] = useState('');
+    const [wifi, setWifi] = useState(false);
 
     const handleCreateBusiness = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -128,6 +138,30 @@ export default function OnboardingPage() {
                                         <option>Tech</option>
                                     </select>
                                 </div>
+
+                                {smartPreview?.length > 0 && (
+                                    <div className="bg-gray-50 p-6 rounded-3xl border border-gray-100 space-y-4 animate-in zoom-in duration-700">
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-xs">✨</span>
+                                            <span className="text-[9px] font-black uppercase tracking-widest text-indigo-600 italic">Oasis Smart Oracle: Predicted Drops</span>
+                                        </div>
+                                        <div className="flex gap-3 overflow-x-auto pb-4 scrollbar-hide">
+                                            {smartPreview.map((item: any) => (
+                                                <div key={item.id} className="min-w-[140px] bg-white p-4 rounded-3xl border border-gray-100 flex flex-col gap-2 shadow-sm">
+                                                    <span className="text-[10px] font-black text-gray-900 truncate uppercase leading-none">{item.name}</span>
+                                                    <span className="text-lg font-black text-indigo-600 italic tracking-tighter leading-none">${item.price}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <div className="flex items-center justify-between">
+                                            <p className="text-[8px] font-black uppercase tracking-widest text-gray-400">Inventory pre-validated for your industry.</p>
+                                            <div className="flex items-center gap-1">
+                                                <span className="w-1 h-1 bg-emerald-500 rounded-full animate-ping"></span>
+                                                <span className="text-[7px] font-black uppercase text-emerald-600 tracking-widest">Automatic Dispatch Active</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
 
                                 <button
                                     type="submit"

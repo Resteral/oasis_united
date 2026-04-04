@@ -18,6 +18,30 @@ create table if not exists public.profiles (
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
+-- 10. PRODUCTS TEMPLATE (Smart Node Provisioning Registry)
+create table if not exists public.products_template (
+  id uuid default uuid_generate_v4() primary key,
+  category text, 
+  name text,
+  price numeric,
+  description text,
+  image_url text
+);
+
+-- Seed Intelligence for Smart Provisioning
+insert into public.products_template (category, name, price, description)
+values 
+  ('Cafe', 'Artisan Latte', 4.50, 'Hand-crafted regional roast.'),
+  ('Cafe', 'Cold Brew Node', 5.00, 'Double-filtered municipal blend.'),
+  ('Cafe', 'Blueberry Muffin', 3.75, 'Fresh from the village bakery.'),
+  ('Restaurant', 'Classic Burger', 12.00, 'Grass-fed regional beef.'),
+  ('Restaurant', 'Hand-cut Fries', 4.50, 'Locally sourced potatoes.'),
+  ('Hardware', 'Industrial Wrench', 18.00, 'Heavy-duty steel tool.'),
+  ('Hardware', 'LED Flashlight', 12.50, 'High-intensity municipal beam.'),
+  ('Groceries', 'Local Milk (Gal)', 4.89, 'Farm-to-table dairy.'),
+  ('Groceries', 'Artisan Sourdough', 6.00, 'Slow-fermented village grain.')
+on conflict do nothing;
+
 -- TOWNS TABLE (Centrally registered towns or towns added by deliverers)
 create table if not exists public.towns (
   id uuid default uuid_generate_v4() primary key,
@@ -73,9 +97,20 @@ create table if not exists public.products (
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
--- Ensure Atomic Price Anchor for Upserts
+-- Registry Sanitization: De-duplicate before enforcing Atomic Price Anchor
 do $$ 
 begin
+    -- Remove duplicates across unified trade registry
+    delete from public.products
+    where id in (
+        select id from (
+            select id, row_number() over (partition by business_id, name order by created_at desc) as rnum
+            from public.products
+        ) t
+        where t.rnum > 1
+    );
+
+    -- Enforce Global Unique Signal
     if not exists (select 1 from pg_constraint where conname = 'products_business_id_name_key') then
         alter table public.products add constraint products_business_id_name_key unique (business_id, name);
     end if;
@@ -518,6 +553,30 @@ create policy "Owners view own logistics" on public.inventory_logistics for sele
 create policy "Admins manage all logistics" on public.inventory_logistics for all using (
     exists (select 1 from public.profiles where id = auth.uid() and role = 'admin')
 );
+
+-- 224. SMART PROVISIONING ENGINE (Autonomous Inventory Dispatch)
+create or replace function public.trigger_seed_business_inventory()
+returns trigger as $$
+begin
+    -- Auto-dispatch regional products based on industry category
+    insert into public.products (business_id, name, price, description, category, image_url)
+    select 
+        new.id,
+        name,
+        price,
+        description,
+        category,
+        image_url
+    from public.products_template
+    where category = new.category;
+
+    return new;
+end;
+$$ language plpgsql;
+
+create trigger on_business_onboarding
+after insert on public.businesses
+for each row execute function public.trigger_seed_business_inventory();
 
 -- 225. SEED DATA FINISHING TOUCHES
 do $$

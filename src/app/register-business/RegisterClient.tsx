@@ -151,36 +151,42 @@ export default function RegisterBusinessClient() {
 
                             {/* Classification */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                <div className="space-y-4">
+                                <div className="space-y-4 relative group">
                                     <label className="text-[10px] font-black uppercase tracking-widest text-indigo-400 block px-1">Classification</label>
-                                    <select 
-                                        className="w-full bg-white/5 border border-white/10 p-6 rounded-3xl font-black italic text-xl tracking-tighter outline-none focus:border-indigo-400/50 appearance-none transition-all cursor-pointer"
-                                        value={category}
-                                        onChange={(e) => setCategory(e.target.value)}
-                                        required
-                                    >
-                                        <option value="" disabled className="bg-[#0a0a0b]">Select Category</option>
-                                        <option value="Restaurant" className="bg-[#0a0a0b]">Restaurant</option>
-                                        <option value="Grocery" className="bg-[#0a0a0b]">Grocery</option>
-                                        <option value="Hardware" className="bg-[#0a0a0b]">Hardware</option>
-                                        <option value="Retail" className="bg-[#0a0a0b]">Retail</option>
-                                        <option value="Art & Decor" className="bg-[#0a0a0b]">Art & Decor</option>
-                                        <option value="Outdoor" className="bg-[#0a0a0b]">Outdoor</option>
-                                    </select>
+                                    <div className="relative">
+                                        <select 
+                                            className="w-full bg-white/5 border border-white/10 p-6 rounded-3xl font-black italic text-xl tracking-tighter outline-none focus:border-indigo-400/50 appearance-none transition-all cursor-pointer relative z-10"
+                                            value={category}
+                                            onChange={(e) => setCategory(e.target.value)}
+                                            required
+                                        >
+                                            <option value="" disabled className="bg-[#0a0a0b]">Select Category</option>
+                                            <option value="Restaurant" className="bg-[#0a0a0b]">Restaurant</option>
+                                            <option value="Grocery" className="bg-[#0a0a0b]">Grocery</option>
+                                            <option value="Hardware" className="bg-[#0a0a0b]">Hardware</option>
+                                            <option value="Retail" className="bg-[#0a0a0b]">Retail</option>
+                                            <option value="Art & Decor" className="bg-[#0a0a0b]">Art & Decor</option>
+                                            <option value="Outdoor" className="bg-[#0a0a0b]">Outdoor</option>
+                                        </select>
+                                        <div className="absolute right-6 top-1/2 -translate-y-1/2 text-indigo-400 pointer-events-none z-0">▼</div>
+                                    </div>
                                 </div>
-                                <div className="space-y-4">
+                                <div className="space-y-4 relative group">
                                     <label className="text-[10px] font-black uppercase tracking-widest text-indigo-400 block px-1">Regional Anchor</label>
-                                    <select 
-                                        className="w-full bg-white/5 border border-white/10 p-6 rounded-3xl font-black italic text-xl tracking-tighter outline-none focus:border-indigo-400/50 appearance-none transition-all cursor-pointer"
-                                        value={townId}
-                                        onChange={(e) => setTownId(e.target.value)}
-                                        required
-                                    >
-                                        <option value="" disabled className="bg-[#0a0a0b]">Select Town</option>
-                                        {towns.map(town => (
-                                            <option key={town.id} value={town.id} className="bg-[#0a0a0b]">{town.name}, {town.state}</option>
-                                        ))}
-                                    </select>
+                                    <div className="relative">
+                                        <select 
+                                            className="w-full bg-white/5 border border-white/10 p-6 rounded-3xl font-black italic text-xl tracking-tighter outline-none focus:border-indigo-400/50 appearance-none transition-all cursor-pointer relative z-10"
+                                            value={townId}
+                                            onChange={(e) => setTownId(e.target.value)}
+                                            required
+                                        >
+                                            <option value="" disabled className="bg-[#0a0a0b]">Select Town</option>
+                                            {towns.map(town => (
+                                                <option key={town.id} value={town.id} className="bg-[#0a0a0b]">{town.name}, {town.state}</option>
+                                            ))}
+                                        </select>
+                                        <div className="absolute right-6 top-1/2 -translate-y-1/2 text-indigo-400 pointer-events-none z-0">▼</div>
+                                    </div>
                                 </div>
                             </div>
 

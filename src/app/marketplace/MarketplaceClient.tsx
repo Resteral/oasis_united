@@ -102,7 +102,14 @@ export default function MarketplaceClient({ initialFeatured, initialShoutouts }:
                                             <div className="space-y-2 overflow-hidden">
                                                 <h3 className="font-black italic text-xl tracking-tighter uppercase truncate">{product.name}</h3>
                                                 <p className="text-[9px] font-bold text-white/30 uppercase tracking-widest">{product.businesses?.name}</p>
-                                                <div className="text-2xl font-black italic text-amber-400 mt-2">${Number(product.price).toFixed(2)}</div>
+                                                <div className="flex items-center gap-2">
+                                                    <div className="text-2xl font-black italic text-amber-400 mt-2">${Number(product.price).toFixed(2)}</div>
+                                                    {product.is_shippable && (
+                                                        <span className="mt-2 bg-emerald-500/20 text-emerald-400 text-[7px] font-black uppercase px-2 py-1 rounded-full border border-emerald-500/20 tracking-widest animate-pulse">
+                                                            Universal Shipping
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </div>
                                         </Link>
                                     ))

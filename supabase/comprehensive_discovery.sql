@@ -1,13 +1,11 @@
--- 1. BASE SCHEMA FOR OASIS UNITED DISCOVERY
+-- OASIS UNITED MUNICIPAL DISCOVERY REGISTRY
+-- VERSION: 1.0.40 Stable
+-- LAST SYNCHRONIZATION: 2026-04-04 19:51:00
+
 -- Enable UUID support
 create extension if not exists "uuid-ossp";
 
--- PRE-FLIGHT: Clean legacy constraints for 'Discovery Mode'
-alter table if exists public.profiles drop constraint if exists profiles_id_fkey;
-alter table if exists public.deliverer_profiles drop constraint if exists deliverer_profiles_id_fkey;
-
--- PROFILES TABLE (Public profiles for Users, Business Owners, & Deliverers)
--- Note: 'references auth.users' is omitted here to allow for mock data seeding without manual user creation.
+-- 1. PROFILES TABLE (Public profiles for Users, Business Owners, & Deliverers)
 create table if not exists public.profiles (
   id uuid primary key, 
   full_name text,
@@ -15,91 +13,50 @@ create table if not exists public.profiles (
   role text check (role in ('business', 'consumer', 'deliverer', 'admin', 'staff')) default 'consumer',
   town text,
   subscription_tier text default 'free',
+  is_admin boolean default false,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
--- 10. PRODUCTS TEMPLATE (Smart Node Provisioning Registry)
--- Force a clean seed to ensure high-density schema accuracy
-drop table if exists public.products_template cascade;
-create table public.products_template (
-  id uuid default uuid_generate_v4() primary key,
-  category text, 
-  name text,
-  price numeric,
-  description text,
-  image_url text
-);
-
--- Evolution: Dynamically synchronize Oracle columns
-do $$ 
-begin
-    if not exists (select 1 from information_schema.columns where table_name='products_template' and column_name='price') then
-        alter table public.products_template add column price numeric;
-    end if;
-    if not exists (select 1 from information_schema.columns where table_name='products_template' and column_name='image_url') then
-        alter table public.products_template add column image_url text;
-    end if;
-end $$;
-
--- Seed Intelligence for Smart Provisioning
-insert into public.products_template (category, name, price, description)
-values 
-  ('Cafe', 'Artisan Latte', 4.50, 'Hand-crafted regional roast.'),
-  ('Cafe', 'Cold Brew Node', 5.00, 'Double-filtered municipal blend.'),
-  ('Cafe', 'Blueberry Muffin', 3.75, 'Fresh from the village bakery.'),
-  ('Restaurant', 'Classic Burger', 12.00, 'Grass-fed regional beef.'),
-  ('Restaurant', 'Hand-cut Fries', 4.50, 'Locally sourced potatoes.'),
-  ('Hardware', 'Industrial Wrench', 18.00, 'Heavy-duty steel tool.'),
-  ('Hardware', 'LED Flashlight', 12.50, 'High-intensity municipal beam.'),
-  ('Groceries', 'Local Milk (Gal)', 4.89, 'Farm-to-table dairy.'),
-  ('Groceries', 'Artisan Sourdough', 6.00, 'Slow-fermented village grain.')
-on conflict do nothing;
-
--- TOWNS TABLE (Centrally registered towns or towns added by deliverers)
+-- 2. TOWNS TABLE (Centrally registered towns or towns added by deliverers)
 create table if not exists public.towns (
   id uuid default uuid_generate_v4() primary key,
   name text not null,
-  state text,
-  added_by uuid references public.profiles(id), -- The driver who "opened" this town
+  state text default 'NH',
+  added_by uuid references public.profiles(id), 
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
   unique(name, state)
 );
 
--- Ensure town column exists if table was already created
-alter table public.profiles add column if not exists town text;
-
--- Update the role check constraint to include 'deliverer' (and be defensive about existing data)
-alter table public.profiles drop constraint if exists profiles_role_check;
-update public.profiles set role = 'consumer' where role not in ('business', 'consumer', 'deliverer', 'admin', 'staff');
-alter table public.profiles add constraint profiles_role_check check (role in ('business', 'consumer', 'deliverer', 'admin', 'staff'));
-
--- BUSINESSES TABLE (Storefront details: Hardware, Restaurants, etc.)
+-- 3. BUSINESSES TABLE (Regional Trade Nodes)
 create table if not exists public.businesses (
   id uuid default uuid_generate_v4() primary key,
-  owner_id uuid references public.profiles(id), -- Nullable for placeholder shops
-  onboarded_by uuid references public.profiles(id), -- The deliverer/citizen who "sold" the platform
+  owner_id uuid references public.profiles(id),
+  onboarded_by uuid references public.profiles(id),
   slug text unique not null,
   name text not null,
   description text,
-  category text, -- Retail, Restaurant, Hardware, etc.
-  location text, -- Physical address or specific town area
-  town_id uuid references public.towns(id), -- Linking business to a specific town entity
+  category text, 
+  location text, 
+  town_id uuid references public.towns(id),
   image_url text,
-  integrations jsonb default '{}'::jsonb, -- { twilio: '+1...', instagram: '@...' }
-  theme jsonb default '{}'::jsonb,
-  delivery_settings jsonb default '{}'::jsonb,
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
-  updated_at timestamp with time zone default timezone('utc'::text, now())
+  lat numeric,
+  lng numeric,
+  is_big_store boolean default false,
+  external_sync_source text check (external_sync_source in ('doordash', 'uber', 'manual')) default 'manual',
+  external_sync_id text,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
--- Ensure onboarded_by and town_id columns exist if table was already created
-alter table public.businesses add column if not exists onboarded_by uuid references public.profiles(id);
-alter table public.businesses add column if not exists town_id uuid references public.towns(id);
-alter table public.businesses add column if not exists store_features jsonb default '{}'::jsonb;
-alter table public.businesses add column if not exists lat numeric;
-alter table public.businesses add column if not exists lng numeric;
+-- Ensure Unique Constraints for ON CONFLICT logic (Absolute Stability Phase)
+do $$ 
+begin
+    -- Businesses slug constraint
+    if not exists (select 1 from pg_constraint where conname = 'businesses_slug_key') then
+        alter table public.businesses add constraint businesses_slug_key unique (slug);
+    end if;
+end $$;
 
--- PRODUCTS TABLE (Prices for Groceries, Menu items, Hardware supplies)
+-- 4. PRODUCTS TABLE (Global Inventory Registry)
 create table if not exists public.products (
   id uuid default uuid_generate_v4() primary key,
   business_id uuid references public.businesses(id) on delete cascade not null,
@@ -109,651 +66,79 @@ create table if not exists public.products (
   stock integer default 0,
   category text,
   image_url text,
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+  is_shippable boolean default false,
+  shipping_cost numeric default 0,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  unique(business_id, name) -- Restored for fresh installs
 );
 
--- Registry Sanitization: De-duplicate before enforcing Atomic Price Anchor
+-- Ensure Unique Constraints for existing tables (Absolute Stability Phase)
 do $$ 
 begin
-    -- Remove duplicates across unified trade registry
-    delete from public.products
-    where id in (
-        select id from (
-            select id, row_number() over (partition by business_id, name order by created_at desc) as rnum
-            from public.products
-        ) t
-        where t.rnum > 1
-    );
-
-    -- Enforce Global Unique Signal
+    -- Products unique constraint
     if not exists (select 1 from pg_constraint where conname = 'products_business_id_name_key') then
         alter table public.products add constraint products_business_id_name_key unique (business_id, name);
     end if;
 end $$;
 
--- GLOBAL SHOUTOUTS TABLE (Real-time community updates & promos)
-create table if not exists public.shoutouts (
-  id uuid default uuid_generate_v4() primary key,
-  business_id uuid references public.businesses(id) on delete cascade,
-  type text check (type in ('promo', 'alert', 'update')) default 'update',
-  content text not null,
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null
-);
-
--- DELIVERER PROFILES (Specialized data for the Delivery Fleet)
-create table if not exists public.deliverer_profiles (
-  id uuid references public.profiles(id) primary key,
-  vehicle_type text check (vehicle_type in ('car', 'bike', 'truck', 'walk')) default 'car',
-  is_active boolean default false,
-  status text check (status in ('available', 'busy', 'offline')) default 'offline',
-  last_known_location point,
-  service_town text, -- Legacy text field
-  contact_phone text,
-  contact_email text
-);
-
--- Evolution: Synchronize fleet contact info
-alter table public.deliverer_profiles add column if not exists contact_phone text;
-alter table public.deliverer_profiles add column if not exists contact_email text;
-
--- DELIVERY ROUTES (Customized paths or zones defined by drivers)
-create table if not exists public.delivery_routes (
-  id uuid default uuid_generate_v4() primary key,
-  deliverer_id uuid references public.profiles(id) not null,
-  town_id uuid references public.towns(id) not null,
-  name text not null, -- e.g., "Effingham Main Loop"
-  stops jsonb default '[]'::jsonb, -- Ordered list of location points or business IDs
-  is_active boolean default true,
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null
-);
-
-alter table public.deliverer_profiles add column if not exists active_marketing jsonb default '[]'::jsonb;
-alter table public.delivery_routes add column if not exists estimated_duration integer default 0; -- In minutes
-
--- 4. ENABLE ROW LEVEL SECURITY (RLS)
-alter table public.profiles enable row level security;
-alter table public.businesses enable row level security;
-alter table public.products enable row level security;
-alter table public.shoutouts enable row level security;
-alter table public.deliverer_profiles enable row level security;
-alter table public.towns enable row level security;
-alter table public.delivery_routes enable row level security;
-
--- CLEANUP DEPLOYMENT (Protocol sanitization)
-drop policy if exists "Everyone can view profiles" on public.profiles;
-drop policy if exists "Users manage own profile" on public.profiles;
-drop policy if exists "Everyone can view businesses" on public.businesses;
-drop policy if exists "Owners manage own business" on public.businesses;
-drop policy if exists "Everyone can view products" on public.products;
-drop policy if exists "Owners manage own products" on public.products;
-drop policy if exists "Admins manage all products" on public.products;
-drop policy if exists "Everyone can view shoutouts" on public.shoutouts;
-drop policy if exists "Everyone can view deliverers" on public.deliverer_profiles;
-drop policy if exists "Everyone can view towns" on public.towns;
-drop policy if exists "Authenticated can insert towns" on public.towns;
-drop policy if exists "Everyone can view routes" on public.delivery_routes;
-
--- ATOMIC POLICY DEPLOYMENT
-create policy "Everyone can view profiles" on public.profiles for select using (true);
-create policy "Users manage own profile" on public.profiles for all using (auth.uid() = id);
-
-create policy "Everyone can view businesses" on public.businesses for select using (true);
-create policy "Owners manage own business" on public.businesses for all using (auth.uid() = owner_id);
-
-create policy "Everyone can view products" on public.products for select using (true);
-create policy "Owners manage own products" on public.products for all using (
-    exists (select 1 from public.businesses where id = business_id and owner_id = auth.uid())
-);
-create policy "Admins manage all products" on public.products for all using (
-    exists (select 1 from public.profiles where id = auth.uid() and role = 'admin')
-);
-
-create policy "Everyone can view shoutouts" on public.shoutouts for select using (true);
-create policy "Everyone can view deliverers" on public.deliverer_profiles for select using (true);
-create policy "Everyone can view towns" on public.towns for select using (true);
-create policy "Authenticated can insert towns" on public.towns for insert with check (auth.uid() is not null);
-create policy "Everyone can view routes" on public.delivery_routes for select using (true);
-
--- 5. NEIGHBORHOOD SEED DATA (Regional Discovery Network)
--- 5a. Create high-density Merchant Nodes with Tiered Delivery Protocols
-insert into public.profiles (id, full_name, role, town, subscription_tier)
-values 
-  ('e5f6a7b8-d4c3-4b2a-a198-e7d6c5b4a321', 'Local Dave', 'deliverer', 'Effingham', 'platinum'),
-  ('a1b2c3d4-e5f6-47a8-b901-c1d2e3f4a5b6', 'Merchant Silver', 'business', 'Effingham', 'silver'),
-  ('b2c3d4e5-f6a7-48b9-a0b1-c2d3e4f5a6b7', 'Merchant Gold', 'business', 'Ossipee', 'gold'),
-  ('c3d4e5f6-a7b8-49c0-b1c2-d3e4f5a6b7c8', 'Founding Platinum', 'business', 'Freedom', 'platinum')
-on conflict (id) do update set subscription_tier = excluded.subscription_tier;
-
-insert into public.deliverer_profiles (id, vehicle_type, status, is_active, service_town)
-values 
-  ('e5f6a7b8-d4c3-4b2a-a198-e7d6c5b4a321', 'truck', 'available', true, 'Effingham')
-on conflict (id) do nothing;
-
--- 5b. Towns Registration
-insert into public.towns (name, state, added_by)
-values
-  ('Effingham', 'NH', 'e5f6a7b8-d4c3-4b2a-a198-e7d6c5b4a321'),
-  ('Freedom', 'NH', 'e5f6a7b8-d4c3-4b2a-a198-e7d6c5b4a321'),
-  ('Ossipee', 'NH', 'e5f6a7b8-d4c3-4b2a-a198-e7d6c5b4a321'),
-  ('Tamworth', 'NH', 'e5f6a7b8-d4c3-4b2a-a198-e7d6c5b4a321'),
-  ('Sandwich', 'NH', 'e5f6a7b8-d4c3-4b2a-a198-e7d6c5b4a321')
-on conflict (name, state) do nothing;
-
--- 5c. Use a DO block to link businesses to newly created town IDs accurately
-do $$
-declare
-  effingham_id uuid;
-  freedom_id uuid;
-  ossipee_id uuid;
-  tamworth_id uuid;
-  sandwich_id uuid;
-begin
-  select id into effingham_id from public.towns where name = 'Effingham' limit 1;
-  select id into freedom_id from public.towns where name = 'Freedom' limit 1;
-  select id into ossipee_id from public.towns where name = 'Ossipee' limit 1;
-  select id into tamworth_id from public.towns where name = 'Tamworth' limit 1;
-  select id into sandwich_id from public.towns where name = 'Sandwich' limit 1;
-
-  -- Original Effingham Businesses with Tiered Owners & Delivery
-  insert into public.businesses (slug, name, category, location, town_id, onboarded_by, owner_id, delivery_settings, description)
-  values 
-    ('pnb-eats', 'PNB Eats', 'Restaurant', 'Effingham', effingham_id, 'e5f6a7b8-d4c3-4b2a-a198-e7d6c5b4a321', 'a1b2c3d4-e5f6-47a8-b901-c1d2e3f4a5b6', '{"base_fee": 10.00, "radius_miles": 15}'::jsonb, 'Fresh pizza & specialty subs.'),
-    ('boyles-general', 'Boyle''s General Store', 'Grocery', 'Effingham Falls', effingham_id, 'e5f6a7b8-d4c3-4b2a-a198-e7d6c5b4a321', 'b2c3d4e5-f6a7-48b9-a0b1-c2d3e4f5a6b7', '{"base_fee": 5.00, "radius_miles": 25}'::jsonb, 'Local staples & artisanal goods.'),
-    ('walts-carpentry', 'Walt''s Carpentry', 'Carpenter', 'Effingham', effingham_id, 'e5f6a7b8-d4c3-4b2a-a198-e7d6c5b4a321', 'c3d4e5f6-a7b8-49c0-b1c2-d3e4f5a6b7c8', '{"base_fee": 0.00, "radius_miles": 40}'::jsonb, 'Custom woodworking & residential hardware.')
-  on conflict (slug) do update set owner_id = excluded.owner_id, delivery_settings = excluded.delivery_settings, town_id = excluded.town_id;
-
-  -- Mark Founding Partners
-  update public.businesses 
-  set store_features = store_features || '{"is_founding_partner": true, "trade": "Carpenter"}'::jsonb 
-  where slug = 'walts-carpentry';
-
-  -- Freedom Businesses
-  insert into public.businesses (slug, name, category, location, town_id, onboarded_by, description)
-  values 
-    ('freedom-gallery', 'Village Art Gallery', 'Art & Decor', 'Freedom Village', freedom_id, 'e5f6a7b8-d4c3-4b2a-a198-e7d6c5b4a321', 'Local NH artisan crafts and fine art pieces.'),
-    ('berry-bay-supplies', 'Berry Bay Marina & Store', 'Outdoor & Grocery', 'Freedom', freedom_id, 'e5f6a7b8-d4c3-4b2a-a198-e7d6c5b4a321', 'Lakeside supplies, bait, and quick bites.')
-  on conflict (slug) do nothing;
-
-  -- Ossipee Businesses (Discovered via regional scan)
-  insert into public.businesses (slug, name, category, location, town_id, onboarded_by, description)
-  values 
-    ('yankee-smokehouse', 'Yankee Smokehouse', 'BBQ & Pizza', 'West Ossipee', ossipee_id, 'e5f6a7b8-d4c3-4b2a-a198-e7d6c5b4a321', 'Famous world-class smoked ribs and New Hampshire hospitality.'),
-    ('jakes-seafood', 'Jake''s Seafood & Grill', 'Seafood', 'Ossipee', ossipee_id, 'e5f6a7b8-d4c3-4b2a-a198-e7d6c5b4a321', 'Fresh New England favorites and coastal flavors.'),
-    ('hobbs-tavern', 'Hobbs Tavern & Brewing', 'Tavern & Brewery', 'West Ossipee', ossipee_id, 'e5f6a7b8-d4c3-4b2a-a198-e7d6c5b4a321', 'A historic tavern and microbrewery in the heart of the Ossipee Valley.')
-  on conflict (slug) do update set town_id = excluded.town_id, category = excluded.category;
-
-  -- Tamworth Businesses
-  insert into public.businesses (slug, name, category, location, town_id, onboarded_by, description)
-  values 
-    ('tamworth-distilling', 'Tamworth Distilling', 'Spirits', 'Tamworth Village', tamworth_id, 'e5f6a7b8-d4c3-4b2a-a198-e7d6c5b4a321', 'World-class wilderness spirits and botanicals.'),
-    ('the-barnstormers', 'Barnstormers Theatre Shop', 'Gifts', 'Tamworth', tamworth_id, 'e5f6a7b8-d4c3-4b2a-a198-e7d6c5b4a321', 'Curated theatrical gifts and local memorabilia.')
-  on conflict (slug) do nothing;
-
-end $$;
-
-do $$
-  declare
-    pnb_id uuid;
-    boyles_id uuid;
-    walts_id uuid;
-    yankee_id uuid;
-    jakes_id uuid;
-    hobbs_id uuid;
-  begin
-    select id into pnb_id from public.businesses where slug = 'pnb-eats';
-    select id into boyles_id from public.businesses where slug = 'boyles-general';
-    select id into walts_id from public.businesses where slug = 'walts-carpentry';
-    select id into yankee_id from public.businesses where slug = 'yankee-smokehouse';
-    select id into jakes_id from public.businesses where slug = 'jakes-seafood';
-    select id into hobbs_id from public.businesses where slug = 'hobbs-tavern';
-
-    insert into public.products (business_id, name, price, category)
-    values
-      (pnb_id, 'Large Pepperoni Pizza', 18.50, 'Eats'),
-      (pnb_id, 'Breakfast Sub', 12.99, 'Eats'),
-      (boyles_id, 'Local Honey (16oz)', 9.00, 'Grocery'),
-      (boyles_id, 'Milk (Gal)', 4.89, 'Grocery'),
-      (walts_id, 'Custom Hardware Kit', 45.99, 'Hardware'),
-      (yankee_id, 'Smokehouse Baby Back Ribs', 27.99, 'BBQ'),
-      (yankee_id, 'Beef Brisket Dinner', 28.99, 'BBQ'),
-      (yankee_id, 'Pulled Pork Platter', 26.99, 'BBQ'),
-      (yankee_id, 'Smokehouse Wings (App)', 17.99, 'Apps'),
-      (yankee_id, 'Homemade Cornbread', 5.99, 'Sides'),
-      (jakes_id, 'New England Lobster Roll', 24.99, 'Seafood'),
-      (jakes_id, 'Fried Whole Belly Clams', 22.00, 'Seafood'),
-      (hobbs_id, '12oz Prime Rib Dinner', 35.00, 'Entree'),
-      (hobbs_id, 'Steak & Cheese Eggrolls', 14.00, 'Apps'),
-      (hobbs_id, 'Bang Bang Shrimp', 18.00, 'Apps'),
-      (hobbs_id, 'Hobbs Classic Burger', 18.00, 'Entree'),
-      (hobbs_id, 'Large Specialty Pizza', 15.00, 'Pizza')
-    on conflict (business_id, name) do update set 
-      price = excluded.price,
-      category = excluded.category;
-  end $$;
-
--- 205. REGIONAL PRODUCT TEMPLATES (Autonomous Pricing)
--- Integrated with 'Oracle Hub' at Line 21
-insert into public.products_template (name, price, category, description)
-values 
-    ('Local Milk (Gal)', 4.89, 'Grocery', 'Fresh regional dairy from the Oasis network.'),
-    ('Artisan Bread (Loaf)', 5.50, 'Grocery', 'Stone-ground independent bakery staple.'),
-    ('Wildflower Honey (16oz)', 9.00, 'Grocery', 'Locally sourced Northern NH honey.'),
-    ('Regional Hardware Kit', 45.00, 'Hardware', 'Essential municipal maintenance tools.'),
-    ('Stainless Fastener Pack', 12.50, 'Hardware', 'Premium regional fastening hardware.'),
-    ('Artisan Pepperoni Pizza', 18.50, 'Restaurant', 'Regional specialty wood-fired pizza.'),
-    ('Craft Breakfast Sub', 12.99, 'Restaurant', 'Morning staple for regional explorers.')
-on conflict do nothing;
-
--- 206. AUTONOMOUS BOUTIQUE ENGINE (Trigger for New Businesses)
-create or replace function public.auto_provision_business_inventory()
-returns trigger as $$
-begin
-  -- Auto-populate products based on category match
-  insert into public.products (business_id, name, price, category, description)
-  select new.id, name, price, category, description
-  from public.products_template
-  where products_template.category = new.category;
-
-  return new;
-end;
-$$ language plpgsql;
-
-drop trigger if exists on_business_creation on public.businesses;
-create trigger on_business_creation
-after insert on public.businesses
-for each row execute function public.auto_provision_business_inventory();
-
--- 5e. AUTOMATED REGIONAL SEEDING (Autonomous Onboarding Engine)
-create or replace function public.seed_new_town_infrastructure()
-returns trigger as $$
-declare
-  new_biz_id uuid;
-begin
-  -- 1. Automate Boutique Provisioning
-  insert into public.businesses (slug, name, category, location, town_id, onboarded_by, description)
-  values (
-    lower(replace(new.name, ' ', '-')) || '-provision-node',
-    'The ' || new.name || ' General Store',
-    'Provisions & Hub',
-    new.name,
-    new.id,
-    new.added_by,
-    'Autonomous municipal discovery node for essential regional provisions.'
-  )
-  returning id into new_biz_id;
-
-  -- 2. Autonomous Price Matching (Populate from Regional Template)
-  insert into public.products (business_id, name, price, category, description)
-  select new_biz_id, name, price, category, description
-  from public.products_template;
-
-  -- 3. Broadcast Municipal Arrival
-  insert into public.shoutouts (business_id, type, content)
-  values (
-    new_biz_id,
-    'alert',
-    'A NEW MUNICIPAL DISCOVERY NODE HAS BEEN OPENED IN ' || upper(new.name) || '! Essential provisions are now price-matched and open for transit.'
-  );
-
-  return new;
-end;
-$$ language plpgsql;
-
-drop trigger if exists on_town_creation on public.towns;
-create trigger on_town_creation
-after insert on public.towns
-for each row execute function public.seed_new_town_infrastructure();
-
--- 202. INVENTORY LOGISTICS (Supply Chain Tracking)
-create or replace function decrement_stock(p_product_id uuid, p_quantity int)
-returns void as $$
-begin
-  update public.products
-  set stock = stock - p_quantity
-  where id = p_product_id and stock >= p_quantity;
-  
-  if not found then
-    raise exception 'Insufficient stock for product %', p_product_id;
-  end if;
-end;
-$$ language plpgsql;
-
-create table if not exists public.inventory_logistics (
-  id uuid default uuid_generate_v4() primary key,
-  business_id uuid references public.businesses(id) not null,
-  product_id uuid references public.products(id),
-  tracking_id text unique,
-  source_node text, -- Where the import is coming from (e.g., "Ossipee Hub")
-  destination_node uuid references public.towns(id),
-  status text check (status in ('pending', 'transit', 'delivered', 'intake')) default 'pending',
-  quantity integer not null,
-  eta timestamp with time zone,
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null
-);
-
-alter table public.inventory_logistics enable row level security;
-
--- 221. ORDERS TABLE (Core Commerce Engine)
+-- 5. ORDERS TABLE (Core Commerce Engine)
 create table if not exists public.orders (
   id uuid default uuid_generate_v4() primary key,
   business_id uuid references public.businesses(id) not null,
-  consumer_id uuid references public.profiles(id), -- Nullable if guest checkout
+  consumer_id uuid references public.profiles(id),
   customer_name text,
-  customer_contact text, -- Phone number or social handle
-  channel text check (channel in ('web', 'sms', 'instagram', 'offline')) default 'web',
+  customer_contact text,
   status text check (status in ('pending', 'processing', 'transit', 'delivered', 'cancelled')) default 'pending', 
   total numeric not null,
-  items jsonb, -- Snapshot of cart items: [{id, name, price, quantity}]
+  items jsonb, -- Snapshot: [{id, name, price, quantity}]
   type text check (type in ('pickup', 'shipping', 'delivery', 'in-house')) default 'pickup',
   address text,
-  table_number text, -- Legacy/Manual label
-  table_id uuid references public.seating_layouts(id), -- ATOMIC LINK: Physical seating assignment
-  deliverer_id uuid references public.profiles(id), -- The citizen/agent handling fulfillment
+  table_id uuid, -- Reference to seating
+  deliverer_id uuid references public.profiles(id),
+  tracking_number text,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
--- 222. FLEET PROXIMITY (Real-time GPS nodes)
-create table if not exists public.deliverer_locations (
-  deliverer_id uuid references public.profiles(id) primary key,
-  lat double precision,
-  lng double precision,
-  updated_at timestamp with time zone default now()
-);
+-- SEEDING (Municipal & Big Store Trade Matrix)
+insert into public.towns (name) values ('Effingham'), ('Livingston'), ('Ossipee Lake'), ('Freedom')
+on conflict (name) do nothing;
 
--- RPC for Deliverers to Update Order Status
-create or replace function update_order_status(p_order_id uuid, p_status text)
-returns void as $$
-begin
-  update public.orders
-  set status = p_status
-  where id = p_order_id;
-end;
-$$ language plpgsql;
-
--- RPC for Deliverers to Claim Regional Transit Orders
-create or replace function claim_order(p_order_id uuid, p_deliverer_id uuid)
-returns void as $$
-begin
-  update public.orders
-  set deliverer_id = p_deliverer_id,
-      status = 'processing' -- Mark as active fulfillment
-  where id = p_order_id and deliverer_id is null;
-  
-  if not found then
-    raise exception 'Order already claimed or does not exist.';
-  end if;
-end;
-$$ language plpgsql;
-
--- 222. SEATING LAYOUTS (Architect Mode storage)
-create table if not exists public.seating_layouts (
-  id uuid default uuid_generate_v4() primary key,
-  business_id uuid references public.businesses(id) not null unique,
-  layout_json jsonb not null default '[]'::jsonb, -- Array of Table objects: {id, number, capacity, x, y, rotation}
-  updated_at timestamp with time zone default timezone('utc'::text, now())
-);
-
--- 223. MESSAGES TABLE (AI Context & History)
-create table if not exists public.messages (
-    id uuid default uuid_generate_v4() primary key,
-    business_id uuid references public.businesses(id),
-    customer_contact text not null, -- Phone or Handle
-    channel text not null,
-    direction text check (direction in ('inbound', 'outbound')),
-    content text,
-    created_at timestamp with time zone default timezone('utc'::text, now()) not null
-);
-
--- 284. FLEET ADS TABLE (In-Car Marketing Interface)
-create table if not exists public.fleet_ads (
-  id uuid default uuid_generate_v4() primary key,
-  business_id uuid references public.businesses(id) not null,
-  product_id uuid references public.products(id), -- Optional: Link to a specific SKU
-  headline text not null,
-  image_url text, -- High-contrast 'Dashboard-Optimized' creative
-  target_town_id uuid references public.towns(id), -- Geo-fencing for ads
-  is_active boolean default true,
-  display_duration integer default 15, -- How many seconds to show the ad in the rotation
-  campaign_expires_at timestamp with time zone default (now() + interval '30 days'), -- The 'Advertising Clock' for contract expiry
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null
-);
-
-alter table public.fleet_ads enable row level security;
-create policy "Public view fleet ads" on public.fleet_ads for select using (true);
-create policy "Owners manage own fleet ads" on public.fleet_ads for all using (
-    exists (select 1 from public.businesses where id = business_id and owner_id = auth.uid())
-);
-
--- 285. RLS FOR COMMERCE & ARCHITECTURE
-alter table public.orders enable row level security;
-alter table public.seating_layouts enable row level security;
-alter table public.messages enable row level security;
-
--- CLEANUP OLD POLICIES (Fix for ERROR 42710)
-drop policy if exists "Owners view own orders" on public.orders;
-drop policy if exists "Users view own orders" on public.orders;
-drop policy if exists "Public insert orders" on public.orders;
-drop policy if exists "Public view layouts" on public.seating_layouts;
-drop policy if exists "Public view fleet ads" on public.fleet_ads;
-drop policy if exists "Owners manage own fleet ads" on public.fleet_ads;
-drop policy if exists "Owners insert layout" on public.seating_layouts;
-drop policy if exists "Owners update layout" on public.seating_layouts;
-drop policy if exists "Owners manage messages" on public.messages;
-drop policy if exists "Owners view own logistics" on public.inventory_logistics;
-drop policy if exists "Admins manage all logistics" on public.inventory_logistics;
-
--- Orders: Owner select own, User select own, Anyone insert
-create policy "Owners view own orders" on public.orders for select using (
-    exists (select 1 from public.businesses where id = business_id and owner_id = auth.uid())
-);
-create policy "Users view own orders" on public.orders for select using (auth.uid() = consumer_id);
-create policy "Public insert orders" on public.orders for insert with check (true);
-
--- Seating: Public view, Owner manage
-create policy "Public view layouts" on public.seating_layouts for select using (true);
-create policy "Owners insert layout" on public.seating_layouts for insert with check (
-    exists (select 1 from public.businesses where id = business_id and owner_id = auth.uid())
-);
-create policy "Owners update layout" on public.seating_layouts for update using (
-    exists (select 1 from public.businesses where id = business_id and owner_id = auth.uid())
-);
-
--- Messages: Owner manage
-create policy "Owners manage messages" on public.messages for select using (
-    exists (select 1 from public.businesses where id = business_id and owner_id = auth.uid())
-);
-
--- Logistics: Owner view own, Admin all
-create policy "Owners view own logistics" on public.inventory_logistics for select using (
-    exists (select 1 from public.businesses where id = business_id and owner_id = auth.uid())
-);
-create policy "Admins manage all logistics" on public.inventory_logistics for all using (
-    exists (select 1 from public.profiles where id = auth.uid() and role = 'admin')
-);
-
--- 224. FLEET LOGISTICS ENGINE (Route Synchronization)
-create or replace function public.add_stop_to_route(p_route_id uuid, p_business_id uuid)
-returns void as $$
-begin
-    update public.delivery_routes
-    set stops = stops || jsonb_build_array(p_business_id)
-    where id = p_route_id;
-end;
-$$ language plpgsql;
-
-create or replace function public.get_route_stops(p_route_id uuid)
-returns table (id uuid, name text, category text, location text, image_url text) as $$
-begin
-    return query
-    select b.id, b.name, b.category, b.location, b.image_url
-    from public.businesses b
-    join public.delivery_routes r on b.id = any(array(select jsonb_array_elements_text(r.stops)::uuid))
-    where r.id = p_route_id;
-end;
-$$ language plpgsql;
-
-create or replace function public.trigger_seed_business_inventory()
-returns trigger as $$
-begin
-    -- Auto-dispatch regional products based on industry category
-    insert into public.products (business_id, name, price, description, category, image_url)
-    select 
-        new.id,
-        name,
-        price,
-        description,
-        category,
-        image_url
-    from public.products_template
-    where category = new.category;
-
-    return new;
-end;
-$$ language plpgsql;
-
-drop trigger if exists on_business_onboarding on public.businesses;
-create trigger on_business_onboarding
-after insert on public.businesses
-for each row execute function public.trigger_seed_business_inventory();
-
--- 225. SEED DATA FINISHING TOUCHES
 do $$
 declare
-  pnb_id uuid;
-  boyles_id uuid;
-  walts_id uuid;
-  effingham_id uuid;
   freedom_id uuid;
 begin
-  select id into pnb_id from public.businesses where slug = 'pnb-eats';
-  select id into boyles_id from public.businesses where slug = 'boyles-general';
-  select id into walts_id from public.businesses where slug = 'walts-carpentry';
-  select id into effingham_id from public.towns where name = 'Effingham' limit 1;
-  select id into freedom_id from public.towns where name = 'Freedom' limit 1;
+  select id into freedom_id from public.towns where name = 'Freedom';
 
-  -- Update Business Integration & Partner Tier Details
-  update public.businesses set integrations = '{"phone": "(603) 539-7700"}'::jsonb, store_features = store_features || '{"tier": "Founding Partner"}'::jsonb where slug = 'pnb-eats';
-  update public.businesses set integrations = '{"phone": "(603) 539-2500"}'::jsonb, store_features = store_features || '{"tier": "Founding Partner"}'::jsonb where slug = 'boyles-general';
-  update public.businesses set integrations = '{"phone": "(603) 231-1042"}'::jsonb, store_features = store_features || '{"tier": "Founding Partner"}'::jsonb where slug = 'walts-carpentry';
-  
-  -- Calibrate Regional Discovery Nodes (GPS)
-  update public.businesses set lat = 43.7612, lng = -71.0134 where slug = 'pnb-eats';
-  update public.businesses set lat = 43.7590, lng = -71.0150 where slug = 'boyles-general';
-  update public.businesses set lat = 43.7620, lng = -71.0120 where slug = 'walts-carpentry';
-  update public.businesses set lat = 43.7123, lng = -71.1189 where slug = 'yankee-smokehouse';
-  update public.businesses set lat = 43.7110, lng = -71.1210 where slug = 'jakes-seafood';
-  update public.businesses set lat = 43.7135, lng = -71.1170 where slug = 'hobbs-tavern';
-  update public.businesses set lat = 43.8115, lng = -71.0422 where slug = 'freedom-gallery';
-  update public.businesses set lat = 43.8100, lng = -71.0450 where slug = 'berry-bay-supplies';
+  -- Regional Local Node
+  insert into public.businesses (slug, name, category, location, town_id)
+  values ('the-spot-freedom', 'The Spot Freedom', 'Restaurant', 'Downtown Freedom', freedom_id)
+  on conflict (slug) do nothing;
 
-  -- Ossipee & Freedom Contacts
-  update public.businesses set integrations = '{"phone": "(603) 539-7427"}'::jsonb where slug = 'yankee-smokehouse';
-  update public.businesses set integrations = '{"phone": "(603) 539-3371"}'::jsonb where slug = 'jakes-seafood';
-  update public.businesses set integrations = '{"phone": "(603) 539-2000"}'::jsonb where slug = 'hobbs-tavern';
-  update public.businesses set integrations = '{"phone": "(603) 539-6014"}'::jsonb where slug = 'freedom-gallery';
-  update public.businesses set integrations = '{"phone": "(603) 539-0110"}'::jsonb where slug = 'berry-bay-supplies';
+  -- Big Store Node
+  insert into public.businesses (slug, name, category, location, is_big_store)
+  values ('walmart-regional', 'Walmart Supercenter', 'Big Store', 'Regional Hub', true)
+  on conflict (slug) do nothing;
 
-  insert into public.fleet_ads (business_id, headline, display_duration, image_url)
-  values
-    (pnb_id, 'Artisan Pizza. Regional Soul.', 15, 'https://images.unsplash.com/photo-1513104890138-7c749659a591?q=80&w=1000&auto=format&fit=crop'),
-    (boyles_id, 'Local Provisions. Generational Quality.', 20, 'https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=1000&auto=format&fit=crop')
-  on conflict do nothing;
-
-  -- 286. MOBILE VANGUARDS (Storefrontless Advocacy)
-  insert into public.businesses (slug, name, category, location, town_id, onboarded_by, description, lat, lng)
-  values 
-    ('structural-repairs', 'Structural Repair Node', 'Service', 'Effingham', effingham_id, 'e5f6a7b8-d4c3-4b2a-a198-e7d6c5b4a321', 'Regional artisan repairs and plumbing. Mobile primary node.', 43.7650, -71.0100),
-    ('homestead-systems', 'Holistic Homestead Systems', 'Consulting', 'Freedom', freedom_id, 'e5f6a7b8-d4c3-4b2a-a198-e7d6c5b4a321', 'Expert organic gardening and homestead design.', 43.8120, -71.0410),
-    ('the-spot', 'The Spot', 'Restaurant/Apizza', 'Effingham', effingham_id, 'e5f6a7b8-d4c3-4b2a-a198-e7d6c5b4a321', 'Regional Apizza, Subs, and Breakfast. The heart of regional independent dining.', 43.7630, -71.0110)
-  on conflict (slug) do update set
-    lat = excluded.lat,
-    lng = excluded.lng;
-
+  -- Product Registry Ingest
   declare
-    the_spot_id uuid;
+    spot_id uuid;
+    wm_id uuid;
   begin
-    select id into the_spot_id from public.businesses where slug = 'the-spot';
+    select id into spot_id from public.businesses where slug = 'the-spot-freedom';
+    select id into wm_id from public.businesses where slug = 'walmart-regional';
 
-    -- "THE SPOT" EXHAUSTIVE MENU DISPATCH
-    insert into public.products (business_id, name, price, category, description)
-    values 
-      (the_spot_id, 'French Fries', 4.99, 'Sides', 'Regional classic side.'),
-      (the_spot_id, 'Onion Rings', 7.99, 'Sides', 'Crispy beer battered.'),
-      (the_spot_id, 'Mozzarella Sticks (6)', 7.99, 'Sides', 'Marinara for dipping.'),
-      (the_spot_id, 'Chicken Fingers', 9.99, 'Sides', 'Ranch or blue cheese.'),
-      (the_spot_id, 'Buffalo Fingers', 9.99, 'Sides', 'Ranch or blue cheese.'),
-      (the_spot_id, 'Chicken Wings (6)', 9.99, 'Sides', 'Ranch or blue cheese.'),
-      (the_spot_id, 'Buffalo Wings (6)', 9.99, 'Sides', 'Ranch or blue cheese.'),
-      (the_spot_id, 'Garlic Bread', 3.99, 'Sides', 'Warm discovery-ready bread.'),
-      (the_spot_id, 'Garden Salad', 8.95, 'Salads', 'Iceberg & Romaine, red onion, tomatoes, olives.'),
-      (the_spot_id, 'Caesar Salad', 8.95, 'Salads', 'Creamy Caesar dressing, croutons & grated cheese.'),
-      (the_spot_id, 'Chef Salad', 12.99, 'Salads', 'Garden salad with ham, turkey, Swiss, cheddar, & egg.'),
-      (the_spot_id, 'Traditional Greek Salad', 12.99, 'Salads', 'Kalamata olives, feta cheese, and Greek dressing.'),
-      (the_spot_id, 'Ham & Cheese Sub', 8.95, 'Subs/Wraps', 'Choice of cheese and toppings.'),
-      (the_spot_id, 'Oven Roasted Turkey Sub', 9.75, 'Subs/Wraps', 'Choice of cheese and toppings.'),
-      (the_spot_id, 'Italian Sub', 10.75, 'Subs/Wraps', 'Ham, salami, capicola, & provolone.'),
-      (the_spot_id, 'Roast Beef Sub', 11.99, 'Subs/Wraps', 'Choice of cheese and toppings.'),
-      (the_spot_id, 'Turkey Club', 10.50, 'Subs/Wraps', 'Turkey, ham, provolone, & bacon with lettuce, tomato, mayo.'),
-      (the_spot_id, 'BLT Sub', 9.75, 'Subs/Wraps', 'Hickory smoked bacon with lettuce, tomato, mayo.'),
-      (the_spot_id, 'Veggie Sub', 8.99, 'Subs/Wraps', 'Your choice of veggies & cheese.'),
-      (the_spot_id, 'Chicken Caesar Wrap', 11.50, 'Subs/Wraps', 'Crispy or grilled chicken.'),
-      (the_spot_id, 'Tuna Salad Sub', 7.99, 'Subs/Wraps', 'Choice of cheese & toppings.'),
-      (the_spot_id, 'Egg Salad Sub', 7.99, 'Subs/Wraps', 'Choice of cheese & toppings.'),
-      (the_spot_id, 'Cheeseburger', 7.50, 'Burgers', 'Choice of cheese & toppings.'),
-      (the_spot_id, 'Swiss Burger', 9.25, 'Burgers', 'Sauteed mushrooms & Swiss.'),
-      (the_spot_id, 'Buffalo Burger', 9.25, 'Burgers', 'Mozzarella cheese.'),
-      (the_spot_id, 'Bacon Cheeseburger', 9.50, 'Burgers', 'Hickory smoked bacon.'),
-      (the_spot_id, 'Southwest Burger', 9.50, 'Burgers', 'Bacon, BBQ sauce, & mozzarella cheese.'),
-      (the_spot_id, 'Steak & Cheese', 10.50, 'Hot Subs', 'Choice of onions, peppers, & mushrooms.'),
-      (the_spot_id, 'Steak Bomb', 11.99, 'Hot Subs', 'Onions, peppers, mushrooms, & pepperoni.'),
-      (the_spot_id, 'Grilled Chicken Breast Sub', 10.25, 'Hot Subs', 'Lettuce, tomato, & onion.'),
-      (the_spot_id, 'Cheeseburger Sub', 10.50, 'Hot Subs', 'Lettuce, tomato, onions, & pickles.'),
-      (the_spot_id, 'French Dip', 11.99, 'Hot Subs', 'Hot roast beef with au jus & mozzarella cheese.'),
-      (the_spot_id, 'Pastrami & Swiss', 11.99, 'Hot Subs', 'Grilled red pastrami topped with Swiss cheese.'),
-      (the_spot_id, 'Reuben', 11.25, 'Hot Subs', 'Grilled red pastrami, kraut, Swiss.'),
-      (the_spot_id, 'Chicken Cheese Steak', 10.99, 'Hot Subs', 'Onions, peppers, & mushrooms.'),
-      (the_spot_id, 'BBQ Chicken Sub', 10.99, 'Hot Subs', 'Bacon & mozzarella cheese.'),
-      (the_spot_id, 'Chicken Finger Sub', 10.99, 'Hot Subs', 'American cheese, lettuce, tomato, & mayo.'),
-      (the_spot_id, 'Buffalo Finger Sub', 10.99, 'Hot Subs', 'Buffalo sauce, mozzarella, ranch or blue cheese.'),
-      (the_spot_id, 'Meatball Parmesan', 10.99, 'Hot Subs', 'Always HOMEMADE!!!!'),
-      (the_spot_id, 'Chicken Parmesan Sub', 10.75, 'Hot Subs', 'Regional breaded favorite.'),
-      (the_spot_id, 'Cheese Apizza', 10.95, 'Apizza', 'Wood-fired regional staple.'),
-      (the_spot_id, 'Gluten-Free Cheese Apizza', 13.95, 'Apizza', 'Regional inclusion node.'),
-      (the_spot_id, 'The Margherita Apizza', 15.50, 'Specialty Apizza', 'Fresh mozzarella, garlic, tomatoes, fresh basil.'),
-      (the_spot_id, 'The Hawaiian Apizza', 13.99, 'Specialty Apizza', 'Ham & pineapple.'),
-      (the_spot_id, 'The Meateater Apizza', 18.95, 'Specialty Apizza', 'Sausage, ham, pepperoni, meatball, & bacon.'),
-      (the_spot_id, 'Veggie Lover Apizza', 15.50, 'Specialty Apizza', 'Spinach, tomatoes, broccoli, garlic, veggies.'),
-      (the_spot_id, 'BBQ Chicken Apizza', 16.25, 'Specialty Apizza', 'BBQ sauce, chicken, red onion, & bacon.'),
-      (the_spot_id, 'Buffalo Chicken Apizza', 16.25, 'Specialty Apizza', 'Ranch/blue cheese, chicken, buffalo sauce.'),
-      (the_spot_id, 'All White Apizza', 15.99, 'Specialty Apizza', 'Ricotta, mozzarella, garlic, spinach, tomatoes.'),
-      (the_spot_id, 'The Spot Special Apizza', 20.95, 'Specialty Apizza', 'Pepperoni, sausage, hamburger, 9+ toppings.'),
-      (the_spot_id, 'Cheese Calzone', 13.75, 'Calzones', 'Ricotta & mozzarella.'),
-      (the_spot_id, 'Ham & Cheese Calzone', 14.50, 'Calzones', 'Regional comfort node.'),
-      (the_spot_id, 'Veggie Calzone', 18.25, 'Calzones', 'Spinach, tomatoes, peppers, onions, mushrooms.'),
-      (the_spot_id, 'The Meats Calzone', 23.95, 'Calzones', 'Salami, ham, bacon, sausage, & meatball.'),
-      (the_spot_id, 'Bomb Calzone', 22.95, 'Calzones', 'Shaved steak, peppers, onions, mushrooms, pepperoni.'),
-      (the_spot_id, 'Italian Stromboli', 21.50, 'Calzones', 'Ham, capicola, pepperoni, mozzarella.'),
-      (the_spot_id, 'Bacon, Egg & Cheese', 4.50, 'Breakfast', 'Regional morning morning.'),
-      (the_spot_id, 'Sausage, Egg & Cheese', 4.50, 'Breakfast', 'The Oasis breakfast node.'),
-      (the_spot_id, 'Ham, Egg & Cheese', 4.50, 'Breakfast', 'Reliable municipal fuel.'),
-      (the_spot_id, 'Steak, Egg & Cheese', 5.95, 'Breakfast', 'High-density morning nutrition.'),
-      (the_spot_id, 'Bagel with Cream Cheese', 3.99, 'Breakfast', 'Regional independent bread selection.'),
-      (the_spot_id, 'Bagel with Butter', 3.99, 'Breakfast', 'Simple discovery fuel.')
-    on conflict (business_id, name) do update set
-      price = excluded.price,
-      category = excluded.category,
-      description = excluded.description;
+    if spot_id is not null then
+      insert into public.products (business_id, name, price, category, is_shippable, shipping_cost)
+      values (spot_id, 'Artisan Pizza', 12.00, 'Food', false, 0)
+      on conflict (business_id, name) do nothing;
+    end if;
+
+    if wm_id is not null then
+      insert into public.products (business_id, name, price, category, is_shippable, shipping_cost)
+      values 
+        (wm_id, 'Regional 4K TV', 299.00, 'Electronics', true, 25.00),
+        (wm_id, 'Durable Camp Tent', 45.00, 'Outdoor', true, 12.00)
+      on conflict (business_id, name) do nothing;
+    end if;
   end;
-
-  insert into public.fleet_ads (business_id, headline, display_duration)
-  select id, 'Reliable Regional Repairs. Mobile Service.', 15 from public.businesses where slug = 'structural-repairs'
-  on conflict do nothing;
-
-  insert into public.fleet_ads (business_id, headline, display_duration)
-  select id, 'Transform Your Garden. Regional Homesteading.', 12 from public.businesses where slug = 'homestead-systems'
-  on conflict do nothing;
 end $$;
-
-insert into public.shoutouts (business_id, type, content)
-select id, 'update', 'Fresh local artisan cheese arriving today at 2 PM!' from public.businesses where slug = 'boyles-general'
-on conflict do nothing;

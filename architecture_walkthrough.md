@@ -68,4 +68,4 @@ The current architecture is ready for:
 - **Logistics Intel:** Visualizing "Fulfillment Heatmaps" to help agents find the most active municipal loops.
 
 > [!IMPORTANT]
-> To activate these systems, ensure you run the `supabase/comprehensive_discovery.sql` script. It initializes all triggers, RPCs, and registries described above.
+> To activate these systems, ensure you run the `supabase/oasis_unified_registry.sql` script. It initializes all triggers, RPCs, and registries described above, ensuring absolute stabilization and atomic growth.

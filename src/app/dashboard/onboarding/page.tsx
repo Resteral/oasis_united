@@ -7,19 +7,31 @@ export default function OnboardingPage() {
     const router = useRouter();
     const [step, setStep] = useState(1);
     const [loading, setLoading] = useState(false);
-    
+
     // Core Identity
     const [name, setName] = useState('');
     const [slug, setSlug] = useState('');
     const [category, setCategory] = useState('Retail');
     const [userId, setUserId] = useState<string | null>(null);
     const [smartPreview, setSmartPreview] = useState<any[]>([]);
+    const [towns, setTowns] = useState<any[]>([]);
+    const [townId, setTownId] = useState('');
+    const [location, setLocation] = useState('');
 
     useEffect(() => {
         supabase.auth.getUser().then(({ data: { user } }) => {
             if (user) setUserId(user.id);
             else router.push('/login');
         });
+
+        async function fetchInitial() {
+            const { data } = await supabase.from('towns').select('*');
+            if (data) {
+                setTowns(data);
+                if (data.length > 0) setTownId(data[0].id);
+            }
+        }
+        fetchInitial();
     }, [router]);
 
     // 📡 Oasis Smart Oracle: Fetch predicted inventory
@@ -56,6 +68,8 @@ export default function OnboardingPage() {
                         name,
                         slug: slug.toLowerCase().replace(/ /g, '-').replace(/[^\w-]/g, ''),
                         category,
+                        location,
+                        town_id: townId,
                         description: `Welcome to ${name}!`,
                         store_features: storeFeatures
                     }
@@ -122,6 +136,31 @@ export default function OnboardingPage() {
                                 </div>
 
                                 <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest pl-1">Municipal Town</label>
+                                    <select
+                                        className="w-full p-4 bg-gray-50 border border-transparent focus:border-indigo-600 focus:bg-white rounded-2xl outline-none transition-all font-bold text-gray-900 shadow-inner appearance-none cursor-pointer"
+                                        value={townId}
+                                        onChange={(e) => setTownId(e.target.value)}
+                                        required
+                                    >
+                                        {towns.map(t => (
+                                            <option key={t.id} value={t.id}>{t.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest pl-1">Physical Address / Area</label>
+                                    <input
+                                        className="w-full p-4 bg-gray-50 border border-transparent focus:border-indigo-600 focus:bg-white rounded-2xl outline-none transition-all font-bold text-gray-900 shadow-inner"
+                                        placeholder="e.g. 123 Main St, Freedom"
+                                        value={location}
+                                        onChange={(e) => setLocation(e.target.value)}
+                                        required
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
                                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest pl-1">Category</label>
                                     <select
                                         className="w-full p-4 bg-gray-50 border border-transparent focus:border-indigo-600 focus:bg-white rounded-2xl outline-none transition-all font-bold text-gray-900 shadow-inner appearance-none cursor-pointer"
@@ -182,18 +221,17 @@ export default function OnboardingPage() {
                                 {(category === 'Restaurant' || category === 'Cafe') && (
                                     <div className="space-y-6 bg-gray-50 p-8 rounded-3xl border border-gray-100">
                                         <label className="text-[10px] font-black italic text-indigo-600 uppercase tracking-widest block mb-4">Seating Alignment</label>
-                                        
+
                                         <div className="grid grid-cols-2 gap-4">
                                             {['indoors', 'outdoors', 'booth', 'bar'].map((type) => (
                                                 <button
                                                     key={type}
                                                     type="button"
                                                     onClick={() => setSeatingType(type)}
-                                                    className={`p-4 rounded-2xl border-2 transition-all font-black text-[10px] uppercase tracking-widest ${
-                                                        seatingType === type 
-                                                        ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg' 
-                                                        : 'bg-white border-gray-100 text-gray-400 hover:border-indigo-300'
-                                                    }`}
+                                                    className={`p-4 rounded-2xl border-2 transition-all font-black text-[10px] uppercase tracking-widest ${seatingType === type
+                                                            ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg'
+                                                            : 'bg-white border-gray-100 text-gray-400 hover:border-indigo-300'
+                                                        }`}
                                                 >
                                                     {type}
                                                 </button>
@@ -218,9 +256,9 @@ export default function OnboardingPage() {
                                         <span className="text-[10px] font-black text-gray-900 uppercase tracking-tight">Public WiFi</span>
                                         <span className="text-[9px] text-gray-400 font-medium tracking-tight">Available for guest checkout</span>
                                     </div>
-                                    <input 
-                                        type="checkbox" 
-                                        className="w-6 h-6 accent-indigo-600" 
+                                    <input
+                                        type="checkbox"
+                                        className="w-6 h-6 accent-indigo-600"
                                         checked={wifi}
                                         onChange={(e) => setWifi(e.target.checked)}
                                     />

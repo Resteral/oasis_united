@@ -36,9 +36,22 @@ export default function DashboardOverview() {
                 return;
             }
 
+            const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+            
+            if (profile?.role === 'deliverer') {
+                window.location.href = '/dashboard/fleet';
+                return;
+            }
+
             const { data: business } = await supabase.from('businesses').select('id, name').eq('owner_id', user.id).single();
             
+            if (!business && profile?.role === 'business') {
+                window.location.href = '/dashboard/onboarding';
+                return;
+            }
+
             if (!business) {
+                // If no business and not a deliverer, maybe they need to onboard as business or they are just a consumer viewing the dashboard (which shouldn't happen, but let's be safe)
                 window.location.href = '/dashboard/onboarding';
                 return;
             }

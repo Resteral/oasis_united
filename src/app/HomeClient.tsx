@@ -4,7 +4,7 @@ import Link from 'next/link';
 import styles from './page.module.css';
 import { supabase } from '@/lib/supabase';
 import { GooglePlace } from '@/lib/types';
-import GlobalSearch from '@/components/GlobalSearch';
+import OasisCompass from '@/components/OasisCompass';
 
 interface HomeClientProps {
   initialBusinesses: any[];
@@ -70,11 +70,9 @@ export default function HomeClient({ initialBusinesses }: HomeClientProps) {
               The premier independent discovery engine for localized boutiques, logistics, and neighborhood infrastructure.
             </p>
 
-            <div className="max-w-2xl mx-auto pt-10 animate-in fade-in slide-in-from-bottom-12 duration-1000 delay-700">
-              <div className="glass p-2 rounded-[3.5rem] shadow-3xl">
-                <GlobalSearch />
-              </div>
-              <div className="mt-8 flex flex-wrap justify-center gap-6">
+            <div className="max-w-4xl mx-auto pt-10 animate-in fade-in slide-in-from-bottom-12 duration-1000 delay-700">
+                <OasisCompass />
+              <div className="mt-20 flex flex-wrap justify-center gap-8 relative z-20">
                 <Link href="/marketplace" className="px-12 py-6 bg-white text-black rounded-3xl font-black text-xs uppercase tracking-widest hover:bg-amber-400 transition-all shadow-2xl hover:scale-105 active:scale-95 duration-300">
                   Enter The Oasis →
                 </Link>

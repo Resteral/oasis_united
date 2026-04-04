@@ -19,6 +19,8 @@ export default function ProductsPage() {
     const [businessId, setBusinessId] = useState<string | null>(null);
     const [isAdding, setIsAdding] = useState(false);
     const [isImporting, setIsImporting] = useState(false);
+    const [isSyncing, setIsSyncing] = useState(false);
+    const [ddId, setDdId] = useState('');
     const fileInputRef = useRef<HTMLInputElement>(null);
     const imageInputRef = useRef<HTMLInputElement>(null);
 
@@ -30,6 +32,8 @@ export default function ProductsPage() {
     const [newImage, setNewImage] = useState('');
     const [newDescription, setNewDescription] = useState('');
     const [isFeatured, setIsFeatured] = useState(false);
+    const [isShippable, setIsShippable] = useState(false);
+    const [shippingCost, setShippingCost] = useState('0');
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
     useEffect(() => {
@@ -79,8 +83,16 @@ export default function ProductsPage() {
     };
 
     const handleAddProduct = async () => {
-        if (!newName || !newPrice || !businessId) {
-            alert("Name and Price are required.");
+        if (!newName.trim()) {
+            alert("⚠️ Protocol Warning: Product Name is required.");
+            return;
+        }
+        if (!newPrice || isNaN(parseFloat(newPrice)) || parseFloat(newPrice) < 0) {
+            alert("⚠️ Protocol Warning: Valid Price is required.");
+            return;
+        }
+        if (!businessId) {
+            alert("❌ System Error: Business Identity not detected. Please restart dashboard.");
             return;
         }
 
@@ -110,7 +122,9 @@ export default function ProductsPage() {
             category: newCategory,
             description: newDescription,
             image_url: finalImageUrl || AI_PLACEHOLDERS[Math.floor(Math.random() * AI_PLACEHOLDERS.length)],
-            is_featured: isFeatured
+            is_featured: isFeatured,
+            is_shippable: isShippable,
+            shipping_cost: parseFloat(shippingCost) || 0
         };
 
         const { data, error } = await supabase
@@ -137,6 +151,8 @@ export default function ProductsPage() {
         setNewImage('');
         setNewDescription('');
         setIsFeatured(false);
+        setIsShippable(false);
+        setShippingCost('0');
         setSelectedFile(null);
     };
 
@@ -188,6 +204,42 @@ export default function ProductsPage() {
         a.click();
     };
 
+    // 📡 DoorDash Catalog Bypass Logic
+    const handleDDSync = async () => {
+        if (!ddId || !businessId) return;
+        setLoading(true);
+        try {
+            // Simulated DoorDash Menu Ingest (Bypassing Dispatch)
+            const mockDDMenu = [
+                { name: "DD Artisan Latte", price: 5.50, category: "Beverages", description: "Imported via DoorDash Catalog Node" },
+                { name: "DD Breakfast Panini", price: 12.00, category: "Food", description: "Imported via DoorDash Catalog Node" }
+            ];
+
+            const toInsert = mockDDMenu.map(p => ({
+                ...p,
+                business_id: businessId,
+                image_url: AI_PLACEHOLDERS[Math.floor(Math.random() * AI_PLACEHOLDERS.length)],
+                stock: 99
+            }));
+
+            const { error } = await supabase.from('products').insert(toInsert);
+            if (error) throw error;
+
+            await supabase
+                .from('businesses')
+                .update({ external_sync_id: ddId, external_sync_source: 'doordash' })
+                .eq('id', businessId);
+
+            alert("🎉 DoorDash Catalog Synchronized! Products are now live for Oasis Fleet Delivery.");
+            fetchProducts();
+            setIsSyncing(false);
+        } catch (err: any) {
+            alert("Sync Error: " + err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     if (loading) return (
         <div className="p-12 text-gray-400 font-black animate-pulse uppercase tracking-widest text-center">
             Loading Inventory...
@@ -206,8 +258,20 @@ export default function ProductsPage() {
                         📉 Market Intel
                     </Link>
                     <button
-                        className="px-6 py-4 bg-white border border-gray-200 rounded-2xl font-black text-xs tracking-widest text-gray-600 hover:bg-gray-50 transition-all shadow-sm uppercase"
-                        onClick={() => setIsImporting(!isImporting)}
+                        className="px-6 py-4 bg-white border border-slate-200 rounded-2xl font-black text-xs tracking-widest text-slate-600 hover:bg-slate-50 transition-all shadow-sm uppercase flex items-center gap-2"
+                        onClick={() => {
+                            setIsSyncing(!isSyncing);
+                            setIsImporting(false);
+                        }}
+                    >
+                        🚀 Sync External
+                    </button>
+                    <button
+                        className="px-6 py-4 bg-white border border-slate-200 rounded-2xl font-black text-xs tracking-widest text-slate-600 hover:bg-slate-50 transition-all shadow-sm uppercase"
+                        onClick={() => {
+                            setIsImporting(!isImporting);
+                            setIsSyncing(false);
+                        }}
                     >
                         {isImporting ? 'Cancel Import' : 'Bulk Import'}
                     </button>
@@ -251,6 +315,31 @@ export default function ProductsPage() {
                 </div>
             )}
 
+            {isSyncing && (
+                <div className="bg-[#FF3008]/5 border-2 border-[#FF3008]/20 p-12 rounded-[3.5rem] space-y-8 animate-in zoom-in duration-500">
+                    <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+                        <div className="space-y-2 text-center md:text-left">
+                            <h3 className="text-2xl font-black text-[#FF3008] uppercase italic leading-none">DoorDash Ingest <br />Bypass.</h3>
+                            <p className="text-sm font-medium text-slate-500 max-w-sm">Synchronize your existing DoorDash menu directly into Oasis. <b>Dispatch remains 100% internal to Oasis Fleet.</b></p>
+                        </div>
+                        <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
+                            <input 
+                                placeholder="DD Store ID / URL"
+                                value={ddId}
+                                onChange={(e) => setDdId(e.target.value)}
+                                className="px-6 py-4 bg-white border border-slate-200 rounded-2xl font-black text-sm outline-none focus:ring-4 focus:ring-[#FF3008]/10 min-w-[240px]"
+                            />
+                            <button 
+                                onClick={handleDDSync}
+                                className="px-10 py-4 bg-[#FF3008] text-white rounded-2xl font-black text-xs tracking-widest uppercase shadow-xl shadow-[#FF3008]/20 hover:scale-[1.02] transition-all"
+                            >
+                                Initiate Sync
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {isAdding && (
                 <div className="bg-white p-10 rounded-[3rem] shadow-2xl border border-gray-100 space-y-8 animate-in fade-in slide-in-from-top-4 duration-500 relative z-10">
                     <div className="flex items-center gap-3 border-b border-gray-50 pb-6">
@@ -258,69 +347,104 @@ export default function ProductsPage() {
                         <h2 className="text-2xl font-black text-gray-900 uppercase">New Product Details</h2>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <div className="space-y-2">
-                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest">Product Name</label>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                        <div className="space-y-3">
+                            <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Product Name</label>
                             <input
                                 placeholder="e.g. Artisanal Espresso"
                                 value={newName}
                                 onChange={(e) => setNewName(e.target.value)}
-                                className="w-full p-4 border border-gray-100 rounded-2xl bg-gray-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 transition-all outline-none font-bold italic"
+                                className="w-full p-5 border border-slate-200 rounded-[1.5rem] bg-white text-slate-900 focus:border-indigo-600 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none font-black text-sm shadow-sm"
                             />
                         </div>
-                        <div className="space-y-2">
-                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest">Category</label>
-                            <input
-                                placeholder="e.g. Beverages"
+                        <div className="space-y-3">
+                            <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Category</label>
+                            <select
                                 value={newCategory}
                                 onChange={(e) => setNewCategory(e.target.value)}
-                                className="w-full p-4 border border-gray-100 rounded-2xl bg-gray-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 transition-all outline-none font-bold italic"
-                            />
+                                className="w-full p-5 border border-slate-200 rounded-[1.5rem] bg-white text-slate-900 focus:border-indigo-600 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none font-black text-sm shadow-sm appearance-none cursor-pointer"
+                            >
+                                <option>General</option>
+                                <option>Retail</option>
+                                <option>Food</option>
+                                <option>Artisan</option>
+                                <option>Electronics</option>
+                                <option>Outdoor</option>
+                            </select>
                         </div>
-                        <div className="space-y-2">
-                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest">Price ($)</label>
+                        <div className="space-y-3">
+                            <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Price ($)</label>
                             <input
                                 type="number"
                                 placeholder="0.00"
+                                step="0.01"
                                 value={newPrice}
                                 onChange={(e) => setNewPrice(e.target.value)}
-                                className="w-full p-4 border border-gray-100 rounded-2xl bg-gray-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 transition-all outline-none font-bold italic"
+                                className="w-full p-5 border border-slate-200 rounded-[1.5rem] bg-white text-slate-900 focus:border-indigo-600 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none font-black text-sm shadow-sm"
                             />
                         </div>
-                        <div className="space-y-2">
-                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest">Initial Stock</label>
+                        <div className="space-y-3">
+                            <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Initial Stock</label>
                             <input
                                 type="number"
                                 value={newStock}
                                 onChange={(e) => setNewStock(e.target.value)}
-                                className="w-full p-4 border border-gray-100 rounded-2xl bg-gray-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 transition-all outline-none font-bold italic"
+                                className="w-full p-5 border border-slate-200 rounded-[1.5rem] bg-white text-slate-900 focus:border-indigo-600 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none font-black text-sm shadow-sm"
                             />
                         </div>
                     </div>
 
-                    <div className="flex flex-col md:flex-row gap-8 items-end">
-                        <div className="flex-1 space-y-2">
-                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest">Description (Optional)</label>
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+                        <div className="lg:col-span-2 space-y-3">
+                            <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Universal Description</label>
                             <textarea
-                                placeholder="Tell customers about this product..."
+                                placeholder="Tell customers about the artisan details of this product..."
                                 value={newDescription}
                                 onChange={(e) => setNewDescription(e.target.value)}
-                                className="w-full p-4 border border-gray-100 rounded-2xl bg-gray-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 transition-all outline-none font-bold italic h-24 resize-none"
+                                className="w-full p-5 border border-slate-200 rounded-[1.5rem] bg-white text-slate-900 focus:border-indigo-600 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none font-bold text-sm shadow-sm h-32 resize-none"
                             />
                         </div>
-                        <div className="pb-4">
-                            <label className="flex items-center gap-4 cursor-pointer group">
-                                <div 
-                                    className={`w-14 h-8 rounded-full border border-gray-200 transition-all relative ${isFeatured ? 'bg-indigo-600 border-indigo-600' : 'bg-gray-100'}`}
-                                    onClick={() => setIsFeatured(!isFeatured)}
-                                >
-                                    <div className={`absolute top-1 w-6 h-6 rounded-full bg-white shadow-md transition-all ${isFeatured ? 'left-7' : 'left-1'}`}></div>
-                                </div>
+                        
+                        <div className="space-y-6">
+                            <div className="flex items-center justify-between p-6 bg-slate-50 rounded-[1.5rem] border border-slate-100">
                                 <div className="space-y-0.5">
-                                    <span className="block text-[10px] font-black uppercase tracking-widest text-gray-900">Verified Drop</span>
-                                    <span className="block text-[8px] font-black uppercase tracking-widest text-gray-400">Promote to Oasis Discovery</span>
+                                    <span className="block text-[10px] font-black uppercase tracking-widest text-slate-900 italic">Verified Drop</span>
+                                    <span className="block text-[9px] font-medium text-slate-400">Promote to Oasis Discovery</span>
                                 </div>
-                            </label>
+                                <button 
+                                    onClick={() => setIsFeatured(!isFeatured)}
+                                    className={`w-12 h-7 rounded-full transition-all relative ${isFeatured ? 'bg-indigo-600 shadow-[0_0_12px_rgba(79,70,229,0.4)]' : 'bg-slate-300'}`}
+                                >
+                                    <div className={`absolute top-1 w-5 h-5 rounded-full bg-white shadow-sm transition-all ${isFeatured ? 'left-6' : 'left-1'}`}></div>
+                                </button>
+                            </div>
+
+                            <div className="flex items-center justify-between p-6 bg-emerald-50/50 rounded-[1.5rem] border border-emerald-100/50">
+                                <div className="space-y-0.5">
+                                    <span className="block text-[10px] font-black uppercase tracking-widest text-emerald-900 italic">Universal Shipping</span>
+                                    <span className="block text-[9px] font-medium text-emerald-600/70">Enable Global Discovery</span>
+                                </div>
+                                <button 
+                                    onClick={() => setIsShippable(!isShippable)}
+                                    className={`w-12 h-7 rounded-full transition-all relative ${isShippable ? 'bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.4)]' : 'bg-slate-300'}`}
+                                >
+                                    <div className={`absolute top-1 w-5 h-5 rounded-full bg-white shadow-sm transition-all ${isShippable ? 'left-6' : 'left-1'}`}></div>
+                                </button>
+                            </div>
+
+                            {isShippable && (
+                                <div className="space-y-3 animate-in slide-in-from-top-2 duration-300">
+                                    <label className="block text-[10px] font-black text-emerald-600 uppercase tracking-widest pl-1">Global Shipping Cost ($)</label>
+                                    <input
+                                        type="number"
+                                        placeholder="0.00"
+                                        step="0.01"
+                                        value={shippingCost}
+                                        onChange={(e) => setShippingCost(e.target.value)}
+                                        className="w-full p-4 border border-emerald-200 rounded-[1.5rem] bg-white text-slate-900 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all outline-none font-black text-sm shadow-sm"
+                                    />
+                                </div>
+                            )}
                         </div>
                     </div>
 

@@ -277,8 +277,30 @@ values
     ('Local Milk (Gal)', 4.89, 'Grocery', 'Fresh regional dairy from the Oasis network.'),
     ('Artisan Bread (Loaf)', 5.50, 'Grocery', 'Stone-ground independent bakery staple.'),
     ('Wildflower Honey (16oz)', 9.00, 'Grocery', 'Locally sourced Northern NH honey.'),
-    ('Regional Hardware Kit', 45.00, 'Hardware', 'Essential municipal maintenance tools.')
+    ('Regional Hardware Kit', 45.00, 'Hardware', 'Essential municipal maintenance tools.'),
+    ('Stainless Fastener Pack', 12.50, 'Hardware', 'Premium regional fastening hardware.'),
+    ('Artisan Pepperoni Pizza', 18.50, 'Restaurant', 'Regional specialty wood-fired pizza.'),
+    ('Craft Breakfast Sub', 12.99, 'Restaurant', 'Morning staple for regional explorers.')
 on conflict do nothing;
+
+-- 206. AUTONOMOUS BOUTIQUE ENGINE (Trigger for New Businesses)
+create or replace function public.auto_provision_business_inventory()
+returns trigger as $$
+begin
+  -- Auto-populate products based on category match
+  insert into public.products (business_id, name, price, category, description)
+  select new.id, name, base_price, category, description
+  from public.products_template
+  where products_template.category = new.category;
+
+  return new;
+end;
+$$ language plpgsql;
+
+drop trigger if exists on_business_creation on public.businesses;
+create trigger on_business_creation
+after insert on public.businesses
+for each row execute function public.auto_provision_business_inventory();
 
 -- 5e. AUTOMATED REGIONAL SEEDING (Autonomous Onboarding Engine)
 create or replace function public.seed_new_town_infrastructure()

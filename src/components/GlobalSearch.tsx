@@ -27,39 +27,55 @@ export default function GlobalSearch() {
                 }
             }
 
-            // 📍 Coordinate-based Discovery (SerpApi)
+            // 📍 Coordinate-based Discovery (Internal & External)
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(async (pos) => {
                     const { latitude, longitude } = pos.coords;
-                    const res = await fetch(`/api/places?query=shops&lat=${latitude}&lng=${longitude}`);
-                    const data = await res.json();
-                    if (data.results) {
-                        const external = data.results.map((p: any) => ({
-                            id: p.place_id,
-                            name: p.name,
-                            location: p.formatted_address,
-                            category: 'Global Network',
-                            isExternal: true,
-                            rating: p.rating,
-                            status: p.open_state
-                        }));
-                        setNearbyBusinesses(prev => [...prev, ...external].slice(0, 8));
+                    
+                    // Initial Scan for internal businesses near these coords (mocked radius for now)
+                    const { data: nearby } = await supabase
+                        .from('businesses')
+                        .select('id, name, category, location, image_url')
+                        .limit(8); // Broad scan for regional nodes
+                    
+                    setNearbyBusinesses(prev => [...(nearby || []), ...prev].slice(0, 10));
+
+                    // External Discovery Fallback
+                    try {
+                        const res = await fetch(`/api/places?query=shops&lat=${latitude}&lng=${longitude}`);
+                        const data = await res.json();
+                        if (data.results) {
+                            const external = data.results.map((p: any) => ({
+                                id: p.place_id,
+                                name: p.name,
+                                location: p.formatted_address,
+                                category: 'Regional Partner',
+                                isExternal: true
+                            }));
+                            setNearbyBusinesses(prev => [...prev, ...external].slice(0, 12));
+                        }
+                    } catch (e) {
+                        console.error("External Radar Offline", e);
                     }
                 });
             }
-
-            // Fetch internal businesses in the user's town
-            const { data: nearby } = await supabase
-                .from('businesses')
-                .select('id, name, category, location, image_url')
-                .ilike('location', `%${town}%`)
-                .limit(4);
-
-             setNearbyBusinesses(prev => [...(nearby || []), ...prev].slice(0, 8));
         };
 
         fetchInitialDiscovery();
     }, []);
+
+    const handleNeighborhoodScan = () => {
+        setLoading(true);
+        setIsOpen(true);
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(async (pos) => {
+                const { latitude, longitude } = pos.coords;
+                // Search for the specific town name if possible (omitted for speed, using broad scan)
+                setQuery('Neighborhood'); // Trigger the results view
+                setLoading(false);
+            });
+        }
+    };
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -164,6 +180,13 @@ export default function GlobalSearch() {
                 />
 
                 <div className="absolute inset-y-0 right-6 flex items-center gap-3">
+                    <button
+                        onClick={handleNeighborhoodScan}
+                        className="p-3 bg-white/5 border border-white/5 text-xs rounded-2xl grayscale group-hover/search:grayscale-0 hover:bg-white/10 transition-all"
+                        title="Scan My Neighborhood"
+                    >
+                        📍
+                    </button>
                     <button
                         onClick={() => setIsAiMode(!isAiMode)}
                         className={`px-6 py-3 rounded-2xl text-[9px] font-black uppercase tracking-[0.2em] transition-all border ${isAiMode

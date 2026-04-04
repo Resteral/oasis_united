@@ -29,8 +29,18 @@ export default function SeatingArrangement({ businessId, onUnitSelect, selectedU
     const [isEditing, setIsEditing] = useState(false);
     const [draggedUnitId, setDraggedUnitId] = useState<string | null>(null);
     const [activeReceipt, setActiveReceipt] = useState<any | null>(null);
-    const [productSelector, setProductSelector] = useState<string | null>(null); // UnitID being assigned
+    const [productSelector, setProductSelector] = useState<string | null>(null);
+    const [configUnitId, setConfigUnitId] = useState<string | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
+
+    const deleteUnit = (id: string) => {
+        setUnits(prev => prev.filter(u => u.id !== id));
+        setConfigUnitId(null);
+    };
+
+    const updateUnit = (id: string, updates: Partial<BoutiqueUnit>) => {
+        setUnits(prev => prev.map(u => u.id === id ? { ...u, ...updates } : u));
+    };
 
     useEffect(() => {
         async function loadData() {
@@ -75,7 +85,7 @@ export default function SeatingArrangement({ businessId, onUnitSelect, selectedU
 
     const handleUnitAction = async (unit: BoutiqueUnit) => {
         if (isEditing) {
-            if (unit.type === 'shelf') setProductSelector(unit.id);
+            setConfigUnitId(unit.id);
             return;
         }
 
@@ -201,9 +211,28 @@ export default function SeatingArrangement({ businessId, onUnitSelect, selectedU
                                     left: `${unit.x}%`,
                                     top: `${unit.y}%`,
                                     transform: `translate(-50%, -50%) rotate(${unit.rotation}deg) ${isSelected || (draggedUnitId === unit.id) ? 'scale(1.1)' : ''}`,
-                                    zIndex: draggedUnitId === unit.id ? 100 : 10
+                                    zIndex: (draggedUnitId === unit.id || configUnitId === unit.id) ? 100 : 10
                                 }}
                             >
+                                {/* Precise Chair Visualization */}
+                                {!isShelf && (
+                                    <div className="absolute inset-0 pointer-events-none">
+                                        {[...Array(unit.capacity || 2)].map((_, i) => {
+                                            const angle = (i * 360) / (unit.capacity || 2);
+                                            return (
+                                                <div 
+                                                    key={i}
+                                                    className="absolute w-3.5 h-3.5 bg-white/10 rounded-full border border-white/20 transition-all duration-700"
+                                                    style={{
+                                                        top: '50%',
+                                                        left: '50%',
+                                                        transform: `translate(-50%, -50%) rotate(${angle}deg) translateY(-44px)`
+                                                    }}
+                                                ></div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
                                 <button
                                     disabled={!merchantMode && isOccupied && !isShelf}
                                     onClick={() => handleUnitAction(unit)}
@@ -312,6 +341,64 @@ export default function SeatingArrangement({ businessId, onUnitSelect, selectedU
                             onClick={() => setProductSelector(null)}
                             className="w-full py-4 bg-white/5 border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest text-white/40 hover:bg-white/10 hover:text-white"
                         > Cancel Structural Linking </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Node Configuration Modal (Chairs / Labels / Deletion) */}
+            {configUnitId && (
+                <div className="fixed inset-0 bg-black/90 backdrop-blur-xl z-[150] flex items-center justify-center p-6 animate-in zoom-in-95 duration-500">
+                    <div className="bg-[#0a0a0b] border border-white/10 w-full max-w-[420px] rounded-[3.5rem] p-12 space-y-12 shadow-3xl relative overflow-hidden">
+                        <div className="absolute top-0 right-0 p-12 opacity-[0.03] pointer-events-none">
+                            <span className="text-[200px] font-black italic select-none leading-none">⚙️</span>
+                        </div>
+
+                        <div className="text-center space-y-3 relative z-10">
+                            <h4 className="text-4xl font-black italic tracking-tighter uppercase text-white leading-none">Configure Node.</h4>
+                            <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest leading-none bg-indigo-500/10 px-4 py-2 rounded-full inline-block">Architectural Tuning: {units.find(u => u.id === configUnitId)?.label}</p>
+                        </div>
+
+                        <div className="space-y-8 relative z-10">
+                            <div className="space-y-4">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-white/30 px-3">Unit Identifier (Alphanumeric Handle)</label>
+                                <input 
+                                    type="text" 
+                                    className="w-full bg-white/5 border border-white/10 rounded-3xl p-6 text-2xl text-white font-black italic tracking-tight focus:border-indigo-500 outline-none transition-all placeholder:text-white/10"
+                                    placeholder="e.g. Table 01"
+                                    value={units.find(u => u.id === configUnitId)?.label || ''}
+                                    onChange={(e) => updateUnit(configUnitId, { label: e.target.value })}
+                                />
+                            </div>
+
+                            {units.find(u => u.id === configUnitId)?.type === 'table' ? (
+                                <div className="space-y-4">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-white/30 px-3 font-mono">Structural Capacity (Chairs)</label>
+                                    <div className="flex items-center gap-6 bg-white/5 rounded-[2rem] p-3 border border-white/10">
+                                        <button onClick={() => updateUnit(configUnitId, { capacity: Math.max(1, (units.find(u => u.id === configUnitId)?.capacity || 2) - 1) })} className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center text-2xl hover:bg-indigo-600 transition-all font-black text-white shadow-lg">-</button>
+                                        <div className="flex-1 text-center py-2">
+                                            <span className="text-5xl font-black italic tracking-tighter text-white inline-block leading-none">{units.find(u => u.id === configUnitId)?.capacity || 2}</span>
+                                            <span className="block text-[8px] font-bold text-white/20 uppercase tracking-widest mt-1">Pax Capacity</span>
+                                        </div>
+                                        <button onClick={() => updateUnit(configUnitId, { capacity: (units.find(u => u.id === configUnitId)?.capacity || 2) + 1 })} className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center text-2xl hover:bg-indigo-600 transition-all font-black text-white shadow-lg">+</button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-white/30 px-3">Inventory Binding</label>
+                                    <button 
+                                        onClick={() => { setProductSelector(configUnitId); setConfigUnitId(null); }}
+                                        className="w-full py-7 bg-white/5 border border-white/10 text-white rounded-3xl font-black text-xs uppercase tracking-widest hover:bg-indigo-600 hover:border-indigo-500 transition-all shadow-xl group"
+                                    >
+                                        <span className="group-hover:scale-105 inline-block transition-transform">Assign Product SKU</span>
+                                    </button>
+                                </div>
+                            )}
+
+                            <div className="pt-10 border-t border-white/5 flex flex-col gap-4">
+                                <button onClick={() => setConfigUnitId(null)} className="w-full py-6 bg-white text-black rounded-3xl font-black text-xs uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98] transition-all shadow-2xl shadow-white/10">Confirm Node Tuning</button>
+                                <button onClick={() => deleteUnit(configUnitId)} className="w-full py-4 text-rose-500 font-black text-[10px] uppercase tracking-widest hover:text-rose-400 transition-all italic tracking-tighter text-center">Decommission Structural Unit</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             )}

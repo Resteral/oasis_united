@@ -14,6 +14,8 @@ export default function BusinessProfilePage() {
     const [loading, setLoading] = useState(true);
     const [cartItems, setCartItems] = useState<any[]>([]);
     const [currentUser, setCurrentUser] = useState<any>(null);
+    const [delivererProfile, setDelivererProfile] = useState<any>(null);
+    const [activeRoutes, setActiveRoutes] = useState<any[]>([]);
 
     const fetchStoreData = async () => {
         if (!id) return;
@@ -46,15 +48,34 @@ export default function BusinessProfilePage() {
     useEffect(() => {
         fetchStoreData();
 
-        // Get current user for owner check
+        // Get current user for owner/deliverer check
         const fetchUser = async () => {
             const { data: { user } } = await supabase.auth.getUser();
-            setCurrentUser(user);
+            if (user) {
+                setCurrentUser(user);
+                
+                // 📡 Fleet Check: If citizen is a deliverer, fetch their loop
+                const { data: profile } = await supabase.from('deliverer_profiles').select('*').eq('id', user.id).single();
+                if (profile) {
+                    setDelivererProfile(profile);
+                    const { data: routes } = await supabase.from('delivery_routes').select('*').eq('deliverer_id', user.id).eq('is_active', true);
+                    setActiveRoutes(routes || []);
+                }
+            }
         };
         fetchUser();
     }, [id]);
 
     const isOwner = currentUser?.id === business?.owner_id;
+
+    const handleAddToRoute = async (routeId: string) => {
+        const { error } = await supabase.rpc('add_stop_to_route', { 
+            p_route_id: routeId, 
+            p_business_id: id 
+        });
+        if (error) alert('Error adding to route: ' + error.message);
+        else alert('🛰️ Business Node appended to your Logistics Loop!');
+    };
 
     const handleAddToCart = (product: any) => {
         setCartItems(prev => {
@@ -190,6 +211,20 @@ export default function BusinessProfilePage() {
                         <Link href={`/shop/${business.id}/order`} className="w-full py-6 bg-amber-400 text-black rounded-[2rem] font-black text-xs uppercase tracking-widest text-center hover:scale-[1.02] shadow-2xl shadow-amber-400/20 transition-all">
                            🚀 Initiate Order Protocol
                         </Link>
+                        {delivererProfile && activeRoutes.length > 0 && (
+                            <div className="space-y-3">
+                                <span className="text-[9px] font-black uppercase text-indigo-400 tracking-widest pl-4">Logistics Fleet Console</span>
+                                {activeRoutes.map(route => (
+                                    <button 
+                                        key={route.id}
+                                        onClick={() => handleAddToRoute(route.id)}
+                                        className="w-full py-6 bg-indigo-600 text-white rounded-[2rem] font-black text-xs uppercase tracking-widest text-center hover:bg-indigo-700 transition-colors flex items-center justify-center gap-3"
+                                    >
+                                        🛰️ Add Stop to {route.name}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
                         <button onClick={() => alert('Launching Secure Oasis Pay...')} className="w-full py-6 bg-white/5 border border-white/10 text-white/50 rounded-[2rem] font-black text-xs uppercase tracking-widest text-center hover:bg-white/10 transition-colors">
                            💎 Digital Wallet Sync
                         </button>

@@ -562,7 +562,16 @@ create policy "Admins manage all logistics" on public.inventory_logistics for al
     exists (select 1 from public.profiles where id = auth.uid() and role = 'admin')
 );
 
--- 224. SMART PROVISIONING ENGINE (Autonomous Inventory Dispatch)
+-- 224. FLEET LOGISTICS ENGINE (Route Synchronization)
+create or replace function public.add_stop_to_route(p_route_id uuid, p_business_id uuid)
+returns void as $$
+begin
+    update public.delivery_routes
+    set stops = stops || jsonb_build_array(p_business_id)
+    where id = p_route_id;
+end;
+$$ language plpgsql;
+
 create or replace function public.trigger_seed_business_inventory()
 returns trigger as $$
 begin

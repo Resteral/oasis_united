@@ -383,7 +383,7 @@ create table if not exists public.orders (
   customer_name text,
   customer_contact text, -- Phone number or social handle
   channel text check (channel in ('web', 'sms', 'instagram', 'offline')) default 'web',
-  status text check (status in ('pending', 'completed', 'cancelled', 'in-house')) default 'pending', 
+  status text check (status in ('pending', 'processing', 'transit', 'delivered', 'cancelled')) default 'pending', 
   total numeric not null,
   items jsonb, -- Snapshot of cart items: [{id, name, price, quantity}]
   type text check (type in ('pickup', 'shipping', 'delivery', 'in-house')) default 'pickup',
@@ -393,13 +393,31 @@ create table if not exists public.orders (
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
+-- 222. FLEET PROXIMITY (Real-time GPS nodes)
+create table if not exists public.deliverer_locations (
+  deliverer_id uuid references public.profiles(id) primary key,
+  lat double precision,
+  lng double precision,
+  updated_at timestamp with time zone default now()
+);
+
+-- RPC for Deliverers to Update Order Status
+create or replace function update_order_status(p_order_id uuid, p_status text)
+returns void as $$
+begin
+  update public.orders
+  set status = p_status
+  where id = p_order_id;
+end;
+$$ language plpgsql;
+
 -- RPC for Deliverers to Claim Regional Transit Orders
 create or replace function claim_order(p_order_id uuid, p_deliverer_id uuid)
 returns void as $$
 begin
   update public.orders
   set deliverer_id = p_deliverer_id,
-      status = 'completed' -- Mark as active fulfillment
+      status = 'processing' -- Mark as active fulfillment
   where id = p_order_id and deliverer_id is null;
   
   if not found then

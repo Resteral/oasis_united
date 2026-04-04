@@ -198,12 +198,12 @@ begin
     ('berry-bay-supplies', 'Berry Bay Marina & Store', 'Outdoor & Grocery', 'Freedom', freedom_id, 'e5f6a7b8-d4c3-4b2a-a198-e7d6c5b4a321', 'Lakeside supplies, bait, and quick bites.')
   on conflict (slug) do nothing;
 
-  -- Ossipee Businesses
+  -- Ossipee Businesses (Discovered via regional scan)
   insert into public.businesses (slug, name, category, location, town_id, onboarded_by, description)
   values 
-    ('whittier-creek-cafe', 'Whittier Creek Cafe', 'Bistro', 'West Ossipee', ossipee_id, 'e5f6a7b8-d4c3-4b2a-a198-e7d6c5b4a321', 'Organic coffee and mountainview breakfast.'),
-    ('ossipee-mount-hardware', 'Ossipee Mountain Hardware', 'Hardware', 'Center Ossipee', ossipee_id, 'e5f6a7b8-d4c3-4b2a-a198-e7d6c5b4a321', 'Generational hardware and home repair.')
-  on conflict (slug) do nothing;
+    ('yankee-smokehouse', 'Yankee Smokehouse', 'BBQ & Pizza', 'West Ossipee', ossipee_id, 'e5f6a7b8-d4c3-4b2a-a198-e7d6c5b4a321', 'Famous world-class smoked ribs and New Hampshire hospitality.'),
+    ('jakes-seafood', 'Jake''s Seafood & Grill', 'Seafood', 'Ossipee', ossipee_id, 'e5f6a7b8-d4c3-4b2a-a198-e7d6c5b4a321', 'Fresh New England favorites and coastal flavors.')
+  on conflict (slug) do update set town_id = excluded.town_id, category = excluded.category;
 
   -- Tamworth Businesses
   insert into public.businesses (slug, name, category, location, town_id, onboarded_by, description)
@@ -214,26 +214,33 @@ begin
 
 end $$;
 
--- 5d. Use slugs to seed products mapping accurately to businesses
 do $$
-declare
-  pnb_id uuid;
-  boyles_id uuid;
-  walts_id uuid;
-begin
-  select id into pnb_id from public.businesses where slug = 'pnb-eats';
-  select id into boyles_id from public.businesses where slug = 'boyles-general';
-  select id into walts_id from public.businesses where slug = 'walts-carpentry';
+  declare
+    pnb_id uuid;
+    boyles_id uuid;
+    walts_id uuid;
+    yankee_id uuid;
+    jakes_id uuid;
+  begin
+    select id into pnb_id from public.businesses where slug = 'pnb-eats';
+    select id into boyles_id from public.businesses where slug = 'boyles-general';
+    select id into walts_id from public.businesses where slug = 'walts-carpentry';
+    select id into yankee_id from public.businesses where slug = 'yankee-smokehouse';
+    select id into jakes_id from public.businesses where slug = 'jakes-seafood';
 
-  insert into public.products (business_id, name, price, category)
-  values
-    (pnb_id, 'Large Pepperoni Pizza', 18.50, 'Eats'),
-    (pnb_id, 'Breakfast Sub', 12.99, 'Eats'),
-    (boyles_id, 'Local Honey (16oz)', 9.00, 'Grocery'),
-    (boyles_id, 'Milk (Gal)', 4.89, 'Grocery'),
-    (walts_id, 'Custom Hardware Kit', 45.99, 'Hardware')
-  on conflict do nothing;
-end $$;
+    insert into public.products (business_id, name, price, category)
+    values
+      (pnb_id, 'Large Pepperoni Pizza', 18.50, 'Eats'),
+      (pnb_id, 'Breakfast Sub', 12.99, 'Eats'),
+      (boyles_id, 'Local Honey (16oz)', 9.00, 'Grocery'),
+      (boyles_id, 'Milk (Gal)', 4.89, 'Grocery'),
+      (walts_id, 'Custom Hardware Kit', 45.99, 'Hardware'),
+      (yankee_id, 'Full Rack Smoked Ribs', 28.99, 'BBQ'),
+      (yankee_id, 'Pulled Pork Sandwich', 14.50, 'BBQ'),
+      (jakes_id, 'New England Lobster Roll', 24.99, 'Seafood'),
+      (jakes_id, 'Fried Whole Belly Clams', 22.00, 'Seafood')
+    on conflict do nothing;
+  end $$;
 
 -- 221. ORDERS TABLE (Core Commerce Engine)
 create table if not exists public.orders (

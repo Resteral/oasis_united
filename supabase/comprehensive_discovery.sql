@@ -29,8 +29,15 @@ create table if not exists public.products_template (
 );
 
 -- Evolution: Dynamically synchronize Oracle columns
-alter table public.products_template add column if not exists price numeric;
-alter table public.products_template add column if not exists image_url text;
+do $$ 
+begin
+    if not exists (select 1 from information_schema.columns where table_name='products_template' and column_name='price') then
+        alter table public.products_template add column price numeric;
+    end if;
+    if not exists (select 1 from information_schema.columns where table_name='products_template' and column_name='image_url') then
+        alter table public.products_template add column image_url text;
+    end if;
+end $$;
 
 -- Seed Intelligence for Smart Provisioning
 insert into public.products_template (category, name, price, description)

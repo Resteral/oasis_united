@@ -8,6 +8,7 @@ import Link from 'next/link';
 import MarketplaceHero from '@/components/marketplace/MarketplaceHero';
 import TownDiscovery from '@/components/marketplace/TownDiscovery';
 import ActiveRoutes from '@/components/marketplace/ActiveRoutes';
+import LogisticsQueue from '@/components/LogisticsQueue';
 
 interface MarketplaceClientProps {
     initialFeatured: any;
@@ -150,11 +151,11 @@ export default function MarketplaceClient({ initialFeatured, initialShoutouts }:
                                 </div>
                                 <div className="space-y-8">
                                     <div className="h-1/2 bg-indigo-600/5 border border-indigo-500/10 rounded-[3rem] p-10 relative overflow-hidden group">
-                                        <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-400 mb-6">Active Logistics</h3>
-                                        <ActiveRoutes />
+                                        <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-400 mb-6 italic">LOGISTICS TRANSIT QUEUE</h3>
+                                        <LogisticsQueue />
                                     </div>
                                     <div className="h-1/2 bg-amber-400/5 border border-amber-500/10 rounded-[3rem] p-10 relative overflow-hidden group">
-                                        <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-amber-400 mb-6">Regional Hubs</h3>
+                                        <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-amber-400 mb-6 italic">REGIONAL HUBS</h3>
                                         <TownDiscovery />
                                     </div>
                                 </div>

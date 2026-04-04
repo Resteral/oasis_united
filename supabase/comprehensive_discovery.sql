@@ -364,8 +364,24 @@ create table if not exists public.orders (
   type text check (type in ('pickup', 'shipping', 'delivery', 'in-house')) default 'pickup',
   address text,
   table_number text, -- LINK: Physical seating assignment
+  deliverer_id uuid references public.profiles(id), -- The citizen/agent handling fulfillment
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
+
+-- RPC for Deliverers to Claim Regional Transit Orders
+create or replace function claim_order(p_order_id uuid, p_deliverer_id uuid)
+returns void as $$
+begin
+  update public.orders
+  set deliverer_id = p_deliverer_id,
+      status = 'completed' -- Mark as active fulfillment
+  where id = p_order_id and deliverer_id is null;
+  
+  if not found then
+    raise exception 'Order already claimed or does not exist.';
+  end if;
+end;
+$$ language plpgsql;
 
 -- 222. SEATING LAYOUTS (Architect Mode storage)
 create table if not exists public.seating_layouts (

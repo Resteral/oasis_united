@@ -110,6 +110,11 @@ export default function BusinessProfilePage() {
                                 <span className="text-[10px] font-black uppercase text-white/30 tracking-[0.3em]">Network Reach</span>
                                 <p className="text-2xl font-black italic tracking-tighter uppercase leading-none">{stats?.total_views || 0} Citizens Found</p>
                             </div>
+                            <div className="ml-auto">
+                                <a href="#menu" className="px-12 py-5 bg-white text-black rounded-full font-black text-[12px] uppercase tracking-[0.3em] hover:scale-105 active:scale-95 transition-all shadow-2xl flex items-center gap-4">
+                                    🛒 Proceed to Order
+                                </a>
+                            </div>
                         </div>
                     </div>
                 </div>

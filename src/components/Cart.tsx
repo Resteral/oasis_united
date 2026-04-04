@@ -176,6 +176,7 @@ export default function Cart({ businessId, items, setItems }: CartProps) {
             setCustomerContact('');
             setAddress('');
             setTableNumber('');
+            router.push(`/order/${data.order.id}`);
         } catch (err: any) {
             console.error("Checkout failed:", err);
             alert("Checkout failed: " + err.message);

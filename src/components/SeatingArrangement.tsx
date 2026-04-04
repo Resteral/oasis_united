@@ -18,10 +18,11 @@ interface SeatingArrangementProps {
     businessId: string;
     onUnitSelect?: (unit: BoutiqueUnit) => void;
     selectedUnitId?: string;
+    selectedLabel?: string;
     merchantMode?: boolean;
 }
 
-export default function SeatingArrangement({ businessId, onUnitSelect, selectedUnitId, merchantMode }: SeatingArrangementProps) {
+export default function SeatingArrangement({ businessId, onUnitSelect, selectedUnitId, selectedLabel, merchantMode }: SeatingArrangementProps) {
     const [units, setUnits] = useState<BoutiqueUnit[]>([]);
     const [inventory, setInventory] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -187,7 +188,7 @@ export default function SeatingArrangement({ businessId, onUnitSelect, selectedU
 
                 <div className="relative w-full h-full">
                     {units.map((unit) => {
-                        const isSelected = selectedUnitId === unit.id;
+                        const isSelected = selectedUnitId === unit.id || selectedLabel === unit.label;
                         const isOccupied = unit.status === 'occupied' || unit.status === 'reserved';
                         const isShelf = unit.type === 'shelf';
 

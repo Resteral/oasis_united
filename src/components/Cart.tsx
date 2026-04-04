@@ -295,8 +295,8 @@ export default function Cart({ businessId, items, setItems }: CartProps) {
                                         <div className="mt-4 border-t border-white/5 pt-8 space-y-8 animate-in fade-in slide-in-from-top-4 duration-500">
                                             <SeatingArrangement 
                                                 businessId={businessId} 
-                                                onTableSelect={setTableNumber} 
-                                                selectedTable={tableNumber} 
+                                                onUnitSelect={(unit) => setTableNumber(unit.label)} 
+                                                selectedLabel={tableNumber} 
                                             />
                                             {tableNumber && (
                                                 <div className="p-8 bg-amber-400 rounded-[2.5rem] flex items-center justify-between border-2 border-amber-300 shadow-2xl shadow-amber-400/20 translate-y-2 animate-in slide-in-from-bottom-2 duration-300">

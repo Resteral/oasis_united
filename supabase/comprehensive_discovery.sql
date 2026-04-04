@@ -229,12 +229,14 @@ do $$
     walts_id uuid;
     yankee_id uuid;
     jakes_id uuid;
+    hobbs_id uuid;
   begin
     select id into pnb_id from public.businesses where slug = 'pnb-eats';
     select id into boyles_id from public.businesses where slug = 'boyles-general';
     select id into walts_id from public.businesses where slug = 'walts-carpentry';
     select id into yankee_id from public.businesses where slug = 'yankee-smokehouse';
     select id into jakes_id from public.businesses where slug = 'jakes-seafood';
+    select id into hobbs_id from public.businesses where slug = 'hobbs-tavern';
 
     insert into public.products (business_id, name, price, category)
     values
@@ -257,6 +259,27 @@ do $$
       (hobbs_id, 'Large Specialty Pizza', 15.00, 'Pizza')
     on conflict do nothing;
   end $$;
+
+-- 5e. AUTOMATED REGIONAL SEEDING (Trigger for New Towns)
+-- This ensures that when a driver/citizen "opens" a new town, default discovery nodes are created.
+create or replace function public.seed_new_town_infrastructure()
+returns trigger as $$
+begin
+  -- Example: When a town is added, we could auto-create a 'General Store' or 'Tavern' node
+  -- For now, we will log the expansion in the regional shoutouts
+  insert into public.shoutouts (business_id, type, content)
+  select id, 'alert', 'A NEW DISCOVERY NODE HAS BEEN OPENED IN ' || upper(new.name) || '! Welcome to the network.'
+  from public.businesses 
+  where role = 'admin' 
+  limit 1;
+  return new;
+end;
+$$ language plpgsql;
+
+drop trigger if exists on_town_creation on public.towns;
+create trigger on_town_creation
+after insert on public.towns
+for each row execute function public.seed_new_town_infrastructure();
 
 -- 202. INVENTORY LOGISTICS (Supply Chain Tracking)
 create table if not exists public.inventory_logistics (

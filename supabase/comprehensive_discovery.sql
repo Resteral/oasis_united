@@ -518,6 +518,21 @@ begin
     (pnb_id, 'Artisan Pizza. Regional Soul.', 15, 'https://images.unsplash.com/photo-1513104890138-7c749659a591?q=80&w=1000&auto=format&fit=crop'),
     (boyles_id, 'Local Provisions. Generational Quality.', 20, 'https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=1000&auto=format&fit=crop')
   on conflict do nothing;
+
+  -- 286. MOBILE VANGUARDS (Storefrontless Advocacy)
+  insert into public.businesses (slug, name, category, location, town_id, onboarded_by, description)
+  values 
+    ('mike-handyman', 'Handyman Mike', 'Service', 'Effingham', effingham_id, 'e5f6a7b8-d4c3-4b2a-a198-e7d6c5b4a321', 'Regional artisan repairs and plumbing. Mobile primary node.'),
+    ('sarah-garden', 'Sarah''s Garden Consult', 'Consulting', 'Freedom', freedom_id, 'e5f6a7b8-d4c3-4b2a-a198-e7d6c5b4a321', 'Expert organic gardening and homestead design.')
+  on conflict (slug) do nothing;
+
+  insert into public.fleet_ads (business_id, headline, display_duration)
+  select id, 'Reliable Regional Repairs. Mobile Service.', 15 from public.businesses where slug = 'mike-handyman'
+  on conflict do nothing;
+
+  insert into public.fleet_ads (business_id, headline, display_duration)
+  select id, 'Transform Your Garden. Regional Homesteading.', 12 from public.businesses where slug = 'sarah-garden'
+  on conflict do nothing;
 end $$;
 
 insert into public.shoutouts (business_id, type, content)

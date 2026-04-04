@@ -112,19 +112,23 @@ alter table public.deliverer_profiles enable row level security;
 alter table public.towns enable row level security;
 alter table public.delivery_routes enable row level security;
 
--- Public Read & Management Policies
-drop policy if exists "Everyone can view profiles" on public.profiles;
-drop policy if exists "Users manage own profile" on public.profiles;
-drop policy if exists "Everyone can view businesses" on public.businesses;
-drop policy if exists "Owners manage own business" on public.businesses;
-drop policy if exists "Everyone can view products" on public.products;
-drop policy if exists "Owners manage own products" on public.products;
-drop policy if exists "Admins manage all products" on public.products;
-drop policy if exists "Everyone can view shoutouts" on public.shoutouts;
-drop policy if exists "Everyone can view deliverers" on public.deliverer_profiles;
-drop policy if exists "Everyone can view towns" on public.towns;
-drop policy if exists "Everyone can view routes" on public.delivery_routes;
+-- CLEANUP DEPLOYMENT (Protocol sanitization)
+do $$ 
+begin
+    drop policy if exists "Everyone can view profiles" on public.profiles;
+    drop policy if exists "Users manage own profile" on public.profiles;
+    drop policy if exists "Everyone can view businesses" on public.businesses;
+    drop policy if exists "Owners manage own business" on public.businesses;
+    drop policy if exists "Everyone can view products" on public.products;
+    drop policy if exists "Owners manage own products" on public.products;
+    drop policy if exists "Admins manage all products" on public.products;
+    drop policy if exists "Everyone can view shoutouts" on public.shoutouts;
+    drop policy if exists "Everyone can view deliverers" on public.deliverer_profiles;
+    drop policy if exists "Everyone can view towns" on public.towns;
+    drop policy if exists "Everyone can view routes" on public.delivery_routes;
+end $$;
 
+-- ATOMIC POLICY DEPLOYMENT
 create policy "Everyone can view profiles" on public.profiles for select using (true);
 create policy "Users manage own profile" on public.profiles for all using (auth.uid() = id);
 

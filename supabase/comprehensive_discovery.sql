@@ -243,10 +243,18 @@ do $$
       (boyles_id, 'Local Honey (16oz)', 9.00, 'Grocery'),
       (boyles_id, 'Milk (Gal)', 4.89, 'Grocery'),
       (walts_id, 'Custom Hardware Kit', 45.99, 'Hardware'),
-      (yankee_id, 'Full Rack Smoked Ribs', 28.99, 'BBQ'),
-      (yankee_id, 'Pulled Pork Sandwich', 14.50, 'BBQ'),
+      (yankee_id, 'Smokehouse Baby Back Ribs', 27.99, 'BBQ'),
+      (yankee_id, 'Beef Brisket Dinner', 28.99, 'BBQ'),
+      (yankee_id, 'Pulled Pork Platter', 26.99, 'BBQ'),
+      (yankee_id, 'Smokehouse Wings (App)', 17.99, 'Apps'),
+      (yankee_id, 'Homemade Cornbread', 5.99, 'Sides'),
       (jakes_id, 'New England Lobster Roll', 24.99, 'Seafood'),
-      (jakes_id, 'Fried Whole Belly Clams', 22.00, 'Seafood')
+      (jakes_id, 'Fried Whole Belly Clams', 22.00, 'Seafood'),
+      (hobbs_id, '12oz Prime Rib Dinner', 35.00, 'Entree'),
+      (hobbs_id, 'Steak & Cheese Eggrolls', 14.00, 'Apps'),
+      (hobbs_id, 'Bang Bang Shrimp', 18.00, 'Apps'),
+      (hobbs_id, 'Hobbs Classic Burger', 18.00, 'Entree'),
+      (hobbs_id, 'Large Specialty Pizza', 15.00, 'Pizza')
     on conflict do nothing;
   end $$;
 

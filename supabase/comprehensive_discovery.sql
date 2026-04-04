@@ -254,7 +254,26 @@ create table if not exists public.messages (
     created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
--- 224. RLS FOR COMMERCE & ARCHITECTURE
+-- 284. FLEET ADS TABLE (In-Car Marketing Interface)
+create table if not exists public.fleet_ads (
+  id uuid default uuid_generate_v4() primary key,
+  business_id uuid references public.businesses(id) not null,
+  product_id uuid references public.products(id), -- Optional: Link to a specific SKU
+  headline text not null,
+  image_url text, -- High-contrast 'Dashboard-Optimized' creative
+  target_town_id uuid references public.towns(id), -- Geo-fencing for ads
+  is_active boolean default true,
+  display_duration integer default 15, -- How many seconds to show the ad in the rotation
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+alter table public.fleet_ads enable row level security;
+create policy "Public view fleet ads" on public.fleet_ads for select using (true);
+create policy "Owners manage own fleet ads" on public.fleet_ads for all using (
+    exists (select 1 from public.businesses where id = business_id and owner_id = auth.uid())
+);
+
+-- 285. RLS FOR COMMERCE & ARCHITECTURE
 alter table public.orders enable row level security;
 alter table public.seating_layouts enable row level security;
 alter table public.messages enable row level security;
@@ -281,7 +300,21 @@ create policy "Owners manage messages" on public.messages for select using (
 );
 
 -- 225. SEED DATA FINISHING TOUCHES
--- (Shoutouts were here)
+do $$
+declare
+  pnb_id uuid;
+  boyles_id uuid;
+begin
+  select id into pnb_id from public.businesses where slug = 'pnb-eats';
+  select id into boyles_id from public.businesses where slug = 'boyles-general';
+
+  insert into public.fleet_ads (business_id, headline, display_duration, image_url)
+  values
+    (pnb_id, 'Artisan Pizza. Regional Soul.', 15, 'https://images.unsplash.com/photo-1513104890138-7c749659a591?q=80&w=1000&auto=format&fit=crop'),
+    (boyles_id, 'Local Provisions. Generational Quality.', 20, 'https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=1000&auto=format&fit=crop')
+  on conflict do nothing;
+end $$;
+
 insert into public.shoutouts (business_id, type, content)
 select id, 'update', 'Fresh local artisan cheese arriving today at 2 PM!' from public.businesses where slug = 'boyles-general'
 on conflict do nothing;

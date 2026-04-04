@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 
 export default function DriverDashboard() {
@@ -162,13 +163,19 @@ export default function DriverDashboard() {
                             <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-white/30 px-2">Telematics Console</h3>
                             <div className="grid grid-cols-1 gap-4">
                                 <button
-                                    disabled={!isActive}
                                     onClick={updateLocation}
                                     className="flex items-center justify-between p-5 bg-white/5 rounded-2xl border border-white/5 hover:bg-white/10 transition-all group disabled:opacity-30 disabled:pointer-events-none"
                                 >
                                     <span className="text-[10px] font-black uppercase tracking-widest text-indigo-400">Broadcast Position</span>
                                     <span className="text-xl group-hover:rotate-12 transition-transform">📍</span>
                                 </button>
+                                <Link 
+                                    href="/driver/dash"
+                                    className="flex items-center justify-between p-5 bg-indigo-600/10 rounded-2xl border border-indigo-600/30 hover:bg-indigo-600/20 transition-all group"
+                                >
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-indigo-400">In-Car Dashboard</span>
+                                    <span className="text-xl group-hover:rotate-12 transition-transform">💻</span>
+                                </Link>
                                 <button
                                     className="flex items-center justify-between p-5 bg-white/5 rounded-2xl border border-white/5 hover:bg-white/10 transition-all group"
                                 >

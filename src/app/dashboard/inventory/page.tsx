@@ -1,105 +1,234 @@
 "use client";
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
-const INITIAL_INVENTORY = [
-  { id: 'SKU-001', name: 'Fresh Pizza Dough', category: 'Dough', stock: 45, unit: 'units', price: 8.50, status: 'In Stock' },
-  { id: 'SKU-002', name: 'Premium Pepperoni', category: 'Meat', stock: 12, unit: 'lb', price: 14.00, status: 'Low Stock' },
-  { id: 'SKU-003', name: 'Artisan Sourdough', category: 'Bakery', stock: 5, unit: 'loaves', price: 9.00, status: 'Critical' },
-  { id: 'SKU-004', name: 'Whole Milk (Gal)', category: 'Dairy', stock: 85, unit: 'units', price: 5.50, status: 'In Stock' },
-  { id: 'SKU-005', name: 'Organic Honey (Lt)', category: 'Pantry', stock: 24, unit: 'jars', price: 18.00, status: 'In Stock' },
-];
-
-export default function InventoryDashboard() {
-    const [inventory, setInventory] = useState(INITIAL_INVENTORY);
+export default function InventoryPage() {
+    const router = useRouter();
+    const [loading, setLoading] = useState(true);
+    const [products, setProducts] = useState<any[]>([]);
+    const [businessId, setBusinessId] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
+    const [isAdding, setIsAdding] = useState(false);
 
-    const filteredInventory = inventory.filter(p => 
+    // Quick Add Form State
+    const [newName, setNewName] = useState('');
+    const [newPrice, setNewPrice] = useState('');
+    const [newStock, setNewStock] = useState('');
+    const [newCategory, setNewCategory] = useState('');
+    const [saving, setSaving] = useState(false);
+
+    useEffect(() => {
+        async function fetchProducts() {
+            setLoading(true);
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) {
+                router.push('/login');
+                return;
+            }
+
+            const { data: business } = await supabase
+                .from('businesses')
+                .select('id')
+                .eq('owner_id', user.id)
+                .single();
+
+            if (business) {
+                setBusinessId(business.id);
+                const { data: inventory } = await supabase
+                    .from('products')
+                    .select('*')
+                    .eq('business_id', business.id)
+                    .order('created_at', { ascending: false });
+
+                setProducts(inventory || []);
+            }
+            setLoading(false);
+        }
+        fetchProducts();
+    }, [router]);
+
+    const handleQuickAdd = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!businessId || !newName || !newPrice) return;
+        setSaving(true);
+
+        const { data, error } = await supabase
+            .from('products')
+            .insert([{
+                business_id: businessId,
+                name: newName,
+                price: parseFloat(newPrice),
+                stock: parseInt(newStock) || 0,
+                category: newCategory || 'General',
+                created_at: new Date().toISOString()
+            }])
+            .select()
+            .single();
+
+        if (error) {
+            alert('Error adding product: ' + error.message);
+        } else {
+            setProducts([data, ...products]);
+            setIsAdding(false);
+            setNewName('');
+            setNewPrice('');
+            setNewStock('');
+            setNewCategory('');
+        }
+        setSaving(false);
+    };
+
+    const handleDelete = async (id: string) => {
+        if (!confirm('Permanent removal from database?')) return;
+        const { error } = await supabase.from('products').delete().eq('id', id);
+        if (!error) setProducts(products.filter(p => p.id !== id));
+    };
+
+    const filteredProducts = products.filter(p => 
         p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        p.id.toLowerCase().includes(searchTerm.toLowerCase())
+        (p.category && p.category.toLowerCase().includes(searchTerm.toLowerCase()))
     );
 
+    if (loading) return <div className="p-20 text-center font-black animate-pulse uppercase tracking-[0.3em] text-white">📡 Accessing Inventory Node...</div>;
+
     return (
-        <div className="min-h-screen bg-[#0a0a0b] text-white flex">
-            {/* Unified Dashboard Sidebar */}
-            <aside className="w-64 border-r border-white/5 p-8 space-y-12 shrink-0">
-                <Link href="/" className="block">
-                    <img src="/logo.png" alt="Oasis" className="h-12 w-auto opacity-80" />
+        <div className="min-h-screen bg-[#0a0a0b] text-white flex flex-col md:flex-row">
+            {/* Sidebar */}
+            <aside className="w-full md:w-72 border-b md:border-b-0 md:border-r border-white/5 p-12 space-y-12 shrink-0 bg-[#050505]">
+                <Link href="/dashboard" className="block group">
+                    <h2 className="text-2xl font-black italic tracking-tighter uppercase group-hover:text-amber-400 transition-colors leading-tight">Oasis <br />Control.</h2>
+                    <p className="text-[9px] font-black uppercase tracking-[0.4em] text-gray-500 mt-2">Boutique Management</p>
                 </Link>
                 
-                <nav className="space-y-4">
-                    <div className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 mb-6">Store Ops</div>
-                    <Link href="/dashboard/analytics" className="flex items-center gap-4 text-xs font-bold text-gray-500 hover:text-white transition-colors"><span>📊</span> Analytics</Link>
-                    <Link href="/dashboard/orders" className="flex items-center gap-4 text-xs font-bold text-gray-500 hover:text-white transition-colors"><span>📋</span> Orders</Link>
-                    <Link href="/dashboard/inventory" className="flex items-center gap-4 text-xs font-bold text-amber-400 bg-white/5 p-3 rounded-2xl"><span>📦</span> Inventory</Link>
+                <nav className="space-y-6 pt-8 border-t border-white/5">
+                    <Link href="/dashboard" className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-gray-500 hover:text-white transition-all">
+                        <span className="text-lg">🏠</span> Overview
+                    </Link>
+                    <Link href="/dashboard/inventory" className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-amber-400">
+                        <span className="text-lg">📦</span> Inventory
+                    </Link>
+                    <Link href="/dashboard/orders" className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-gray-500 hover:text-white transition-all">
+                        <span className="text-lg">📋</span> Global Orders
+                    </Link>
+                    <Link href="/dashboard/settings" className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-gray-500 hover:text-white transition-all">
+                        <span className="text-lg">⚙️</span> Control Node
+                    </Link>
                 </nav>
             </aside>
 
-            {/* Main Content Area */}
-            <main className="flex-1 p-12 overflow-y-auto">
-                <header className="flex justify-between items-center mb-16">
-                    <div className="space-y-2">
-                        <h1 className="text-4xl font-black italic tracking-tighter">Inventory <span className="text-amber-400">Database.</span></h1>
-                        <p className="text-gray-500 text-xs font-medium uppercase tracking-widest leading-none">Tracking 300+ SKU across your digital storefront</p>
+            {/* Main Content */}
+            <main className="flex-1 p-8 md:p-16 space-y-16">
+                <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-8">
+                    <div className="space-y-4">
+                        <h1 className="text-5xl font-black italic tracking-tighter uppercase leading-none">Stock <span className="text-amber-400">Ledger.</span></h1>
+                        <p className="text-gray-500 text-[10px] font-black uppercase tracking-[0.3em]">Precision Inventory Persistence for the Unified Network</p>
                     </div>
-                    <div className="flex items-center gap-4 bg-white/5 rounded-3xl p-1 border border-white/10">
-                        <input 
-                            type="text" 
-                            placeholder="Search SKU or Name..." 
-                            className="bg-transparent border-none outline-none px-6 py-2 text-sm w-64 focus:ring-0"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                        />
-                        <button className="bg-amber-400 text-black px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-amber-900/40 hover:scale-105 transition-all">Search</button>
+                    <div className="flex items-center gap-4">
+                        <div className="bg-white/5 border border-white/10 rounded-2xl p-1 flex">
+                            <input 
+                                className="bg-transparent border-none outline-none px-6 py-3 text-xs font-bold w-48 md:w-64"
+                                placeholder="Search Ledger..."
+                                value={searchTerm}
+                                onChange={e => setSearchTerm(e.target.value)}
+                            />
+                        </div>
+                        <button 
+                            onClick={() => setIsAdding(true)}
+                            className="px-8 py-4 bg-amber-400 text-black rounded-[1.5rem] font-black text-[10px] uppercase tracking-widest hover:scale-105 transition-all shadow-2xl shadow-amber-900/40"
+                        >
+                            + Quick Add
+                        </button>
                     </div>
                 </header>
 
-                <div className="grid grid-cols-1 gap-4">
-                    <div className="bg-white/5 border border-white/10 rounded-[3rem] p-12 overflow-hidden shadow-3xl">
-                        <table className="w-full text-left">
-                            <thead className="border-b border-white/5">
-                                <tr className="text-gray-500 text-[10px] font-black uppercase tracking-[0.2em]">
-                                    <th className="pb-8 pl-4">Product Detail</th>
-                                    <th className="pb-8">Category</th>
-                                    <th className="pb-8">Stock Level</th>
-                                    <th className="pb-8">Unit Price</th>
-                                    <th className="pb-8">Status</th>
-                                    <th className="pb-8 pr-4 text-right">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-white/5">
-                                {filteredInventory.map((item) => (
-                                    <tr key={item.id} className="group hover:bg-white/[0.03] transition-all">
-                                        <td className="py-8 pl-4 space-y-1">
-                                            <div className="font-black italic text-lg tracking-tight leading-none">{item.name}</div>
-                                            <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{item.id}</div>
-                                        </td>
-                                        <td className="py-8 font-black text-xs text-white/60 tracking-wider italic uppercase">{item.category}</td>
-                                        <td className="py-8">
-                                            <div className="font-bold text-base">{item.stock} {item.unit}</div>
-                                            <div className="h-1 w-24 bg-white/5 rounded-full mt-2 overflow-hidden">
-                                                <div className={`h-full rounded-full ${
-                                                    item.status === 'In Stock' ? 'bg-green-400 w-full' :
-                                                    item.status === 'Low Stock' ? 'bg-amber-400 w-1/3' : 'bg-red-500 w-[10%]'
-                                                }`} />
-                                            </div>
-                                        </td>
-                                        <td className="py-8 font-black italic tracking-tighter text-lg text-amber-400">${item.price.toFixed(2)}</td>
-                                        <td className="py-8">
-                                            <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-[0.2em] shadow-xl ${
-                                                item.status === 'In Stock' ? 'bg-green-400/10 text-green-400 border border-green-400/20' :
-                                                item.status === 'Low Stock' ? 'bg-amber-400/10 text-amber-400 border border-amber-400/20' :
-                                                'bg-red-400/10 text-red-500 border border-red-500/20'
-                                            }`}>{item.status}</span>
-                                        </td>
-                                        <td className="py-8 pr-4 text-right">
-                                            <button className="px-6 py-3 bg-white/5 border border-white/10 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-white/10 transition-all opacity-0 group-hover:opacity-100 translate-x-4 group-hover:translate-x-0 transition-all duration-500">Edit Point</button>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                {/* Quick Add Form Section (Conditional) */}
+                {isAdding && (
+                    <div className="bg-white/5 border border-amber-400/20 rounded-[3rem] p-12 space-y-10 animate-in slide-in-from-top-12 duration-500 relative overflow-hidden">
+                        <div className="absolute top-0 right-0 p-12 opacity-5 grayscale">
+                            <span className="text-8xl italic font-black">📦</span>
+                        </div>
+                        <div className="flex justify-between items-center relative z-10">
+                            <h2 className="text-2xl font-black italic uppercase tracking-tight">New Inventory Entry</h2>
+                            <button onClick={() => setIsAdding(false)} className="text-[10px] font-black uppercase text-gray-500 hover:text-white">Cancel X</button>
+                        </div>
+                        
+                        <form onSubmit={handleQuickAdd} className="grid grid-cols-1 md:grid-cols-4 gap-8 relative z-10">
+                            <div className="space-y-2">
+                                <label className="text-[9px] font-black uppercase text-gray-500 tracking-widest pl-1">Product Name</label>
+                                <input required value={newName} onChange={e => setNewName(e.target.value)} className="w-full bg-black/40 border border-white/5 p-4 rounded-xl font-bold focus:border-amber-400 outline-none" />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[9px] font-black uppercase text-gray-500 tracking-widest pl-1">Price ($)</label>
+                                <input required type="number" step="0.01" value={newPrice} onChange={e => setNewPrice(e.target.value)} className="w-full bg-black/40 border border-white/5 p-4 rounded-xl font-bold focus:border-amber-400 outline-none" />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[9px] font-black uppercase text-gray-500 tracking-widest pl-1">Initial Stock</label>
+                                <input type="number" value={newStock} onChange={e => setNewStock(e.target.value)} className="w-full bg-black/40 border border-white/5 p-4 rounded-xl font-bold focus:border-amber-400 outline-none" />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[9px] font-black uppercase text-gray-500 tracking-widest pl-1">Category</label>
+                                <input value={newCategory} onChange={e => setNewCategory(e.target.value)} className="w-full bg-black/40 border border-white/5 p-4 rounded-xl font-bold focus:border-amber-400 outline-none" placeholder="e.g. Retail" />
+                            </div>
+                            <div className="md:col-span-4 flex justify-end">
+                                <button type="submit" disabled={saving} className="px-12 py-5 bg-white text-black rounded-[1.5rem] font-black text-[10px] uppercase tracking-widest hover:bg-amber-400 transition-all shadow-xl">
+                                    {saving ? 'Transmitting Data...' : 'Commit to Database'}
+                                </button>
+                            </div>
+                        </form>
                     </div>
+                )}
+
+                {/* Inventory Table */}
+                <div className="bg-[#111112] border border-white/5 rounded-[4rem] overflow-hidden shadow-3xl">
+                    <table className="w-full text-left">
+                        <thead className="bg-white/[0.02] border-b border-white/5">
+                            <tr className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-500">
+                                <th className="p-10">Product Detail</th>
+                                <th className="p-10">Category</th>
+                                <th className="p-10 text-center">In Stock</th>
+                                <th className="p-10">Price (Unit)</th>
+                                <th className="p-10 text-right pr-12">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-white/5">
+                            {filteredProducts.map(p => (
+                                <tr key={p.id} className="group hover:bg-white/[0.01] transition-all">
+                                    <td className="p-10">
+                                        <div className="font-black italic text-xl tracking-tight leading-none text-white/90 group-hover:text-white transition-colors">{p.name}</div>
+                                        <div className="text-[9px] font-bold text-gray-600 uppercase tracking-widest mt-1">ID: {p.id.slice(0, 8)}...</div>
+                                    </td>
+                                    <td className="p-10">
+                                        <span className="px-4 py-1.5 bg-white/5 rounded-full text-[9px] font-black uppercase tracking-widest text-amber-400/60 border border-white/5">{p.category || 'RETAIL'}</span>
+                                    </td>
+                                    <td className="p-10 text-center">
+                                        <div className="font-black text-2xl tracking-tighter">{p.stock}</div>
+                                        <div className={`text-[8px] font-black uppercase tracking-widest mt-1 ${p.stock < 10 ? 'text-red-500' : 'text-green-500 opacity-40'}`}>
+                                            {p.stock < 10 ? 'Low Volume' : 'Stable'}
+                                        </div>
+                                    </td>
+                                    <td className="p-10 font-black italic text-2xl tracking-tighter text-amber-400">${Number(p.price).toFixed(2)}</td>
+                                    <td className="p-10 text-right pr-12">
+                                        <button 
+                                            onClick={() => handleDelete(p.id)}
+                                            className="px-6 py-3 bg-red-500/10 text-red-500 rounded-xl font-black text-[9px] uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all opacity-0 group-hover:opacity-100"
+                                        >
+                                            Decommission
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+                            {filteredProducts.length === 0 && (
+                                <tr>
+                                    <td colSpan={5} className="p-40 text-center space-y-4 opacity-20">
+                                        <div className="text-6xl grayscale">📦</div>
+                                        <p className="text-[10px] font-black uppercase tracking-[0.5em]">Ledger Empty. Add items above.</p>
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
                 </div>
             </main>
         </div>

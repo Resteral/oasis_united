@@ -3,6 +3,7 @@ import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Product } from '@/lib/types';
 import { parseProductCSV, generateCSVTemplate } from '@/lib/import_utils';
+import Link from 'next/link';
 
 // High-quality stock photo placeholders for a premium feel
 const AI_PLACEHOLDERS = [
@@ -174,9 +175,12 @@ export default function ProductsPage() {
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
                 <div>
                     <h1 className="text-4xl font-black text-gray-900 tracking-tight uppercase italic">Inventory</h1>
-                    <p className="mt-2 text-lg text-gray-500 font-medium">Manage your products, stock levels, and bulk updates.</p>
+                    <p className="mt-2 text-lg text-gray-500 font-medium italic">Manage your products and regional stock levels.</p>
                 </div>
                 <div className="flex gap-4">
+                    <Link href="/price-compass" className="px-6 py-4 bg-white border border-gray-200 text-gray-400 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-gray-50 transition-all flex items-center gap-3">
+                        📉 Market Intel
+                    </Link>
                     <button
                         className="px-6 py-4 bg-white border border-gray-200 rounded-2xl font-black text-xs tracking-widest text-gray-600 hover:bg-gray-50 transition-all shadow-sm uppercase"
                         onClick={() => setIsImporting(!isImporting)}

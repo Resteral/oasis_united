@@ -66,6 +66,11 @@ export default function MarketplaceClient({ initialFeatured, initialShoutouts }:
                             </h2>
                             <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest px-1">Curated Fresh Arrivals from our Premium Partners</p>
                         </div>
+                        <div className="flex gap-4 items-center">
+                            <Link href="/price-compass" className="px-8 py-4 bg-amber-400/10 border border-amber-400/20 text-amber-400 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-amber-400 hover:text-black transition-all shadow-xl flex items-center gap-3">
+                                <span className="text-xl">📡</span> Price Compass
+                            </Link>
+                        </div>
                     </div>
                     <DiscoveryFeed />
                 </section>

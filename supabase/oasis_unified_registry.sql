@@ -197,6 +197,30 @@ BEGIN
     
     EXECUTE 'CREATE POLICY "Businesses manage own ads" ON public.route_ads FOR ALL USING (EXISTS (SELECT 1 FROM public.businesses b WHERE b.id = route_ads.business_id AND b.owner_id = auth.uid()))';
     EXECUTE 'CREATE POLICY "Route ads are public" ON public.route_ads FOR SELECT USING (true)';
+
+    -- Staging & Waiting Policies
+    EXECUTE 'CREATE TABLE IF NOT EXISTS public.wait_points (
+        id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+        town_id UUID REFERENCES public.towns(id) ON DELETE CASCADE NOT NULL,
+        name TEXT NOT NULL,
+        description TEXT,
+        is_active BOOLEAN DEFAULT true,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone(''utc''::text, now()) NOT NULL
+    )';
+    
+    EXECUTE 'CREATE TABLE IF NOT EXISTS public.active_waiting (
+        id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+        deliverer_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
+        wait_point_id UUID REFERENCES public.wait_points(id) ON DELETE CASCADE NOT NULL,
+        started_at TIMESTAMP WITH TIME ZONE DEFAULT timezone(''utc''::text, now()) NOT NULL
+    )';
+
+    EXECUTE 'ALTER TABLE public.wait_points ENABLE ROW LEVEL SECURITY';
+    EXECUTE 'ALTER TABLE public.active_waiting ENABLE ROW LEVEL SECURITY';
+    
+    EXECUTE 'CREATE POLICY "Wait points are public" ON public.wait_points FOR SELECT USING (true)';
+    EXECUTE 'CREATE POLICY "Manage own wait status" ON public.active_waiting FOR ALL USING (auth.uid() = deliverer_id)';
+    EXECUTE 'CREATE POLICY "Active waits are public" ON public.active_waiting FOR SELECT USING (true)';
 END $$;
 
 -- 7. SEEDING INITIAL MUNICIPAL INFRASTRUCTURE

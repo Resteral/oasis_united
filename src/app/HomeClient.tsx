@@ -35,6 +35,9 @@ export default function HomeClient({ initialBusinesses }: HomeClientProps) {
           
           <nav className="hidden md:flex items-center gap-10">
             <Link href="/marketplace" className="text-[10px] font-black uppercase tracking-[0.3em] text-white/50 hover:text-white transition-colors">Marketplace</Link>
+            <Link href="/sell" className="text-[10px] font-black uppercase tracking-[0.3em] text-amber-400 group flex items-center gap-2">
+               Sell <span className="group-hover:translate-x-1 transition-transform">→</span>
+            </Link>
             <Link href="/hub" className="text-[10px] font-black uppercase tracking-[0.3em] text-white/50 hover:text-white transition-colors">Discovery Hub</Link>
             <Link href="/dashboard" className="px-8 py-3 bg-white/5 border border-white/10 rounded-full text-[10px] font-black uppercase tracking-[0.3em] hover:bg-white/10 transition-all">Merchant Portal</Link>
             <Link href="/login" className="px-8 py-3 bg-amber-400 text-black rounded-full text-[10px] font-black uppercase tracking-[0.3em] hover:scale-105 transition-all shadow-xl shadow-amber-400/20">Secure Login</Link>

@@ -97,6 +97,9 @@ export default function MarketplaceClient({ initialFeatured, initialShoutouts }:
                                         <div className="flex gap-3">
                                             <span className="text-[9px] font-black uppercase tracking-widest text-[hsl(var(--muted-foreground))]">{biz.category}</span>
                                             <span className="text-[9px] font-black uppercase tracking-widest text-primary/60">{biz.location || 'Local'}</span>
+                                            {biz.store_features?.is_founding_partner && (
+                                                <span className="text-[7px] font-black uppercase tracking-[0.2em] px-2 py-0.5 bg-amber-400 text-black rounded-full shadow-lg">Founding Partner</span>
+                                            )}
                                         </div>
                                     </div>
                                     <div className="absolute top-0 right-0 w-48 h-48 bg-[hsl(var(--primary))/0.1] blur-[80px] opacity-0 group-hover:opacity-100 transition-opacity"></div>
@@ -117,6 +120,7 @@ export default function MarketplaceClient({ initialFeatured, initialShoutouts }:
 
                     <div className="flex gap-8 overflow-x-auto pb-12 no-scrollbar">
                         {[
+                            { name: "Walt's Carpentry", role: 'Founding Carpenter', icon: '🔨', stats: 'Regional Infrastructure Build' },
                             { name: 'Local Dave', role: 'Elite Deliverer', icon: '🚐', stats: '24 Shops Onboarded' },
                             { name: 'Sarah NH', role: 'Expansion Scout', icon: '🗺️', stats: '8 Towns Opened' },
                             { name: 'Marcus R.', role: 'Logistics Lead', icon: '🛰️', stats: '12 Active Routes' },

@@ -62,8 +62,7 @@ create table if not exists public.products (
   name text not null,
   description text,
   price numeric not null,
-  stock integer default 0,
-  category text,
+  stock integer default 0,tegory text,
   image_url text,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
@@ -166,9 +165,14 @@ begin
   values 
     ('pnb-eats', 'PNB Eats', 'Restaurant', 'Effingham', effingham_id, 'e5f6a7b8-d4c3-4b2a-a198-e7d6c5b4a321', 'Fresh pizza & specialty subs.'),
     ('boyles-general', 'Boyle''s General Store', 'Grocery', 'Effingham Falls', effingham_id, 'e5f6a7b8-d4c3-4b2a-a198-e7d6c5b4a321', 'Local staples & artisanal goods.'),
-    ('walts-carpentry', 'Walt''s Carpentry & Hardware', 'Hardware', 'Effingham', effingham_id, 'e5f6a7b8-d4c3-4b2a-a198-e7d6c5b4a321', 'Custom woodworking & hardware.'),
+    ('walts-carpentry', 'Walt''s Carpentry', 'Carpenter', 'Effingham', effingham_id, 'e5f6a7b8-d4c3-4b2a-a198-e7d6c5b4a321', 'Custom woodworking & residential hardware.'),
     ('wayside-farm', 'Wayside Farm Stand', 'Farm & Grocery', 'Effingham', effingham_id, 'e5f6a7b8-d4c3-4b2a-a198-e7d6c5b4a321', 'Seasonal fresh produce & dairy.')
-  on conflict (slug) do update set town_id = excluded.town_id;
+  on conflict (slug) do update set town_id = excluded.town_id, category = excluded.category, name = excluded.name;
+
+  -- Mark Founding Partners
+  update public.businesses 
+  set store_features = store_features || '{"is_founding_partner": true, "trade": "Carpenter"}'::jsonb 
+  where slug = 'walts-carpentry';
 
   -- Freedom Businesses
   insert into public.businesses (slug, name, category, location, town_id, onboarded_by, description)

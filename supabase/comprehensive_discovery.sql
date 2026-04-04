@@ -302,6 +302,17 @@ alter table public.orders enable row level security;
 alter table public.seating_layouts enable row level security;
 alter table public.messages enable row level security;
 
+-- CLEANUP OLD POLICIES (Fix for ERROR 42710)
+drop policy if exists "Owners view own orders" on public.orders;
+drop policy if exists "Users view own orders" on public.orders;
+drop policy if exists "Public insert orders" on public.orders;
+drop policy if exists "Public view layouts" on public.seating_layouts;
+drop policy if exists "Public view fleet ads" on public.fleet_ads;
+drop policy if exists "Owners manage own fleet ads" on public.fleet_ads;
+drop policy if exists "Owners insert layout" on public.seating_layouts;
+drop policy if exists "Owners update layout" on public.seating_layouts;
+drop policy if exists "Owners manage messages" on public.messages;
+
 -- Orders: Owner select own, User select own, Anyone insert
 create policy "Owners view own orders" on public.orders for select using (
     exists (select 1 from public.businesses where id = business_id and owner_id = auth.uid())
@@ -328,9 +339,16 @@ do $$
 declare
   pnb_id uuid;
   boyles_id uuid;
+  walts_id uuid;
 begin
   select id into pnb_id from public.businesses where slug = 'pnb-eats';
   select id into boyles_id from public.businesses where slug = 'boyles-general';
+  select id into walts_id from public.businesses where slug = 'walts-carpentry';
+
+  -- Update Business Integration & Partner Tier Details
+  update public.businesses set integrations = '{"phone": "(603) 539-7700"}'::jsonb, store_features = store_features || '{"tier": "Founding Partner"}'::jsonb where id = pnb_id;
+  update public.businesses set integrations = '{"phone": "(603) 539-2500"}'::jsonb, store_features = store_features || '{"tier": "Founding Partner"}'::jsonb where id = boyles_id;
+  update public.businesses set integrations = '{"phone": "(603) 231-1042"}'::jsonb, store_features = store_features || '{"tier": "Founding Partner"}'::jsonb where id = walts_id;
 
   insert into public.fleet_ads (business_id, headline, display_duration, image_url)
   values

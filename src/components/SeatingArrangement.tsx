@@ -11,17 +11,17 @@ interface Table {
 
 interface SeatingArrangementProps {
     businessId: string;
-    onTableSelect: (tableNumber: string) => void;
+    onTableSelect?: (tableNumber: string) => void;
     selectedTable?: string;
+    merchantMode?: boolean;
 }
 
-export default function SeatingArrangement({ businessId, onTableSelect, selectedTable }: SeatingArrangementProps) {
+export default function SeatingArrangement({ businessId, onTableSelect, selectedTable, merchantMode }: SeatingArrangementProps) {
     const [tables, setTables] = useState<Table[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         // Mocking a seating layout generation based on businessId
-        // In a real app, this would be fetched from Supabase (e.g. business_seating table)
         const mockTables: Table[] = [
             { id: '1', number: '01', capacity: 2, status: 'available', x: 20, y: 20 },
             { id: '2', number: '02', capacity: 2, status: 'occupied', x: 50, y: 20 },
@@ -37,12 +37,23 @@ export default function SeatingArrangement({ businessId, onTableSelect, selected
         setLoading(false);
     }, [businessId]);
 
+    const handleTableAction = (table: Table) => {
+        if (merchantMode) {
+            // In Merchant Mode, we toggle status
+            const newStatus = table.status === 'available' ? 'occupied' : 'available';
+            setTables(prev => prev.map(t => t.id === table.id ? { ...t, status: newStatus as any } : t));
+        } else {
+            // In Consumer Mode, we select
+            if (onTableSelect) onTableSelect(table.number);
+        }
+    };
+
     if (loading) return <div className="animate-pulse text-[10px] font-black uppercase tracking-widest text-white/20 text-center py-10">Mapping Floor Plan...</div>;
 
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center px-2">
-                <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40">Select Your Table</h3>
+                <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40">{merchantMode ? 'Live Seating Management' : 'Select Your Table'}</h3>
                 <div className="flex gap-4">
                     <div className="flex items-center gap-2">
                         <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
@@ -73,10 +84,10 @@ export default function SeatingArrangement({ businessId, onTableSelect, selected
                         return (
                             <button
                                 key={table.id}
-                                disabled={isOccupied}
-                                onClick={() => onTableSelect(table.number)}
+                                disabled={!merchantMode && isOccupied}
+                                onClick={() => handleTableAction(table)}
                                 className={`absolute transition-all duration-500 group ${
-                                    isSelected ? 'scale-110 z-20' : 'hover:scale-105 z-10'
+                                    isSelected ? 'scale-110 z-20' : 'hover:scale-110 z-10'
                                 }`}
                                 style={{
                                     left: `${table.x}%`,
@@ -85,14 +96,14 @@ export default function SeatingArrangement({ businessId, onTableSelect, selected
                                 }}
                             >
                                 <div className={`relative flex flex-col items-center justify-center transition-all duration-500 ${
-                                    isOccupied ? 'opacity-40 grayscale cursor-not-allowed' : 'cursor-pointer'
+                                    !merchantMode && isOccupied ? 'opacity-40 grayscale cursor-not-allowed' : 'cursor-pointer'
                                 }`}>
                                     {/* Table Shape */}
                                     <div className={`w-16 h-16 rounded-[1.5rem] border-2 flex items-center justify-center shadow-2xl transition-all duration-500 ${
                                         isSelected 
                                             ? 'bg-amber-400 border-amber-300 text-black shadow-amber-400/40' 
                                             : isOccupied 
-                                                ? 'bg-white/5 border-white/10 text-white/20' 
+                                                ? 'bg-red-500/20 border-red-500/30 text-red-400' 
                                                 : 'bg-white/10 border-white/20 text-white/60 hover:border-amber-400/50'
                                     }`}>
                                         <span className="text-xl font-black italic tracking-tighter">{table.number}</span>
@@ -100,7 +111,7 @@ export default function SeatingArrangement({ businessId, onTableSelect, selected
 
                                     {/* Table Label / Capacity */}
                                     <div className={`mt-2 px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest transition-all ${
-                                        isSelected ? 'bg-amber-400 text-black' : 'bg-white/5 text-white/40'
+                                        isSelected ? 'bg-amber-400 text-black' : isOccupied ? 'bg-red-500/10 text-red-400' : 'bg-white/5 text-white/40'
                                     }`}>
                                         {table.capacity} Seats
                                     </div>

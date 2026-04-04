@@ -6,6 +6,7 @@ import styles from './Sidebar.module.css';
 const navItems = [
     { label: 'Overview', href: '/dashboard', icon: '📊' },
     { label: 'Recent Orders', href: '/dashboard/orders', icon: '📋' },
+    { label: 'Seating & Layout', href: '/dashboard/seating', icon: '🍽️' },
     { label: 'Team / Staff', href: '/dashboard/staff', icon: '🛡️' },
     { label: 'CRM / Customers', href: '/dashboard/crm', icon: '👥' },
     { label: 'Messages', href: '/dashboard/messages', icon: '💬' },

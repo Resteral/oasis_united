@@ -375,7 +375,7 @@ begin
 
   -- 2. Autonomous Price Matching (Populate from Regional Template)
   insert into public.products (business_id, name, price, category, description)
-  select new_biz_id, name, base_price, category, description
+  select new_biz_id, name, price, category, description
   from public.products_template;
 
   -- 3. Broadcast Municipal Arrival

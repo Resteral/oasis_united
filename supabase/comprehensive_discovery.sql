@@ -210,7 +210,8 @@ begin
   insert into public.businesses (slug, name, category, location, town_id, onboarded_by, description)
   values 
     ('yankee-smokehouse', 'Yankee Smokehouse', 'BBQ & Pizza', 'West Ossipee', ossipee_id, 'e5f6a7b8-d4c3-4b2a-a198-e7d6c5b4a321', 'Famous world-class smoked ribs and New Hampshire hospitality.'),
-    ('jakes-seafood', 'Jake''s Seafood & Grill', 'Seafood', 'Ossipee', ossipee_id, 'e5f6a7b8-d4c3-4b2a-a198-e7d6c5b4a321', 'Fresh New England favorites and coastal flavors.')
+    ('jakes-seafood', 'Jake''s Seafood & Grill', 'Seafood', 'Ossipee', ossipee_id, 'e5f6a7b8-d4c3-4b2a-a198-e7d6c5b4a321', 'Fresh New England favorites and coastal flavors.'),
+    ('hobbs-tavern', 'Hobbs Tavern & Brewing', 'Tavern & Brewery', 'West Ossipee', ossipee_id, 'e5f6a7b8-d4c3-4b2a-a198-e7d6c5b4a321', 'A historic tavern and microbrewery in the heart of the Ossipee Valley.')
   on conflict (slug) do update set town_id = excluded.town_id, category = excluded.category;
 
   -- Tamworth Businesses

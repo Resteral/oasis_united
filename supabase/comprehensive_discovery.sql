@@ -312,12 +312,6 @@ create table if not exists public.inventory_logistics (
 );
 
 alter table public.inventory_logistics enable row level security;
-create policy "Owners view own logistics" on public.inventory_logistics for select using (
-    exists (select 1 from public.businesses where id = business_id and owner_id = auth.uid())
-);
-create policy "Admins manage all logistics" on public.inventory_logistics for all using (
-    exists (select 1 from public.profiles where id = auth.uid() and role = 'admin')
-);
 
 -- 221. ORDERS TABLE (Core Commerce Engine)
 create table if not exists public.orders (
@@ -389,6 +383,8 @@ drop policy if exists "Owners manage own fleet ads" on public.fleet_ads;
 drop policy if exists "Owners insert layout" on public.seating_layouts;
 drop policy if exists "Owners update layout" on public.seating_layouts;
 drop policy if exists "Owners manage messages" on public.messages;
+drop policy if exists "Owners view own logistics" on public.inventory_logistics;
+drop policy if exists "Admins manage all logistics" on public.inventory_logistics;
 
 -- Orders: Owner select own, User select own, Anyone insert
 create policy "Owners view own orders" on public.orders for select using (
@@ -409,6 +405,14 @@ create policy "Owners update layout" on public.seating_layouts for update using 
 -- Messages: Owner manage
 create policy "Owners manage messages" on public.messages for select using (
     exists (select 1 from public.businesses where id = business_id and owner_id = auth.uid())
+);
+
+-- Logistics: Owner view own, Admin all
+create policy "Owners view own logistics" on public.inventory_logistics for select using (
+    exists (select 1 from public.businesses where id = business_id and owner_id = auth.uid())
+);
+create policy "Admins manage all logistics" on public.inventory_logistics for all using (
+    exists (select 1 from public.profiles where id = auth.uid() and role = 'admin')
 );
 
 -- 225. SEED DATA FINISHING TOUCHES

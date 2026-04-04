@@ -153,9 +153,9 @@ create policy "Everyone can view routes" on public.delivery_routes for select us
 insert into public.profiles (id, full_name, role, town, subscription_tier)
 values 
   ('e5f6a7b8-d4c3-4b2a-a198-e7d6c5b4a321', 'Local Dave', 'deliverer', 'Effingham', 'platinum'),
-  ('a1b2c3d4-e5f6-g7h8-i9j0-k1l2m3n4o5p6', 'Merchant Silver', 'business', 'Effingham', 'silver'),
-  ('b2c3d4e5-f6g7-h8i9-j0k1-l2m3n4o5p6q7', 'Merchant Gold', 'business', 'Ossipee', 'gold'),
-  ('c3d4e5f6-g7h8-i9j0-k1l2-m3n4o5p6q7r8', 'Founding Platinum', 'business', 'Freedom', 'platinum')
+  ('a1b2c3d4-e5f6-47a8-b901-c1d2e3f4a5b6', 'Merchant Silver', 'business', 'Effingham', 'silver'),
+  ('b2c3d4e5-f6a7-48b9-a0b1-c2d3e4f5a6b7', 'Merchant Gold', 'business', 'Ossipee', 'gold'),
+  ('c3d4e5f6-a7b8-49c0-b1c2-d3e4f5a6b7c8', 'Founding Platinum', 'business', 'Freedom', 'platinum')
 on conflict (id) do update set subscription_tier = excluded.subscription_tier;
 
 insert into public.deliverer_profiles (id, vehicle_type, status, is_active, service_town)
@@ -191,9 +191,9 @@ begin
   -- Original Effingham Businesses with Tiered Owners & Delivery
   insert into public.businesses (slug, name, category, location, town_id, onboarded_by, owner_id, delivery_settings, description)
   values 
-    ('pnb-eats', 'PNB Eats', 'Restaurant', 'Effingham', effingham_id, 'e5f6a7b8-d4c3-4b2a-a198-e7d6c5b4a321', 'a1b2c3d4-e5f6-g7h8-i9j0-k1l2m3n4o5p6', '{"base_fee": 10.00, "radius_miles": 15}'::jsonb, 'Fresh pizza & specialty subs.'),
-    ('boyles-general', 'Boyle''s General Store', 'Grocery', 'Effingham Falls', effingham_id, 'e5f6a7b8-d4c3-4b2a-a198-e7d6c5b4a321', 'b2c3d4e5-f6g7-h8i9-j0k1-l2m3n4o5p6q7', '{"base_fee": 5.00, "radius_miles": 25}'::jsonb, 'Local staples & artisanal goods.'),
-    ('walts-carpentry', 'Walt''s Carpentry', 'Carpenter', 'Effingham', effingham_id, 'e5f6a7b8-d4c3-4b2a-a198-e7d6c5b4a321', 'c3d4e5f6-g7h8-i9j0-k1l2-m3n4o5p6q7r8', '{"base_fee": 0.00, "radius_miles": 40}'::jsonb, 'Custom woodworking & residential hardware.')
+    ('pnb-eats', 'PNB Eats', 'Restaurant', 'Effingham', effingham_id, 'e5f6a7b8-d4c3-4b2a-a198-e7d6c5b4a321', 'a1b2c3d4-e5f6-47a8-b901-c1d2e3f4a5b6', '{"base_fee": 10.00, "radius_miles": 15}'::jsonb, 'Fresh pizza & specialty subs.'),
+    ('boyles-general', 'Boyle''s General Store', 'Grocery', 'Effingham Falls', effingham_id, 'e5f6a7b8-d4c3-4b2a-a198-e7d6c5b4a321', 'b2c3d4e5-f6a7-48b9-a0b1-c2d3e4f5a6b7', '{"base_fee": 5.00, "radius_miles": 25}'::jsonb, 'Local staples & artisanal goods.'),
+    ('walts-carpentry', 'Walt''s Carpentry', 'Carpenter', 'Effingham', effingham_id, 'e5f6a7b8-d4c3-4b2a-a198-e7d6c5b4a321', 'c3d4e5f6-a7b8-49c0-b1c2-d3e4f5a6b7c8', '{"base_fee": 0.00, "radius_miles": 40}'::jsonb, 'Custom woodworking & residential hardware.')
   on conflict (slug) do update set owner_id = excluded.owner_id, delivery_settings = excluded.delivery_settings, town_id = excluded.town_id;
 
   -- Mark Founding Partners

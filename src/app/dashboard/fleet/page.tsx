@@ -37,7 +37,12 @@ export default function FleetOperationsPage() {
         if (!selectedRouteId) return;
         async function fetchStops() {
             const { data: stops, error } = await supabase.rpc('get_route_stops', { p_route_id: selectedRouteId });
-            if (!error) setRouteStops(stops || []);
+            if (!error) {
+                setRouteStops(stops || []);
+                // 🛰️ Simulation Calculation: 15 mins per stop + 10 mins transit
+                const estimatedMins = (stops?.length || 0) * 15 + 10;
+                await supabase.from('delivery_routes').update({ estimated_duration: estimatedMins }).eq('id', selectedRouteId);
+            }
             else console.error('Error fetching route stops:', error);
         }
         fetchStops();
@@ -116,9 +121,35 @@ export default function FleetOperationsPage() {
                     </div>
 
                     {routeStops.length > 0 && (
-                        <button className="w-full py-8 bg-amber-400 text-black rounded-[2.5rem] font-black text-xs uppercase tracking-[0.3em] hover:scale-[1.02] active:scale-[0.98] transition-all shadow-3xl shadow-amber-400/20">
-                            🚀 Dispatch Active Loop
-                        </button>
+                        <>
+                            <div className="bg-emerald-500/10 border border-emerald-500/20 p-8 rounded-[2.5rem] space-y-4">
+                                <div className="flex justify-between items-center">
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500">Regional Loop Timing</span>
+                                    <span className="text-2xl font-black italic tracking-tighter uppercase text-white">{(routeStops.length * 15 + 10)} Mins</span>
+                                </div>
+                                <p className="text-[9px] font-medium text-white/30 italic uppercase">Estimated driver fulfillment window based on {routeStops.length} nodes.</p>
+                            </div>
+
+                            <section className="space-y-8 pt-8">
+                                <h3 className="text-[10px] font-black uppercase tracking-[0.5em] text-indigo-400 italic">Discovery Marketing Nodes (Car Ads)</h3>
+                                <div className="bg-indigo-600/5 border border-indigo-500/10 rounded-[3rem] p-8 space-y-6">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-12 h-12 bg-indigo-500/20 rounded-xl flex items-center justify-center text-xl grayscale">🛰️</div>
+                                        <div className="space-y-0.5">
+                                            <p className="text-sm font-black italic uppercase tracking-tight text-white/80">Active Mobile Campaigns</p>
+                                            <p className="text-[9px] font-black uppercase text-indigo-400">0 Active / 2 Available</p>
+                                        </div>
+                                    </div>
+                                    <button className="w-full py-4 bg-white/5 border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest text-white/40 hover:bg-indigo-600 hover:text-white transition-all shadow-xl">
+                                        Browse Available Hub Ads
+                                    </button>
+                                </div>
+                            </section>
+
+                            <button className="w-full py-8 bg-amber-400 text-black rounded-[2.5rem] font-black text-xs uppercase tracking-[0.3em] hover:scale-[1.02] active:scale-[0.98] transition-all shadow-3xl shadow-amber-400/20">
+                                🚀 Dispatch Active Loop
+                            </button>
+                        </>
                     )}
                 </section>
             </main>

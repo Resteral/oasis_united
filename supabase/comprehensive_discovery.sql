@@ -167,6 +167,9 @@ create table if not exists public.delivery_routes (
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
+alter table public.deliverer_profiles add column if not exists active_marketing jsonb default '[]'::jsonb;
+alter table public.delivery_routes add column if not exists estimated_duration integer default 0; -- In minutes
+
 -- 4. ENABLE ROW LEVEL SECURITY (RLS)
 alter table public.profiles enable row level security;
 alter table public.businesses enable row level security;

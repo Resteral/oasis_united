@@ -29,6 +29,8 @@ export default function ProductsPage() {
     const [newStock, setNewStock] = useState('100');
     const [newImage, setNewImage] = useState('');
     const [newDescription, setNewDescription] = useState('');
+    const [isFeatured, setIsFeatured] = useState(false);
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
     useEffect(() => {
         fetchProducts();
@@ -61,14 +63,14 @@ export default function ProductsPage() {
     const handleGenerateAI = () => {
         const randomImg = AI_PLACEHOLDERS[Math.floor(Math.random() * AI_PLACEHOLDERS.length)];
         setNewImage(randomImg);
+        setSelectedFile(null);
     };
 
     const handleLocalImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
-        // In a real staging/prod env, we'd upload to Supabase Storage
-        // For now, let's create a local preview or handle the upload if storage is ready
+        setSelectedFile(file);
         const reader = new FileReader();
         reader.onload = (event) => {
             setNewImage(event.target?.result as string);
@@ -82,6 +84,24 @@ export default function ProductsPage() {
             return;
         }
 
+        setLoading(true);
+        let finalImageUrl = newImage;
+
+        // 📤 High-Density Storage Upload
+        if (selectedFile) {
+            const fileName = `${businessId}-${Date.now()}`;
+            const { data: uploadData, error: uploadError } = await supabase.storage
+                .from('products')
+                .upload(fileName, selectedFile);
+
+            if (!uploadError) {
+                const { data: { publicUrl } } = supabase.storage
+                    .from('products')
+                    .getPublicUrl(fileName);
+                finalImageUrl = publicUrl;
+            }
+        }
+
         const newProductData = {
             business_id: businessId,
             name: newName,
@@ -89,7 +109,8 @@ export default function ProductsPage() {
             stock: parseInt(newStock) || 0,
             category: newCategory,
             description: newDescription,
-            image_url: newImage || AI_PLACEHOLDERS[Math.floor(Math.random() * AI_PLACEHOLDERS.length)]
+            image_url: finalImageUrl || AI_PLACEHOLDERS[Math.floor(Math.random() * AI_PLACEHOLDERS.length)],
+            is_featured: isFeatured
         };
 
         const { data, error } = await supabase
@@ -99,12 +120,13 @@ export default function ProductsPage() {
             .single();
 
         if (error) {
-            alert("Error adding product: " + error.message);
+            alert("Protocol Error: " + error.message);
         } else if (data) {
             setProducts([data as Product, ...products]);
             setIsAdding(false);
             resetForm();
         }
+        setLoading(false);
     };
 
     const resetForm = () => {
@@ -114,6 +136,8 @@ export default function ProductsPage() {
         setNewCategory('General');
         setNewImage('');
         setNewDescription('');
+        setIsFeatured(false);
+        setSelectedFile(null);
     };
 
     const handleDeleteProduct = async (id: string) => {
@@ -274,14 +298,30 @@ export default function ProductsPage() {
                         </div>
                     </div>
 
-                    <div className="space-y-2">
-                        <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest">Description (Optional)</label>
-                        <textarea
-                            placeholder="Tell customers about this product..."
-                            value={newDescription}
-                            onChange={(e) => setNewDescription(e.target.value)}
-                            className="w-full p-4 border border-gray-100 rounded-2xl bg-gray-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 transition-all outline-none font-bold italic h-24 resize-none"
-                        />
+                    <div className="flex flex-col md:flex-row gap-8 items-end">
+                        <div className="flex-1 space-y-2">
+                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest">Description (Optional)</label>
+                            <textarea
+                                placeholder="Tell customers about this product..."
+                                value={newDescription}
+                                onChange={(e) => setNewDescription(e.target.value)}
+                                className="w-full p-4 border border-gray-100 rounded-2xl bg-gray-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 transition-all outline-none font-bold italic h-24 resize-none"
+                            />
+                        </div>
+                        <div className="pb-4">
+                            <label className="flex items-center gap-4 cursor-pointer group">
+                                <div 
+                                    className={`w-14 h-8 rounded-full border border-gray-200 transition-all relative ${isFeatured ? 'bg-indigo-600 border-indigo-600' : 'bg-gray-100'}`}
+                                    onClick={() => setIsFeatured(!isFeatured)}
+                                >
+                                    <div className={`absolute top-1 w-6 h-6 rounded-full bg-white shadow-md transition-all ${isFeatured ? 'left-7' : 'left-1'}`}></div>
+                                </div>
+                                <div className="space-y-0.5">
+                                    <span className="block text-[10px] font-black uppercase tracking-widest text-gray-900">Verified Drop</span>
+                                    <span className="block text-[8px] font-black uppercase tracking-widest text-gray-400">Promote to Oasis Discovery</span>
+                                </div>
+                            </label>
+                        </div>
                     </div>
 
                     <div className="space-y-4">

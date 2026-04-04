@@ -16,6 +16,29 @@ export default function RouteArchitectPage() {
     const [extractedItems, setExtractedItems] = useState<any[]>([]);
     const [ingestLoading, setIngestLoading] = useState(false);
 
+    const [newTownName, setNewTownName] = useState('');
+    const [provisioning, setProvisioning] = useState(false);
+
+    const openNewTown = async () => {
+        if (!newTownName) return;
+        setProvisioning(true);
+        const { data, error } = await supabase
+            .from('towns')
+            .insert({ name: newTownName })
+            .select()
+            .single();
+        
+        if (!error && data) {
+            setTowns(prev => [...prev, data]);
+            setSelectedTownId(data.id);
+            setNewTownName('');
+            alert(`🏘️ Municipal Node '${newTownName}' Provisioned! Scanning Matrix Authorized.`);
+        } else {
+            alert('Protocol Failure: Municipal Provisioning Aborted.');
+        }
+        setProvisioning(false);
+    };
+
     useEffect(() => {
         async function loadInitialData() {
             setLoading(true);
@@ -137,7 +160,25 @@ export default function RouteArchitectPage() {
                         {/* Left: Regional Scanning Nodes */}
                         <div className="lg:col-span-4 space-y-12">
                             <section className="space-y-8 bg-white/[0.02] border border-white/5 p-10 rounded-[3rem]">
-                                <h3 className="text-[11px] font-black uppercase tracking-[0.4em] text-indigo-400">Regional Scan Target</h3>
+                                <div className="space-y-4 border-b border-white/5 pb-8">
+                            <h3 className="text-[11px] font-black uppercase tracking-[0.4em] text-amber-400">Open New Town</h3>
+                            <div className="flex gap-4">
+                                <input 
+                                    type="text" 
+                                    value={newTownName}
+                                    onChange={(e) => setNewTownName(e.target.value)}
+                                    placeholder="Enter Town Name (e.g. Ossipee West)"
+                                    className="flex-1 bg-black/40 border border-white/10 rounded-2xl p-4 text-[10px] uppercase font-black tracking-widest text-white outline-none focus:border-amber-400"
+                                />
+                                <button 
+                                    onClick={openNewTown}
+                                    disabled={!newTownName || provisioning}
+                                    className="px-6 bg-white/5 border border-white/10 rounded-2xl text-[10px] font-black uppercase text-white hover:bg-white/10"
+                                > {provisioning ? '...' : '+ Provision'} </button>
+                            </div>
+                        </div>
+
+                        <h3 className="text-[11px] font-black uppercase tracking-[0.4em] text-indigo-400">Regional Scan Target</h3>
                                 <div className="space-y-6">
                                     <select 
                                         value={selectedTownId || ''} 

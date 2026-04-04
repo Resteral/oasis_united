@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
@@ -15,6 +15,8 @@ export default function SellOnboardingPage() {
     const [desc, setDesc] = useState('');
     const [category, setCategory] = useState('Personal Drop');
     const [location, setLocation] = useState('');
+    const [bannerUrl, setBannerUrl] = useState('');
+    const bannerInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         supabase.auth.getUser().then(({ data: { user } }) => {
@@ -28,6 +30,14 @@ export default function SellOnboardingPage() {
             }
         });
     }, [router]);
+
+    const handleBannerSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (event) => setBannerUrl(event.target?.result as string);
+        reader.readAsDataURL(file);
+    };
 
     const handleOnboard = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -47,6 +57,7 @@ export default function SellOnboardingPage() {
                     category,
                     description: desc,
                     location,
+                    image_url: bannerUrl,
                     store_features: { type: 'individual', is_p2p: true }
                 }])
                 .select()
@@ -129,6 +140,35 @@ export default function SellOnboardingPage() {
                                     value={location}
                                     onChange={e => setLocation(e.target.value)}
                                 />
+                            </div>
+                        </div>
+
+                        <div className="space-y-4">
+                            <label className="text-[10px] font-black uppercase text-gray-500 tracking-[0.3em] pl-1">Boutique Banner Image</label>
+                            <div 
+                                onClick={() => bannerInputRef.current?.click()}
+                                className={`w-full group h-48 border-2 border-dashed rounded-[2.5rem] flex flex-col items-center justify-center cursor-pointer transition-all ${bannerUrl ? 'border-amber-400' : 'border-white/10 hover:border-amber-400/50 hover:bg-white/[0.02]'}`}
+                            >
+                                <input 
+                                    type="file" 
+                                    accept="image/*" 
+                                    className="hidden" 
+                                    ref={bannerInputRef} 
+                                    onChange={handleBannerSelect}
+                                />
+                                {bannerUrl ? (
+                                    <div className="w-full h-full relative group shadow-2xl overflow-hidden rounded-[2.5rem]">
+                                        <img src={bannerUrl} alt="Store Banner" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity backdrop-blur-sm">
+                                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white">Click to change</span>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="text-center group-hover:scale-110 transition-transform">
+                                        <div className="text-4xl mb-2">📸</div>
+                                        <p className="text-[10px] font-black uppercase text-white/30 tracking-[0.2em]">Select an inviting cover photo</p>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>

@@ -3,10 +3,12 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import SeatingArrangement from '@/components/SeatingArrangement';
 
 const COLORS = ['#4F46E5', '#10B981', '#F59E0B', '#EF4444', '#EC4899', '#8B5CF6'];
 
 export default function DashboardOverview() {
+    const [businessId, setBusinessId] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
     const [stats, setStats] = useState({
         totalOrders: 0,
@@ -35,11 +37,13 @@ export default function DashboardOverview() {
             }
 
             const { data: business } = await supabase.from('businesses').select('id, name').eq('owner_id', user.id).single();
-
+            
             if (!business) {
                 window.location.href = '/dashboard/onboarding';
                 return;
             }
+
+            setBusinessId(business.id);
 
             const fetchData = async () => {
                 // 1. Fetch Basic Stats & Analytics
@@ -282,6 +286,64 @@ export default function DashboardOverview() {
                     </div>
                 </div>
             </div>
+
+            {/* Live Seating Layout Section - The Selling Context */}
+            {businessId && (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                    <div className="bg-gray-900 p-10 rounded-[3rem] shadow-2xl border border-white/5 relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 p-12 opacity-[0.03] select-none pointer-events-none grayscale group-hover:opacity-10 transition-opacity">
+                            <span className="text-[120px] font-black italic leading-none text-white">MAP</span>
+                        </div>
+                        <div className="relative z-10">
+                            <div className="flex justify-between items-center mb-10">
+                                <div>
+                                    <h3 className="text-xl font-black text-white uppercase tracking-tight italic">Live Floor Plan</h3>
+                                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Real-time Table Management</p>
+                                </div>
+                                <Link href="/dashboard/seating" className="px-6 py-3 bg-white/5 border border-white/10 rounded-2xl text-[9px] font-black uppercase tracking-widest text-white hover:bg-white/10 transition-all">Manage All →</Link>
+                            </div>
+                            <SeatingArrangement businessId={businessId} merchantMode={true} />
+                        </div>
+                    </div>
+
+                    <div className="bg-[#4F46E5] p-12 rounded-[3.5rem] shadow-2xl shadow-indigo-500/20 text-white flex flex-col justify-between relative overflow-hidden group">
+                        <div className="absolute -top-12 -right-12 w-64 h-64 bg-white/10 rounded-full blur-3xl group-hover:scale-110 transition-transform duration-1000"></div>
+                        <div className="relative z-10 space-y-10">
+                            <div className="space-y-4">
+                                <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 rounded-full border border-white/10">
+                                    <span className="w-1 h-1 bg-white rounded-full"></span>
+                                    <span className="text-[9px] font-black uppercase tracking-widest">Revenue Optimizer</span>
+                                </div>
+                                <h3 className="text-4xl font-black italic tracking-tighter uppercase leading-tight">Maximized <br />Boutique Selling.</h3>
+                            </div>
+                            
+                            <div className="grid grid-cols-2 gap-6">
+                                <div className="bg-black/20 p-6 rounded-3xl border border-white/5 group-hover:bg-black/30 transition-colors">
+                                    <p className="text-[10px] font-black text-white/50 uppercase tracking-widest mb-1">In-House Revenue</p>
+                                    <p className="text-2xl font-black italic tracking-tighter">$1.4k</p>
+                                </div>
+                                <div className="bg-black/20 p-6 rounded-3xl border border-white/5 group-hover:bg-black/30 transition-colors">
+                                    <p className="text-[10px] font-black text-white/50 uppercase tracking-widest mb-1">Occupancy Rate</p>
+                                    <p className="text-2xl font-black italic tracking-tighter">92%</p>
+                                </div>
+                            </div>
+
+                            <div className="p-8 bg-black/10 rounded-3x border border-white/5 backdrop-blur-sm">
+                                <p className="text-[11px] font-bold text-indigo-100 leading-relaxed italic">
+                                    "Your corner tables are generating 20% more revenue than the central aisle. Consider repositioning for higher density."
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="relative z-10 pt-10">
+                            <Link href="/dashboard/seating" className="w-full py-5 bg-white text-[#4F46E5] rounded-[1.5rem] font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all shadow-xl">
+                                Full Layout Configuration
+                                <span className="text-lg">🛠️</span>
+                            </Link>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Bottom Section: Recent Orders & Category Mix */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">

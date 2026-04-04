@@ -19,6 +19,7 @@ export default function ProductsPage() {
     const [isAdding, setIsAdding] = useState(false);
     const [isImporting, setIsImporting] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const imageInputRef = useRef<HTMLInputElement>(null);
 
     // Form State
     const [newName, setNewName] = useState('');
@@ -59,6 +60,19 @@ export default function ProductsPage() {
     const handleGenerateAI = () => {
         const randomImg = AI_PLACEHOLDERS[Math.floor(Math.random() * AI_PLACEHOLDERS.length)];
         setNewImage(randomImg);
+    };
+
+    const handleLocalImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        // In a real staging/prod env, we'd upload to Supabase Storage
+        // For now, let's create a local preview or handle the upload if storage is ready
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            setNewImage(event.target?.result as string);
+        };
+        reader.readAsDataURL(file);
     };
 
     const handleAddProduct = async () => {
@@ -275,12 +289,27 @@ export default function ProductsPage() {
                                 onChange={(e) => setNewImage(e.target.value)}
                                 className="flex-1 p-4 border border-gray-100 rounded-2xl bg-gray-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 transition-all outline-none font-mono text-xs overflow-hidden text-ellipsis"
                             />
-                            <button
-                                onClick={handleGenerateAI}
-                                className="px-6 py-4 bg-gray-900 text-white rounded-2xl font-black text-[10px] tracking-widest shadow-lg hover:bg-indigo-600 transition-all uppercase"
-                            >
-                                ✨ Generate AI Image
-                            </button>
+                            <div className="flex gap-2">
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    className="hidden"
+                                    ref={imageInputRef}
+                                    onChange={handleLocalImageSelect}
+                                />
+                                <button
+                                    onClick={() => imageInputRef.current?.click()}
+                                    className="px-6 py-4 bg-white border border-gray-200 text-gray-600 rounded-2xl font-black text-[10px] tracking-widest shadow-sm hover:bg-gray-50 transition-all uppercase"
+                                >
+                                    📁 Browse
+                                </button>
+                                <button
+                                    onClick={handleGenerateAI}
+                                    className="px-6 py-4 bg-gray-900 text-white rounded-2xl font-black text-[10px] tracking-widest shadow-lg hover:bg-indigo-600 transition-all uppercase"
+                                >
+                                    ✨ AI Image
+                                </button>
+                            </div>
                         </div>
                         {newImage && (
                             <div className="mt-4 relative w-48 h-48 rounded-[2rem] overflow-hidden border-4 border-white shadow-2xl">

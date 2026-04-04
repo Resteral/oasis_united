@@ -12,7 +12,10 @@ export default function FleetOperationsPage() {
     const [towns, setTowns] = useState<any[]>([]);
     const [businesses, setBusinesses] = useState<any[]>([]);
     const [waitPoints, setWaitPoints] = useState<any[]>([]);
+    const [custodianships, setCustodianships] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    
+    // Modals
     const [showTownModal, setShowTownModal] = useState(false);
     const [showRouteModal, setShowRouteModal] = useState(false);
     const [showImportModal, setShowImportModal] = useState(false);
@@ -42,13 +45,14 @@ export default function FleetOperationsPage() {
                     setDelivererProfile(profile);
                 }
 
-                // 2. Load Logistics Data
-                const [rResp, tResp, bResp, oResp, wResp] = await Promise.all([
+                // 2. Load Logistics & Governance Data
+                const [rResp, tResp, bResp, oResp, wResp, cResp] = await Promise.all([
                     supabase.from('delivery_routes').select('*').eq('deliverer_id', user.id),
                     supabase.from('towns').select('*').order('name'),
                     supabase.from('businesses').select('*').order('name'),
                     supabase.from('orders').select('*, businesses(name)').eq('status', 'pending').eq('delivery_type', 'delivery'),
-                    supabase.from('wait_points').select('*').order('name')
+                    supabase.from('wait_points').select('*').order('name'),
+                    supabase.from('town_custodians').select('*, towns(name)').eq('deliverer_id', user.id)
                 ]);
 
                 setRoutes(rResp.data || []);
@@ -56,6 +60,7 @@ export default function FleetOperationsPage() {
                 setBusinesses(bResp.data || []);
                 setOpenOrders(oResp.data || []);
                 setWaitPoints(wResp.data || []);
+                setCustodianships(cResp.data || []);
                 
                 if (rResp.data && rResp.data.length > 0) {
                     setSelectedRouteId(rResp.data[0].id);
@@ -71,16 +76,26 @@ export default function FleetOperationsPage() {
         return () => clearInterval(timer);
     }, []);
 
+    const handleClaimCustodianship = async (townId: string) => {
+        const { data: { user } } = await supabase.auth.getUser();
+        const { data, error } = await supabase.from('town_custodians').insert([{ deliverer_id: user?.id, town_id: townId, auth_level: 'sovereign' }]).select('*, towns(name)').single();
+        if (data) {
+            setCustodianships([...custodianships, data]);
+            alert('🏛️ Municipal Custodianship Established. Governance override active.');
+        } else alert(error?.message || 'Custodianship already claimed or restricted.');
+    };
+
     const handleCreateTown = async () => {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
-        const { error } = await supabase.from('towns').insert([{ ...newTown, added_by: user.id }]);
-        if (error) alert(error.message);
-        else {
+        const { data: town, error } = await supabase.from('towns').insert([{ ...newTown, added_by: user.id }]).select().single();
+        if (town) {
             setShowTownModal(false);
             setNewTown({ name: '', state: 'NH' });
             alert('🏘️ Municipal Node Provisioned.');
-        }
+            // Auto-claim custodianship for creator
+            handleClaimCustodianship(town.id);
+        } else alert(error?.message);
     };
 
     const handleCreateRoute = async () => {
@@ -123,7 +138,7 @@ export default function FleetOperationsPage() {
     const handleStaging = async (wpId: string) => {
         const { data: { user } } = await supabase.auth.getUser();
         await supabase.from('active_waiting').insert([{ deliverer_id: user?.id, wait_point_id: wpId }]);
-        alert('⚡ You are now staging at this node. Ads active.');
+        alert('⚡ You are now staging at this node.');
     };
 
     if (loading) return (
@@ -138,30 +153,15 @@ export default function FleetOperationsPage() {
                 <div className="space-y-4">
                     <div className="inline-flex items-center gap-3 px-4 py-2 bg-indigo-500/10 border border-indigo-500/20 rounded-full">
                         <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-ping"></span>
-                        <span className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-400 italic">Regional Fleet Terminal</span>
+                        <span className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-400 italic">Logistics Hub v2.15</span>
                     </div>
-                    <h1 className="text-7xl font-black italic tracking-tighter uppercase leading-[0.8]">Logistics <br /><span className="text-amber-400">Radar.</span></h1>
+                    <h1 className="text-7xl font-black italic tracking-tighter uppercase leading-[0.8]">Fleet <br /><span className="text-amber-400">Terminal.</span></h1>
                 </div>
 
                 <div className="flex flex-wrap gap-4">
-                    <button 
-                        onClick={() => setShowImportModal(true)}
-                        className="px-8 py-5 bg-white/5 border border-white/10 rounded-3xl font-black text-[10px] uppercase tracking-widest hover:bg-white/10 transition-all border-b-4 border-b-white/5 active:translate-y-1"
-                    >
-                        📋 Import Menu
-                    </button>
-                    <button 
-                        onClick={() => setShowTownModal(true)}
-                        className="px-8 py-5 bg-white/5 border border-white/10 rounded-3xl font-black text-[10px] uppercase tracking-widest hover:bg-white/10 transition-all border-b-4 border-b-white/5 active:translate-y-1"
-                    >
-                        🏘️ Register Town
-                    </button>
-                    <button 
-                        onClick={() => setShowRouteModal(true)}
-                        className="px-8 py-5 bg-indigo-600 rounded-3xl font-black text-[10px] uppercase tracking-widest hover:bg-indigo-500 transition-all shadow-xl shadow-indigo-600/20 border-b-4 border-b-indigo-800 active:translate-y-1"
-                    >
-                        🛰️ Draft Route
-                    </button>
+                    <button onClick={() => setShowImportModal(true)} className="px-8 py-5 bg-white/5 border border-white/10 rounded-3xl font-black text-[10px] uppercase tracking-widest hover:bg-white/10 transition-all border-b-4 border-b-white/5 active:translate-y-1">📋 Import Menu</button>
+                    <button onClick={() => setShowTownModal(true)} className="px-8 py-5 bg-white/5 border border-white/10 rounded-3xl font-black text-[10px] uppercase tracking-widest hover:bg-white/10 transition-all border-b-4 border-b-white/5 active:translate-y-1">🏘️ Register Town</button>
+                    <button onClick={() => setShowRouteModal(true)} className="px-8 py-5 bg-indigo-600 rounded-3xl font-black text-[10px] uppercase tracking-widest hover:bg-indigo-500 transition-all shadow-xl shadow-indigo-600/20 border-b-4 border-b-indigo-800 active:translate-y-1">🛰️ Draft Route</button>
                 </div>
             </header>
 
@@ -169,6 +169,41 @@ export default function FleetOperationsPage() {
                 <section className="lg:col-span-8 space-y-12">
                     <RouteMap stops={routeStops} />
                     
+                    {/* Municipal Governance (Custodianship) */}
+                    <div className="space-y-8">
+                        <div className="flex justify-between items-center px-2">
+                            <h3 className="text-[10px] font-black uppercase tracking-[0.5em] text-indigo-400 italic">Municipal Governance (Custodianships)</h3>
+                            <button className="text-[8px] font-black uppercase text-white/20 hover:text-white transition-colors">Apply for Sovereignty Protocol →</button>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {custodianships.map(c => (
+                                <div key={c.id} className="bg-indigo-600/5 border border-indigo-500/20 rounded-[2.5rem] p-8 space-y-4 group hover:bg-indigo-600/10 transition-all">
+                                    <div className="flex justify-between">
+                                        <div className="space-y-1">
+                                            <h4 className="text-2xl font-black italic tracking-tighter uppercase">{c.towns?.name} Dashboard</h4>
+                                            <p className="text-[9px] font-black uppercase text-indigo-400 tracking-widest italic">{c.auth_level} Custodian Control</p>
+                                        </div>
+                                        <span className="text-3xl grayscale opacity-40 group-hover:opacity-100 transition-opacity">🏛️</span>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <button className="flex-1 py-3 bg-white/5 border border-white/10 rounded-xl text-[8px] font-black uppercase tracking-widest hover:bg-indigo-600 hover:text-white transition-all">Manage Stores</button>
+                                        <button className="flex-1 py-3 bg-white/5 border border-white/10 rounded-xl text-[8px] font-black uppercase tracking-widest hover:bg-indigo-600 hover:text-white transition-all">Tax Audit</button>
+                                    </div>
+                                </div>
+                            ))}
+                            <div className="bg-white/[0.01] border border-dashed border-white/5 rounded-[2.5rem] p-8 flex flex-col items-center justify-center text-center space-y-6 min-h-[160px]">
+                                <p className="text-[9px] font-black uppercase text-white/10 tracking-widest">Available Town Jurisdictions</p>
+                                <select 
+                                    className="bg-transparent text-xs font-black uppercase text-indigo-400/40 outline-none cursor-pointer"
+                                    onChange={(e) => handleClaimCustodianship(e.target.value)}
+                                >
+                                    <option>Claim Node Jurisdiction...</option>
+                                    {towns.filter(t => !custodianships.some(c => c.town_id === t.id)).map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
                     <div className="space-y-8">
                         <div className="flex justify-between items-center px-2">
                             <h3 className="text-[10px] font-black uppercase tracking-[0.5em] text-amber-400 italic">Open Dispatch Queue</h3>
@@ -184,89 +219,50 @@ export default function FleetOperationsPage() {
                                         </div>
                                         <div className="px-3 py-1 bg-amber-400/10 text-amber-500 rounded-full text-[9px] font-black italic uppercase">Ready</div>
                                     </div>
-                                    <button 
-                                        onClick={() => claimOrder(order.id)}
-                                        className="w-full py-4 bg-amber-400 text-black rounded-2xl font-black text-[9px] uppercase tracking-widest hover:scale-105 active:scale-95 transition-all"
-                                    >
-                                        Claim & Pick Up
-                                    </button>
+                                    <button onClick={() => claimOrder(order.id)} className="w-full py-4 bg-amber-400 text-black rounded-2xl font-black text-[9px] uppercase tracking-widest hover:scale-105 active:scale-95 transition-all">Claim & Pick Up</button>
                                 </div>
-                            )) : (
-                                <div className="col-span-full p-20 text-center bg-white/[0.01] border border-dashed border-white/5 rounded-[3rem] text-white/10 font-black italic uppercase tracking-widest">
-                                    Queue Clear. Awaiting regional signals.
-                                </div>
-                            )}
+                            )) : <div className="col-span-full p-20 text-center bg-white/[0.01] border border-dashed border-white/5 rounded-[3rem] text-white/10 font-black italic uppercase tracking-widest">Queue Clear. Awaiting signals.</div>}
                         </div>
                     </div>
                 </section>
 
                 <section className="lg:col-span-4 space-y-12">
-                    {/* Staging Control */}
                     <div className="bg-white/5 backdrop-blur-3xl p-10 rounded-[3rem] border border-white/5 space-y-8">
                         <div className="flex items-center gap-3">
                             <span className="text-2xl">⚡</span>
-                            <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-amber-500 italic">Regional Staging</h3>
+                            <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-amber-500 italic">Staging Nodes</h3>
                         </div>
                         <div className="space-y-4">
-                            <select 
-                                className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-xs font-black uppercase text-white outline-none appearance-none"
-                                onChange={(e) => handleStaging(e.target.value)}
-                            >
+                            <select className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-xs font-black uppercase text-white outline-none appearance-none" onChange={(e) => handleStaging(e.target.value)}>
                                 <option>Select Staging Node...</option>
                                 {waitPoints.map(wp => <option key={wp.id} value={wp.id}>{wp.name}</option>)}
                             </select>
-                            <p className="text-[9px] font-black uppercase text-white/20 px-2 italic font-medium leading-relaxed">Wait points maintain local visibility for priority drops and keep your advertisements active on the regional discovery network.</p>
+                            <p className="text-[9px] font-black uppercase text-white/20 px-2 italic leading-relaxed">Wait points maintain local visibility for priority drops and keep your advertisements active on the regional network.</p>
                         </div>
                     </div>
 
                     <div className="bg-white/5 backdrop-blur-3xl p-10 rounded-[3rem] border border-white/5 space-y-8">
                         <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-white/30 italic">Active Loop Control</h3>
-                        <select 
-                            value={selectedRouteId || ''} 
-                            onChange={(e) => setSelectedRouteId(e.target.value)}
-                            className="w-full bg-black/40 border border-white/10 rounded-2xl p-6 text-xl font-black italic tracking-tighter uppercase text-amber-400 outline-none appearance-none cursor-pointer"
-                        >
+                        <select value={selectedRouteId || ''} onChange={(e) => setSelectedRouteId(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-2xl p-6 text-xl font-black italic tracking-tighter uppercase text-amber-400 outline-none appearance-none cursor-pointer">
                             <option value="" disabled>Select Logistics Path</option>
-                            {routes.map(r => (
-                                <option key={r.id} value={r.id} className="bg-[#0a0a0b]">{r.name}</option>
-                            ))}
+                            {routes.map(r => <option key={r.id} value={r.id} className="bg-[#0a0a0b]">{r.name}</option>)}
                         </select>
-                        <button 
-                            onClick={goActive}
-                            className="w-full py-8 bg-indigo-600 rounded-[2rem] font-black italic text-sm tracking-tighter uppercase text-white shadow-2xl hover:scale-[1.02] transition-all"
-                        >
-                            🛰️ Start Route Loop
-                        </button>
+                        <button onClick={goActive} className="w-full py-8 bg-indigo-600 rounded-[2rem] font-black italic text-sm tracking-tighter uppercase text-white shadow-2xl hover:scale-[1.02] transition-all">🛰️ Start Route Loop</button>
                     </div>
 
-                    <div className="bg-indigo-600/5 border border-indigo-500/10 rounded-[3rem] p-10 space-y-8 relative overflow-hidden">
-                        <div className="absolute top-0 right-0 p-8 opacity-5 grayscale">📡</div>
-                        <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-400 italic">Marketing Hub</h3>
-                        <p className="text-sm font-black italic text-white/40 leading-relaxed uppercase tracking-tighter">Maintain persistent ad presence while staging at specialized nodes.</p>
+                    <div className="bg-amber-400 p-10 rounded-[3rem] text-black space-y-6 shadow-3xl shadow-amber-400/20">
+                        <h3 className="text-xl font-black italic uppercase tracking-tighter leading-none">Scout Protocol.</h3>
+                        <p className="text-[10px] font-black uppercase tracking-widest opacity-60 leading-relaxed italic">You are empowered by regional governance to provision merchant nodes and maintain inventory integrity.</p>
                     </div>
                 </section>
             </main>
 
-            {/* MODALS */}
+            {/* MODALS (Simplified for clarity) */}
             {showTownModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-6 backdrop-blur-2xl bg-black/60">
                     <div className="bg-[#111114] border border-white/10 p-12 rounded-[3.5rem] w-full max-w-lg space-y-10 shadow-3xl">
-                        <header className="space-y-2">
-                            <h2 className="text-4xl font-black italic tracking-tighter uppercase">Provision <span className="text-amber-400">Town Node.</span></h2>
-                        </header>
-                        <div className="space-y-6">
-                            <div className="flex flex-wrap gap-2">
-                                {REGIONAL_SUGGESTIONS.map(t => (
-                                    <button key={t} onClick={() => setNewTown({...newTown, name: t})} className="px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-[9px] font-black uppercase hover:bg-amber-400 hover:text-black transition-all">{t}</button>
-                                ))}
-                            </div>
-                            <input 
-                                placeholder="Town Name" 
-                                value={newTown.name}
-                                onChange={(e) => setNewTown({...newTown, name: e.target.value})}
-                                className="w-full bg-white/5 border border-white/10 p-6 rounded-2xl font-black italic text-xl outline-none"
-                            />
-                        </div>
+                        <h2 className="text-4xl font-black italic tracking-tighter uppercase">Provision <span className="text-amber-400">Node.</span></h2>
+                        <input placeholder="Town Name" value={newTown.name} onChange={(e) => setNewTown({...newTown, name: e.target.value})} className="w-full bg-white/5 border border-white/10 p-6 rounded-2xl font-black italic text-xl outline-none" />
                         <div className="flex gap-4">
                             <button onClick={() => setShowTownModal(false)} className="flex-1 py-5 bg-white/5 rounded-2xl font-black text-[10px] uppercase tracking-widest text-white/30">Abort</button>
                             <button onClick={handleCreateTown} className="flex-[2] py-5 bg-amber-400 text-black rounded-2xl font-black text-[10px] uppercase tracking-widest">Establish Node</button>
@@ -278,79 +274,24 @@ export default function FleetOperationsPage() {
             {showImportModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-6 backdrop-blur-2xl bg-black/60">
                     <div className="bg-[#111114] border border-white/10 p-12 rounded-[3.5rem] w-full max-w-2xl space-y-10 shadow-4xl">
-                        <header className="space-y-2">
-                            <h2 className="text-4xl font-black italic tracking-tighter uppercase text-indigo-400 leading-none">Signal <span className="text-white">Importer.</span></h2>
-                            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/20 italic">Reconnaissance Menu Capture</p>
-                        </header>
-                        <div className="space-y-8">
-                            <select 
-                                className="w-full bg-white/5 border border-white/10 p-6 rounded-2xl font-black italic text-xl outline-none"
-                                value={importTargetBiz}
-                                onChange={(e) => setImportTargetBiz(e.target.value)}
-                            >
-                                <option value="" disabled>Select Merchant...</option>
-                                {businesses.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
-                            </select>
-                            <textarea 
-                                placeholder="Item Name - Price - Category (One per line)..." 
-                                className="w-full bg-white/5 border border-white/10 p-8 rounded-[2rem] font-medium text-xs tracking-widest min-h-[160px] outline-none"
-                                value={importData}
-                                onChange={(e) => setImportData(e.target.value)}
-                            />
-                        </div>
+                        <h2 className="text-4xl font-black italic tracking-tighter uppercase text-indigo-400">Signal <span className="text-white">Importer.</span></h2>
+                        <select className="w-full bg-white/5 border border-white/10 p-6 rounded-2xl font-black italic text-xl outline-none" value={importTargetBiz} onChange={(e) => setImportTargetBiz(e.target.value)}>
+                            <option value="" disabled>Select Merchant...</option>
+                            {businesses.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                        </select>
+                        <textarea placeholder="Item - Price - Category..." className="w-full bg-white/5 border border-white/10 p-8 rounded-[2rem] font-medium text-xs tracking-widest min-h-[160px] outline-none" value={importData} onChange={(e) => setImportData(e.target.value)} />
                         <div className="flex gap-4">
                             <button onClick={() => setShowImportModal(false)} className="flex-1 py-5 bg-white/5 rounded-2xl font-black text-[10px] uppercase tracking-widest text-white/30">Abort</button>
-                            <button 
-                                onClick={async () => {
-                                    if (!importTargetBiz || !importData) return;
-                                    const items = importData.split('\n').filter(l => l.includes('-')).map(line => {
-                                        const [name, price, cat] = line.split('-').map(s => s.trim());
-                                        return { business_id: importTargetBiz, name, price: Number(price) || 0, category: cat || 'Imported' };
-                                    });
-                                    await supabase.from('products').insert(items);
-                                    setShowImportModal(false);
-                                    setImportData('');
-                                    alert('Menu signals imported.');
-                                }}
-                                className="flex-[2] py-5 bg-indigo-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl"
-                            >
-                                Import Into Registry
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {showRouteModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-6 backdrop-blur-2xl bg-black/60">
-                    <div className="bg-[#111114] border border-white/10 p-12 rounded-[3.5rem] w-full max-w-2xl space-y-10 shadow-3xl">
-                        <header className="space-y-2">
-                            <h2 className="text-4xl font-black italic tracking-tighter uppercase">Sync <span className="text-indigo-400">Trade Loop.</span></h2>
-                        </header>
-                        <div className="space-y-8">
-                            <input 
-                                placeholder="Route Name" 
-                                className="w-full bg-white/5 border border-white/10 p-6 rounded-2xl font-black italic text-xl outline-none"
-                                onChange={(e) => setNewRoute({...newRoute, name: e.target.value})}
-                            />
-                            <div className="grid grid-cols-2 gap-4 max-h-[300px] overflow-y-auto p-2">
-                                {businesses.map(biz => (
-                                    <button 
-                                        key={biz.id} 
-                                        onClick={() => {
-                                            const exists = newRoute.stops.includes(biz.id);
-                                            setNewRoute({...newRoute, stops: exists ? newRoute.stops.filter(id => id !== biz.id) : [...newRoute.stops, biz.id]});
-                                        }}
-                                        className={`p-4 rounded-2xl border text-left transition-all ${newRoute.stops.includes(biz.id) ? 'bg-indigo-600 border-indigo-400 text-white' : 'bg-white/5 border-white/5 text-white/40'}`}
-                                    >
-                                        <span className="text-xs font-black italic uppercase tracking-tight">{biz.name}</span>
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                        <div className="flex gap-4">
-                            <button onClick={() => setShowRouteModal(false)} className="flex-1 py-5 bg-white/5 rounded-2xl font-black text-[10px] uppercase tracking-widest text-white/30">Abort</button>
-                            <button onClick={handleCreateRoute} className="flex-[2] py-5 bg-indigo-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl">Draft Path</button>
+                            <button onClick={async () => {
+                                const items = importData.split('\n').filter(l => l.includes('-')).map(line => {
+                                    const [n, p, c] = line.split('-').map(s => s.trim());
+                                    return { business_id: importTargetBiz, name: n, price: Number(p) || 0, category: c || 'Imported' };
+                                });
+                                await supabase.from('products').insert(items);
+                                setShowImportModal(false);
+                                setImportData('');
+                                alert('Menu signals imported.');
+                            }} className="flex-[2] py-5 bg-indigo-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl">Import Signals</button>
                         </div>
                     </div>
                 </div>

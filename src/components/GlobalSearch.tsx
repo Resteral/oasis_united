@@ -6,10 +6,39 @@ import Link from 'next/link';
 export default function GlobalSearch() {
     const [query, setQuery] = useState('');
     const [results, setResults] = useState<any>({ products: [], businesses: [] });
+    const [nearbyBusinesses, setNearbyBusinesses] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
     const [isAiMode, setIsAiMode] = useState(false);
+    const [userTown, setUserTown] = useState<string | null>(null);
     const searchRef = useRef<HTMLDivElement>(null);
+
+    // Initial load: Fetch user town and nearby businesses
+    useEffect(() => {
+        const fetchInitialDiscovery = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            let town = 'Effingham'; // Default fallback
+
+            if (user) {
+                const { data: profile } = await supabase.from('profiles').select('town').eq('id', user.id).single();
+                if (profile?.town) {
+                    town = profile.town;
+                    setUserTown(town);
+                }
+            }
+
+            // Fetch businesses in the user's town as "Nearby Legends"
+            const { data: nearby } = await supabase
+                .from('businesses')
+                .select('id, name, category, location, image_url')
+                .ilike('location', `%${town}%`)
+                .limit(4);
+
+             setNearbyBusinesses(nearby || []);
+        };
+
+        fetchInitialDiscovery();
+    }, []);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -45,7 +74,6 @@ export default function GlobalSearch() {
                     finalBusinesses = [];
                 }
 
-                // Fallback to SerpApi if no local businesses found (and we aren't purely in AI product search)
                 if (finalBusinesses.length === 0 && !isAiMode) {
                     try {
                         const placesRes = await fetch(`/api/places?query=${encodeURIComponent(query)}`);
@@ -65,12 +93,11 @@ export default function GlobalSearch() {
                 }
 
                 setResults({ products: finalProducts, businesses: finalBusinesses });
-                setIsOpen(finalProducts.length > 0 || finalBusinesses.length > 0);
-
+                setIsOpen(true);
                 setLoading(false);
             } else {
                 setResults({ products: [], businesses: [] });
-                setIsOpen(false);
+                if (query.length === 0) setIsOpen(false);
             }
         }, 500);
 
@@ -78,146 +105,79 @@ export default function GlobalSearch() {
     }, [query, isAiMode]);
 
     return (
-        <div ref={searchRef} className="relative w-full max-w-2xl mx-auto z-[100]">
-            <div className="relative group p-1 bg-white/5 backdrop-blur-3xl rounded-[3rem] border border-white/5 shadow-2xl">
-                <div className="absolute inset-y-0 left-8 flex items-center pointer-events-none gap-3">
-                    <span className={`text-xl transition-all duration-500 ${isAiMode ? 'grayscale-0 rotate-12 scale-125' : 'grayscale'}`}>
-                        {isAiMode ? '🤖' : '🔍'}
-                    </span>
+        <div ref={searchRef} className="relative w-full max-w-2xl mx-auto z-[100] group/search">
+            {/* The Discovery Command Pill */}
+            <div className={`relative p-1.5 rounded-[3.5rem] border transition-all duration-700 ${isOpen ? 'bg-[#0d0d0f] border-amber-400 shadow-[0_0_80px_rgba(251,191,36,0.15)] scale-[1.02]' : 'bg-white/5 backdrop-blur-3xl border-white/5 shadow-2xl hover:bg-white/10'}`}>
+                <div className="absolute inset-y-0 left-8 flex items-center pointer-events-none gap-4">
+                    <div className="relative">
+                        <span className={`text-2xl transition-all duration-700 block ${loading || isAiMode ? 'animate-pulse scale-110' : 'grayscale group-hover/search:grayscale-0'}`}>
+                           {isAiMode ? '🤖' : loading ? '📡' : '🛰️'}
+                        </span>
+                        {loading && (
+                            <div className="absolute inset-0 border-2 border-amber-400 rounded-full animate-ping opacity-20 scale-150"></div>
+                        )}
+                    </div>
                     {isAiMode && (
-                        <span className="text-[10px] font-black uppercase tracking-widest text-indigo-400 animate-pulse">AI Online</span>
+                        <div className="flex flex-col">
+                           <span className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-400 animate-pulse">AI Agent Active</span>
+                        </div>
                     )}
                 </div>
 
                 <input
                     type="text"
-                    placeholder={isAiMode ? "Ask Oasis: 'Find me a cozy outfit for a rainy day...'" : "Search treasures, boutiques, or makers..."}
+                    placeholder={isAiMode ? "Ask Oasis Intelligence..." : `Discovery near ${userTown || 'you'}...`}
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
-                    onFocus={() => query.trim().length > 1 && setIsOpen(true)}
-                    className="w-full bg-transparent text-white pl-24 pr-24 py-6 rounded-[2.5rem] text-sm font-bold tracking-tight outline-none placeholder:text-gray-500 transition-all"
+                    onFocus={() => setIsOpen(true)}
+                    className="w-full bg-transparent text-white pl-28 pr-32 py-7 rounded-[3rem] text-lg font-bold tracking-tight outline-none placeholder:text-white/20 transition-all font-mono"
                 />
 
-                <div className="absolute inset-y-0 right-4 flex items-center gap-2">
-                    {loading ? (
-                        <div className="w-5 h-5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mx-4"></div>
-                    ) : (
-                        <button
-                            onClick={() => {
-                                setIsAiMode(!isAiMode);
-                                setResults({ products: [], businesses: [] });
-                                setQuery('');
-                            }}
-                            className={`px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${isAiMode
-                                ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-500/20'
-                                : 'bg-white/10 text-white/40 hover:bg-white/20'
-                                }`}
-                        >
-                            {isAiMode ? 'AI ACTIVE' : 'SWITCH TO AI'}
+                <div className="absolute inset-y-0 right-6 flex items-center gap-3">
+                    <button
+                        onClick={() => setIsAiMode(!isAiMode)}
+                        className={`px-6 py-3 rounded-2xl text-[9px] font-black uppercase tracking-[0.2em] transition-all border ${isAiMode
+                            ? 'bg-amber-400 text-black border-amber-400 shadow-xl shadow-amber-400/20'
+                            : 'bg-white/5 text-white/40 border-white/5 hover:bg-white/10'
+                        }`}
+                    >
+                        {isAiMode ? 'Neural Search' : 'Basic Radar'}
+                    </button>
+                    {query && (
+                        <button onClick={() => setQuery('')} className="w-10 h-10 flex items-center justify-center bg-white/5 rounded-full hover:bg-white/10 transition-colors">
+                           ✕
                         </button>
                     )}
                 </div>
             </div>
 
-            {/* Results Overlay */}
+            {/* Immersive Discovery Overlay */}
             {isOpen && (
-                <div className="absolute top-full mt-6 w-full bg-[#0d0d0f]/95 backdrop-blur-3xl rounded-[3.5rem] shadow-[0_48px_128px_-16px_rgba(0,0,0,0.5)] border border-white/10 overflow-hidden animate-in fade-in slide-in-from-top-6 duration-500">
-                    <div className="max-h-[75vh] overflow-y-auto custom-scrollbar p-6 space-y-8">
-
-                        {isAiMode && (
-                            <div className="px-6 py-4 bg-indigo-500/5 rounded-3xl border border-indigo-500/10 mb-4">
-                                <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1 italic">Thinking Semantically...</p>
-                                <p className="text-white/40 text-xs font-medium italic">"Connecting your intent with the global Oasis catalog."</p>
-                            </div>
-                        )}
-
-                        {/* Businesses Section */}
-                        {results.businesses?.length > 0 && (
-                            <div className="space-y-4">
-                                <h3 className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.3em] px-6">Curated Boutiques</h3>
-                                <div className="grid grid-cols-1 gap-2">
-                                    {results.businesses.map((biz: any) => {
-                                        const isExternal = biz.isExternal;
-                                        const Container = isExternal ? 'a' : Link;
-                                        const href = isExternal
-                                            ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(biz.name + ' ' + (biz.location || ''))}`
-                                            : `/shop/${biz.id}`;
-
-                                        return (
-                                            <Container
-                                                key={biz.id}
-                                                href={href as any}
-                                                target={isExternal ? "_blank" : undefined}
-                                                rel={isExternal ? "noopener noreferrer" : undefined}
-                                                onClick={() => !isExternal && setIsOpen(false)}
-                                                className="flex items-center gap-6 p-6 rounded-[2.5rem] hover:bg-white/5 transition-all group border border-transparent hover:border-white/5"
-                                            >
-                                                <div className="w-16 h-16 bg-white rounded-[1.5rem] flex items-center justify-center text-2xl font-black text-indigo-600 italic group-hover:scale-110 transition-transform shadow-2xl relative">
-                                                    {biz.name[0]}
-                                                    {isExternal && (
-                                                        <div className="absolute -top-2 -right-2 w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center text-[10px] text-white shadow-lg border-2 border-[#0d0d0f]">
-                                                            🌍
-                                                        </div>
-                                                    )}
-                                                </div>
-                                                <div className="flex-1">
-                                                    <div className="flex justify-between items-start">
-                                                        <p className="font-black text-lg text-white group-hover:text-indigo-400 transition-colors tracking-tight uppercase">{biz.name}</p>
-                                                        {isExternal && (
-                                                            <span className="text-[8px] font-black tracking-widest uppercase text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-full">
-                                                                Global Network (via Google Maps)
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                    <div className="flex items-center gap-2 pt-0.5">
-                                                        <span className="text-[10px] text-white/20 font-bold uppercase tracking-widest">{biz.location}</span>
-                                                        <span className="w-1 h-1 bg-white/10 rounded-full"></span>
-                                                        <span className={`text-[10px] font-bold uppercase tracking-widest ${isExternal ? 'text-emerald-400' : 'text-indigo-400'}`}>
-                                                            {biz.category || 'Boutique'}
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                            </Container>
-                                        );
-                                    })}
+                <div className="absolute top-full mt-8 w-full bg-[#0d0d0f]/95 backdrop-blur-3xl rounded-[4rem] shadow-[0_64px_128px_-24px_rgba(0,0,0,0.8)] border border-white/10 overflow-hidden animate-in fade-in slide-in-from-top-12 duration-700">
+                    <div className="max-h-[75vh] overflow-y-auto custom-scrollbar p-10 space-y-12">
+                        
+                        {/* Default Suggestions: Near You */}
+                        {query.length < 2 && nearbyBusinesses.length > 0 && (
+                            <div className="space-y-8 animate-in fade-in slide-in-from-left-8 duration-700">
+                                <div className="flex justify-between items-center px-4">
+                                    <h3 className="text-[11px] font-black text-amber-400 uppercase tracking-[0.4em]">Nearby Legends in {userTown || 'Oasis'}</h3>
+                                    <div className="h-[1px] flex-1 mx-8 bg-white/5"></div>
+                                    <span className="text-[10px] font-black text-white/20 uppercase tracking-widest animate-pulse">Live Radar</span>
                                 </div>
-                            </div>
-                        )}
-
-                        {/* Products Section */}
-                        {results.products?.length > 0 && (
-                            <div className="space-y-4">
-                                <h3 className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.3em] px-6">Marketplace Treasures</h3>
-                                <div className="grid grid-cols-1 gap-3">
-                                    {results.products.map((product: any) => (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    {nearbyBusinesses.map((biz) => (
                                         <Link
-                                            key={product.id}
-                                            href={`/shop/${product.business_id}`}
+                                            key={biz.id}
+                                            href={`/shop/${biz.id}`}
                                             onClick={() => setIsOpen(false)}
-                                            className="flex items-center gap-6 p-6 rounded-[2.5rem] hover:bg-white/5 transition-all group border border-transparent hover:border-white/5"
+                                            className="flex items-center gap-6 p-6 rounded-[2.5rem] bg-white/[0.02] border border-white/5 hover:border-amber-400/30 hover:bg-white/5 transition-all group"
                                         >
-                                            <div className="w-20 h-20 bg-white/5 rounded-3xl flex items-center justify-center p-2 border border-white/5 shadow-2xl overflow-hidden group-hover:scale-105 transition-transform">
-                                                {product.image_url ? (
-                                                    <img src={product.image_url} alt={product.name} className="w-full h-full object-cover rounded-2xl" />
-                                                ) : (
-                                                    <span className="text-3xl grayscale opacity-20">📦</span>
-                                                )}
+                                            <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center text-3xl overflow-hidden shadow-2xl grayscale group-hover:grayscale-0 transition-all group-hover:scale-105">
+                                                {biz.image_url ? <img src={biz.image_url} className="w-full h-full object-cover" /> : biz.name[0]}
                                             </div>
-                                            <div className="flex-1">
-                                                <div className="flex justify-between items-start">
-                                                    <div>
-                                                        <p className="font-black text-white text-lg group-hover:text-emerald-400 transition-colors uppercase tracking-tight">{product.name}</p>
-                                                        <p className="text-[10px] text-white/20 font-bold uppercase tracking-widest mt-0.5 italic">at {product.businesses?.name || 'Exclusive Shop'}</p>
-                                                    </div>
-                                                    <div className="text-right">
-                                                        <p className="font-black text-indigo-500 text-xl tracking-tighter">${Number(product.price).toFixed(2)}</p>
-                                                        {product.similarity && (
-                                                            <span className="text-[8px] font-black text-white/10 uppercase tracking-widest">
-                                                                {Math.round(product.similarity * 100)}% Match
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                </div>
+                                            <div className="flex flex-col gap-1">
+                                                <span className="text-xl font-black italic tracking-tighter uppercase group-hover:text-amber-400 transition-colors truncate">{biz.name}</span>
+                                                <span className="text-[10px] font-black uppercase tracking-widest text-white/20">{biz.category} • {biz.location}</span>
                                             </div>
                                         </Link>
                                     ))}
@@ -225,13 +185,71 @@ export default function GlobalSearch() {
                             </div>
                         )}
 
-                        {(!results.products || results.products.length === 0) && (!results.businesses || results.businesses.length === 0) && (
-                            <div className="py-32 text-center space-y-6">
-                                <span className="text-6xl animate-pulse inline-block grayscale opacity-20">📡</span>
-                                <div className="space-y-2">
-                                    <p className="text-white text-xl font-black italic tracking-tight uppercase">Scanning the Oasis...</p>
-                                    <p className="text-white/20 text-xs font-medium italic">No matches found for &ldquo;{query}&rdquo;.</p>
+                        {/* Active Search Results: Businesses */}
+                        {query.length >= 2 && results.businesses?.length > 0 && (
+                            <div className="space-y-6">
+                                <h3 className="text-[10px] font-black text-amber-500 uppercase tracking-[0.4em] px-4">Boutique Match Detected</h3>
+                                <div className="space-y-4">
+                                    {results.businesses.map((biz: any) => (
+                                        <Link
+                                            key={biz.id}
+                                            href={biz.isExternal ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(biz.name + ' ' + biz.location)}` : `/shop/${biz.id}`}
+                                            target={biz.isExternal ? "_blank" : undefined}
+                                            onClick={() => !biz.isExternal && setIsOpen(false)}
+                                            className="flex justify-between items-center p-8 rounded-[3rem] bg-white/[0.03] border border-white/5 hover:border-amber-400/20 hover:bg-white/5 transition-all group"
+                                        >
+                                            <div className="flex items-center gap-8">
+                                                <div className="w-20 h-20 bg-white/5 rounded-3xl flex items-center justify-center text-4xl font-black italic text-amber-400 group-hover:rotate-6 transition-all shadow-2xl">
+                                                    {biz.name[0]}
+                                                </div>
+                                                <div className="flex flex-col gap-1">
+                                                    <h4 className="text-2xl font-black italic tracking-tighter uppercase group-hover:text-amber-400 transition-colors">{biz.name}</h4>
+                                                    <p className="text-[10px] font-black uppercase tracking-widest text-white/20 italic">{biz.category} • {biz.location}</p>
+                                                </div>
+                                            </div>
+                                            {biz.isExternal && (
+                                                <span className="px-5 py-2 bg-emerald-500/10 text-emerald-400 text-[9px] font-black uppercase tracking-widest rounded-full border border-emerald-500/20 space-x-2">
+                                                   🌍 Global Discovery
+                                                </span>
+                                            )}
+                                        </Link>
+                                    ))}
                                 </div>
+                            </div>
+                        )}
+
+                        {/* Active Search Results: Products */}
+                        {query.length >= 2 && results.products?.length > 0 && (
+                            <div className="space-y-6">
+                                <h3 className="text-[10px] font-black text-white/50 uppercase tracking-[0.4em] px-4">Catalog Extraction</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    {results.products.map((p: any) => (
+                                        <Link
+                                            key={p.id}
+                                            href={`/shop/${p.business_id}`}
+                                            onClick={() => setIsOpen(false)}
+                                            className="group flex gap-6 p-8 rounded-[3rem] bg-white/[0.03] border border-white/5 hover:border-amber-400/30 transition-all"
+                                        >
+                                            <div className="w-24 h-24 bg-black/40 rounded-[2rem] overflow-hidden grayscale group-hover:grayscale-0 transition-all group-hover:scale-105">
+                                                {p.image_url ? <img src={p.image_url} className="w-full h-full object-cover" /> : <span className="flex items-center justify-center h-full text-4xl opacity-10">📦</span>}
+                                            </div>
+                                            <div className="flex-1 flex flex-col justify-between py-2">
+                                                <div className="space-y-1">
+                                                    <h4 className="text-xl font-black italic uppercase tracking-tighter leading-none group-hover:text-amber-400 transition-colors truncate">{p.name}</h4>
+                                                    <p className="text-[9px] font-black uppercase tracking-widest text-white/20 italic">at {p.businesses?.name || 'Authorized Boutique'}</p>
+                                                </div>
+                                                <p className="text-2xl font-black italic tracking-tighter text-amber-500">${Number(p.price).toFixed(2)}</p>
+                                            </div>
+                                        </Link>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {query.length >= 2 && results.products.length === 0 && results.businesses.length === 0 && !loading && (
+                            <div className="py-40 text-center space-y-8 opacity-40 italic font-black uppercase tracking-[0.4em]">
+                                <span className="text-8xl">🏜️</span>
+                                <p>Signal Lost. No discovery detected.</p>
                             </div>
                         )}
                     </div>

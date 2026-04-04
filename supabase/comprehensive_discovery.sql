@@ -657,11 +657,90 @@ begin
   on conflict do nothing;
 
   -- 286. MOBILE VANGUARDS (Storefrontless Advocacy)
-  insert into public.businesses (slug, name, category, location, town_id, onboarded_by, description)
+  insert into public.businesses (slug, name, category, location, town_id, onboarded_by, description, lat, lng)
   values 
-    ('structural-repairs', 'Structural Repair Node', 'Service', 'Effingham', effingham_id, 'e5f6a7b8-d4c3-4b2a-a198-e7d6c5b4a321', 'Regional artisan repairs and plumbing. Mobile primary node.'),
-    ('homestead-systems', 'Holistic Homestead Systems', 'Consulting', 'Freedom', freedom_id, 'e5f6a7b8-d4c3-4b2a-a198-e7d6c5b4a321', 'Expert organic gardening and homestead design.')
-  on conflict (slug) do nothing;
+    ('structural-repairs', 'Structural Repair Node', 'Service', 'Effingham', effingham_id, 'e5f6a7b8-d4c3-4b2a-a198-e7d6c5b4a321', 'Regional artisan repairs and plumbing. Mobile primary node.', 43.7650, -71.0100),
+    ('homestead-systems', 'Holistic Homestead Systems', 'Consulting', 'Freedom', freedom_id, 'e5f6a7b8-d4c3-4b2a-a198-e7d6c5b4a321', 'Expert organic gardening and homestead design.', 43.8120, -71.0410),
+    ('the-spot', 'The Spot', 'Restaurant/Apizza', 'Effingham', effingham_id, 'e5f6a7b8-d4c3-4b2a-a198-e7d6c5b4a321', 'Regional Apizza, Subs, and Breakfast. The heart of regional independent dining.', 43.7630, -71.0110)
+  on conflict (slug) do update set
+    lat = excluded.lat,
+    lng = excluded.lng;
+
+  declare
+    the_spot_id uuid;
+  begin
+    select id into the_spot_id from public.businesses where slug = 'the-spot';
+
+    -- "THE SPOT" EXHAUSTIVE MENU DISPATCH
+    insert into public.products (business_id, name, price, category, description)
+    values 
+      (the_spot_id, 'French Fries', 4.99, 'Sides', 'Regional classic side.'),
+      (the_spot_id, 'Onion Rings', 7.99, 'Sides', 'Crispy beer battered.'),
+      (the_spot_id, 'Mozzarella Sticks (6)', 7.99, 'Sides', 'Marinara for dipping.'),
+      (the_spot_id, 'Chicken Fingers', 9.99, 'Sides', 'Ranch or blue cheese.'),
+      (the_spot_id, 'Buffalo Fingers', 9.99, 'Sides', 'Ranch or blue cheese.'),
+      (the_spot_id, 'Chicken Wings (6)', 9.99, 'Sides', 'Ranch or blue cheese.'),
+      (the_spot_id, 'Buffalo Wings (6)', 9.99, 'Sides', 'Ranch or blue cheese.'),
+      (the_spot_id, 'Garlic Bread', 3.99, 'Sides', 'Warm discovery-ready bread.'),
+      (the_spot_id, 'Garden Salad', 8.95, 'Salads', 'Iceberg & Romaine, red onion, tomatoes, olives.'),
+      (the_spot_id, 'Caesar Salad', 8.95, 'Salads', 'Creamy Caesar dressing, croutons & grated cheese.'),
+      (the_spot_id, 'Chef Salad', 12.99, 'Salads', 'Garden salad with ham, turkey, Swiss, cheddar, & egg.'),
+      (the_spot_id, 'Traditional Greek Salad', 12.99, 'Salads', 'Kalamata olives, feta cheese, and Greek dressing.'),
+      (the_spot_id, 'Ham & Cheese Sub', 8.95, 'Subs/Wraps', 'Choice of cheese and toppings.'),
+      (the_spot_id, 'Oven Roasted Turkey Sub', 9.75, 'Subs/Wraps', 'Choice of cheese and toppings.'),
+      (the_spot_id, 'Italian Sub', 10.75, 'Subs/Wraps', 'Ham, salami, capicola, & provolone.'),
+      (the_spot_id, 'Roast Beef Sub', 11.99, 'Subs/Wraps', 'Choice of cheese and toppings.'),
+      (the_spot_id, 'Turkey Club', 10.50, 'Subs/Wraps', 'Turkey, ham, provolone, & bacon with lettuce, tomato, mayo.'),
+      (the_spot_id, 'BLT Sub', 9.75, 'Subs/Wraps', 'Hickory smoked bacon with lettuce, tomato, mayo.'),
+      (the_spot_id, 'Veggie Sub', 8.99, 'Subs/Wraps', 'Your choice of veggies & cheese.'),
+      (the_spot_id, 'Chicken Caesar Wrap', 11.50, 'Subs/Wraps', 'Crispy or grilled chicken.'),
+      (the_spot_id, 'Tuna Salad Sub', 7.99, 'Subs/Wraps', 'Choice of cheese & toppings.'),
+      (the_spot_id, 'Egg Salad Sub', 7.99, 'Subs/Wraps', 'Choice of cheese & toppings.'),
+      (the_spot_id, 'Cheeseburger', 7.50, 'Burgers', 'Choice of cheese & toppings.'),
+      (the_spot_id, 'Swiss Burger', 9.25, 'Burgers', 'Sauteed mushrooms & Swiss.'),
+      (the_spot_id, 'Buffalo Burger', 9.25, 'Burgers', 'Mozzarella cheese.'),
+      (the_spot_id, 'Bacon Cheeseburger', 9.50, 'Burgers', 'Hickory smoked bacon.'),
+      (the_spot_id, 'Southwest Burger', 9.50, 'Burgers', 'Bacon, BBQ sauce, & mozzarella cheese.'),
+      (the_spot_id, 'Steak & Cheese', 10.50, 'Hot Subs', 'Choice of onions, peppers, & mushrooms.'),
+      (the_spot_id, 'Steak Bomb', 11.99, 'Hot Subs', 'Onions, peppers, mushrooms, & pepperoni.'),
+      (the_spot_id, 'Grilled Chicken Breast Sub', 10.25, 'Hot Subs', 'Lettuce, tomato, & onion.'),
+      (the_spot_id, 'Cheeseburger Sub', 10.50, 'Hot Subs', 'Lettuce, tomato, onions, & pickles.'),
+      (the_spot_id, 'French Dip', 11.99, 'Hot Subs', 'Hot roast beef with au jus & mozzarella cheese.'),
+      (the_spot_id, 'Pastrami & Swiss', 11.99, 'Hot Subs', 'Grilled red pastrami topped with Swiss cheese.'),
+      (the_spot_id, 'Reuben', 11.25, 'Hot Subs', 'Grilled red pastrami, kraut, Swiss.'),
+      (the_spot_id, 'Chicken Cheese Steak', 10.99, 'Hot Subs', 'Onions, peppers, & mushrooms.'),
+      (the_spot_id, 'BBQ Chicken Sub', 10.99, 'Hot Subs', 'Bacon & mozzarella cheese.'),
+      (the_spot_id, 'Chicken Finger Sub', 10.99, 'Hot Subs', 'American cheese, lettuce, tomato, & mayo.'),
+      (the_spot_id, 'Buffalo Finger Sub', 10.99, 'Hot Subs', 'Buffalo sauce, mozzarella, ranch or blue cheese.'),
+      (the_spot_id, 'Meatball Parmesan', 10.99, 'Hot Subs', 'Always HOMEMADE!!!!'),
+      (the_spot_id, 'Chicken Parmesan Sub', 10.75, 'Hot Subs', 'Regional breaded favorite.'),
+      (the_spot_id, 'Cheese Apizza', 10.95, 'Apizza', 'Wood-fired regional staple.'),
+      (the_spot_id, 'Gluten-Free Cheese Apizza', 13.95, 'Apizza', 'Regional inclusion node.'),
+      (the_spot_id, 'The Margherita Apizza', 15.50, 'Specialty Apizza', 'Fresh mozzarella, garlic, tomatoes, fresh basil.'),
+      (the_spot_id, 'The Hawaiian Apizza', 13.99, 'Specialty Apizza', 'Ham & pineapple.'),
+      (the_spot_id, 'The Meateater Apizza', 18.95, 'Specialty Apizza', 'Sausage, ham, pepperoni, meatball, & bacon.'),
+      (the_spot_id, 'Veggie Lover Apizza', 15.50, 'Specialty Apizza', 'Spinach, tomatoes, broccoli, garlic, veggies.'),
+      (the_spot_id, 'BBQ Chicken Apizza', 16.25, 'Specialty Apizza', 'BBQ sauce, chicken, red onion, & bacon.'),
+      (the_spot_id, 'Buffalo Chicken Apizza', 16.25, 'Specialty Apizza', 'Ranch/blue cheese, chicken, buffalo sauce.'),
+      (the_spot_id, 'All White Apizza', 15.99, 'Specialty Apizza', 'Ricotta, mozzarella, garlic, spinach, tomatoes.'),
+      (the_spot_id, 'The Spot Special Apizza', 20.95, 'Specialty Apizza', 'Pepperoni, sausage, hamburger, 9+ toppings.'),
+      (the_spot_id, 'Cheese Calzone', 13.75, 'Calzones', 'Ricotta & mozzarella.'),
+      (the_spot_id, 'Ham & Cheese Calzone', 14.50, 'Calzones', 'Regional comfort node.'),
+      (the_spot_id, 'Veggie Calzone', 18.25, 'Calzones', 'Spinach, tomatoes, peppers, onions, mushrooms.'),
+      (the_spot_id, 'The Meats Calzone', 23.95, 'Calzones', 'Salami, ham, bacon, sausage, & meatball.'),
+      (the_spot_id, 'Bomb Calzone', 22.95, 'Calzones', 'Shaved steak, peppers, onions, mushrooms, pepperoni.'),
+      (the_spot_id, 'Italian Stromboli', 21.50, 'Calzones', 'Ham, capicola, pepperoni, mozzarella.'),
+      (the_spot_id, 'Bacon, Egg & Cheese', 4.50, 'Breakfast', 'Regional morning morning.'),
+      (the_spot_id, 'Sausage, Egg & Cheese', 4.50, 'Breakfast', 'The Oasis breakfast node.'),
+      (the_spot_id, 'Ham, Egg & Cheese', 4.50, 'Breakfast', 'Reliable municipal fuel.'),
+      (the_spot_id, 'Steak, Egg & Cheese', 5.95, 'Breakfast', 'High-density morning nutrition.'),
+      (the_spot_id, 'Bagel with Cream Cheese', 3.99, 'Breakfast', 'Regional independent bread selection.'),
+      (the_spot_id, 'Bagel with Butter', 3.99, 'Breakfast', 'Simple discovery fuel.')
+    on conflict (business_id, name) do update set
+      price = excluded.price,
+      category = excluded.category,
+      description = excluded.description;
+  end;
 
   insert into public.fleet_ads (business_id, headline, display_duration)
   select id, 'Reliable Regional Repairs. Mobile Service.', 15 from public.businesses where slug = 'structural-repairs'

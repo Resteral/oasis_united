@@ -496,10 +496,14 @@ declare
   pnb_id uuid;
   boyles_id uuid;
   walts_id uuid;
+  effingham_id uuid;
+  freedom_id uuid;
 begin
   select id into pnb_id from public.businesses where slug = 'pnb-eats';
   select id into boyles_id from public.businesses where slug = 'boyles-general';
   select id into walts_id from public.businesses where slug = 'walts-carpentry';
+  select id into effingham_id from public.towns where name = 'Effingham' limit 1;
+  select id into freedom_id from public.towns where name = 'Freedom' limit 1;
 
   -- Update Business Integration & Partner Tier Details
   update public.businesses set integrations = '{"phone": "(603) 539-7700"}'::jsonb, store_features = store_features || '{"tier": "Founding Partner"}'::jsonb where slug = 'pnb-eats';

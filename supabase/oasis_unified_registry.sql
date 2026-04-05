@@ -247,4 +247,39 @@ INSERT INTO public.towns (name, state) VALUES
 ('Ossipee Lake', 'NH'), 
 ('Freedom', 'NH'),
 ('Wolfeboro', 'NH')
-ON CONFLICT (name, state) DO NOTHING;
+-- 8. REWARDS & MUNICIPAL MERITOCRACY
+CREATE TABLE IF NOT EXISTS public.rewards (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    name TEXT NOT NULL,
+    description TEXT,
+    icon TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone(''utc''::text, now()) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS public.business_rewards (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    business_id UUID REFERENCES public.businesses(id) ON DELETE CASCADE NOT NULL,
+    reward_id UUID REFERENCES public.rewards(id) ON DELETE CASCADE NOT NULL,
+    awarded_at TIMESTAMP WITH TIME ZONE DEFAULT timezone(''utc''::text, now()) NOT NULL,
+    UNIQUE(business_id, reward_id)
+);
+
+ALTER TABLE public.rewards ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.business_rewards ENABLE ROW LEVEL SECURITY;
+
+DO $$ 
+BEGIN
+    DROP POLICY IF EXISTS "Rewards are public" ON public.rewards;
+    EXECUTE 'CREATE POLICY "Rewards are public" ON public.rewards FOR SELECT USING (true)';
+    
+    DROP POLICY IF EXISTS "Business rewards are public" ON public.business_rewards;
+    EXECUTE 'CREATE POLICY "Business rewards are public" ON public.business_rewards FOR SELECT USING (true)';
+END $$;
+
+-- Seed Initial Rewards
+INSERT INTO public.rewards (name, description, icon) VALUES 
+(''Gold Node'', ''Ranked in the top 1% of municipal order volume.'', ''💎''),
+(''Town Hero'', ''Achieved a 5.0 rating over 50+ successful deliveries.'', ''🛡️''),
+(''Speed King'', ''Average dispatch-to-pickup time under 10 minutes.'', ''⚡''),
+(''Founder'', ''Charter merchant of the Regional Oasis Network.'', ''🏔️'')
+ON CONFLICT DO NOTHING;

@@ -3,6 +3,7 @@ import { useEffect, useState, Suspense } from 'react';
 import CategoryNav from '@/components/CategoryNav';
 import DiscoveryFeed from '@/components/DiscoveryFeed';
 import Link from 'next/link';
+import Cart from '@/components/Cart';
 
 // New Modular Components
 import MarketplaceHero from '@/components/marketplace/MarketplaceHero';
@@ -21,6 +22,17 @@ export default function MarketplaceClient({ initialFeatured, initialShoutouts }:
     const [activeCategory, setActiveCategory] = useState('All');
     const [trendingView, setTrendingView] = useState<'Items' | 'Sellers'>('Items');
     const [loading, setLoading] = useState(false);
+    const [cartItems, setCartItems] = useState<any[]>([]);
+
+    const handleAddToCart = (product: any) => {
+        setCartItems(prev => {
+            const existing = prev.find(item => item.id === product.id);
+            if (existing) {
+                return prev.map(item => item.id === product.id ? { ...item, quantity: (item.quantity || 1) + 1 } : item);
+            }
+            return [...prev, { ...product, quantity: 1 }];
+        });
+    };
 
     useEffect(() => {
         if (activeCategory === 'All' && JSON.stringify(featured) === JSON.stringify(initialFeatured)) return;
@@ -46,7 +58,7 @@ export default function MarketplaceClient({ initialFeatured, initialShoutouts }:
 
     return (
         <div className="min-h-screen bg-[hsl(var(--background))] text-[hsl(var(--foreground))] selection:bg-[hsl(var(--primary))] selection:text-[hsl(var(--primary-foreground))]">
-            
+            <Cart items={cartItems} setItems={setCartItems} businessId={featured.products?.[0]?.business_id || ''} />
             <MarketplaceHero />
 
             <main className="max-w-7xl mx-auto px-8 -mt-24 pb-32 space-y-32">
@@ -93,25 +105,28 @@ export default function MarketplaceClient({ initialFeatured, initialShoutouts }:
                             <div className={`grid grid-cols-1 md:grid-cols-2 gap-8 transition-all duration-500 ${loading ? 'opacity-50' : 'opacity-100'}`}>
                                 {trendingView === 'Items' ? (
                                     featured.products?.slice(0, 6).map((product: any) => (
-                                        <Link key={product.id} href={`/shop/${product.business_id}`} className="group relative bg-[hsl(var(--card))/0.4] rounded-[3rem] p-8 border border-white/5 hover:border-amber-400/30 transition-all flex gap-8 items-center shadow-3xl">
-                                            <div className="w-32 h-32 bg-white/5 rounded-2xl overflow-hidden shrink-0">
+                                        <div key={product.id} className="group relative bg-[hsl(var(--card))/0.4] rounded-[3rem] p-8 border border-white/5 hover:border-amber-400/30 transition-all flex flex-col md:flex-row gap-8 items-center shadow-3xl">
+                                            <Link href={`/shop/${product.business_id}`} className="w-32 h-32 bg-white/5 rounded-2xl overflow-hidden shrink-0">
                                                 {product.image_url ? (
                                                     <img src={product.image_url} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all" alt="" />
                                                 ) : <div className="w-full h-full flex items-center justify-center text-3xl opacity-20">💎</div>}
-                                            </div>
-                                            <div className="space-y-2 overflow-hidden">
-                                                <h3 className="font-black italic text-xl tracking-tighter uppercase truncate">{product.name}</h3>
+                                            </Link>
+                                            <div className="flex-1 space-y-2 overflow-hidden">
+                                                <Link href={`/shop/${product.business_id}`} className="block">
+                                                    <h3 className="font-black italic text-xl tracking-tighter uppercase truncate group-hover:text-amber-400 transition-colors">{product.name}</h3>
+                                                </Link>
                                                 <p className="text-[9px] font-bold text-white/30 uppercase tracking-widest">{product.businesses?.name}</p>
-                                                <div className="flex items-center gap-2">
+                                                <div className="flex items-center justify-between">
                                                     <div className="text-2xl font-black italic text-amber-400 mt-2">${Number(product.price).toFixed(2)}</div>
-                                                    {product.is_shippable && (
-                                                        <span className="mt-2 bg-emerald-500/20 text-emerald-400 text-[7px] font-black uppercase px-2 py-1 rounded-full border border-emerald-500/20 tracking-widest animate-pulse">
-                                                            Universal Shipping
-                                                        </span>
-                                                    )}
+                                                    <button 
+                                                        onClick={() => handleAddToCart(product)}
+                                                        className="px-6 py-2 bg-white/5 border border-white/10 rounded-full text-[9px] font-black uppercase tracking-widest hover:bg-amber-400 hover:text-black transition-all"
+                                                    >
+                                                        + Cart
+                                                    </button>
                                                 </div>
                                             </div>
-                                        </Link>
+                                        </div>
                                     ))
                                 ) : (
                                     featured.businesses?.slice(0, 6).map((biz: any) => (

@@ -2,10 +2,12 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
+import OasisLogo from '@/components/OasisLogo';
 import styles from './Sidebar.module.css';
 
 const navItems = [
     { label: 'Merchant Dashboard', href: '/dashboard/orders', icon: '📋' },
+    { label: 'Field Manual', href: '/manual', icon: '📖' },
     { label: 'Seating & Layout', href: '/dashboard/seating', icon: '🍽️' },
     { label: 'Security (MFA)', href: '/dashboard/settings/security', icon: '🔒' },
     { label: 'Regional Network', href: '/dashboard/fleet', icon: '🛰️' },
@@ -39,8 +41,8 @@ export default function Sidebar() {
 
     return (
         <aside className={styles.sidebar}>
-            <Link href="/" className={styles.logo} style={{ textDecoration: 'none', display: 'flex', justifyContent: 'center', padding: '1rem 0' }}>
-                <img src="/logo.png" alt="OasisUnited" style={{ height: '60px', width: 'auto' }} className="hover:scale-105 transition-transform" />
+            <Link href="/" className="group no-underline">
+                <OasisLogo size="md" />
             </Link>
 
             <div className="mt-8 mb-4 px-4">

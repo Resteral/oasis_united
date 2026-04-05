@@ -5,6 +5,7 @@ import styles from './page.module.css';
 import { supabase } from '@/lib/supabase';
 import { GooglePlace } from '@/lib/types';
 import OasisCompass from '@/components/OasisCompass';
+import OasisLogo from '@/components/OasisLogo';
 
 interface HomeClientProps {
   initialBusinesses: any[];
@@ -28,9 +29,8 @@ export default function HomeClient({ initialBusinesses }: HomeClientProps) {
       {/* Dynamic Navigation Bar */}
       <header className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-500 ${scrolled ? 'bg-black/80 backdrop-blur-2xl py-4 border-b border-white/5' : 'bg-transparent py-8'}`}>
         <div className="max-w-7xl mx-auto px-10 flex justify-between items-center">
-          <Link href="/" className="flex items-center gap-4 group">
-            <div className="w-10 h-10 bg-amber-400 rounded-2xl flex items-center justify-center text-2xl group-hover:rotate-12 transition-transform shadow-lg shadow-amber-400/20">🏜️</div>
-            <span className="text-2xl font-black italic tracking-tighter uppercase group-hover:text-amber-400 transition-colors">Oasis <span className="text-white/40">United.</span></span>
+          <Link href="/" className="group no-underline">
+            <OasisLogo size="md" />
           </Link>
           
           <nav className="hidden md:flex items-center gap-10">

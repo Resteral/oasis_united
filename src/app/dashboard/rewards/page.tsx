@@ -1,19 +1,13 @@
 "use client";
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import Link from 'next/link';
 
 export default function MerchantRewardsPage() {
-    const [rewards, setRewards] = useState<any[]>([]);
+    const [earnedRewards, setEarnedRewards] = useState<any[]>([]);
+    const [availableRewards, setAvailableRewards] = useState<any[]>([]);
     const [business, setBusiness] = useState<any>(null);
     const [loading, setLoading] = useState(true);
-    const [isCreating, setIsCreating] = useState(false);
-    const [formData, setFormData] = useState({
-        title: '',
-        description: '',
-        point_cost: 500,
-        reward_type: 'discount',
-        reward_value: 0
-    });
 
     useEffect(() => {
         async function loadMerchantRewards() {
@@ -23,137 +17,107 @@ export default function MerchantRewardsPage() {
 
             const { data: bus } = await supabase
                 .from('businesses')
-                .select('*')
+                .select('*, towns(name)')
                 .eq('owner_id', user.id)
                 .single();
 
             if (bus) {
                 setBusiness(bus);
-                const { data: rwds } = await supabase
-                    .from('rewards')
-                    .select('*')
-                    .eq('business_id', bus.id)
-                    .order('created_at', { ascending: false });
+                const [earned, available] = await Promise.all([
+                    supabase.from('business_rewards').select('*, rewards(*)').eq('business_id', bus.id),
+                    supabase.from('rewards').select('*')
+                ]);
 
-                if (rwds) setRewards(rwds);
+                if (earned.data) setEarnedRewards(earned.data.map(e => e.rewards));
+                if (available.data) setAvailableRewards(available.data);
             }
             setLoading(false);
         }
         loadMerchantRewards();
     }, []);
 
-    const handleCreateReward = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!business) return;
-
-        const { data, error } = await supabase
-            .from('rewards')
-            .insert({
-                business_id: business.id,
-                ...formData
-            })
-            .select()
-            .single();
-
-        if (data) {
-            setRewards([data, ...rewards]);
-            setIsCreating(false);
-            setFormData({ title: '', description: '', point_cost: 500, reward_type: 'discount', reward_value: 0 });
-        }
-    };
-
-    if (loading) return <div className="p-12 flex justify-center"><div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div></div>;
+    if (loading) return <div className="p-12 min-h-screen bg-[#0a0a0b] flex items-center justify-center font-black uppercase text-white/20 text-[10px] animate-pulse italic">Syncing Merit Cabinet...</div>;
 
     return (
-        <div className="p-8 md:p-12 space-y-12 max-w-5xl mx-auto">
-            <header className="flex justify-between items-end">
+        <div className="min-h-screen bg-[#0a0a0b] text-white p-8 md:p-12 space-y-12 max-w-7xl mx-auto selection:bg-amber-400 selection:text-black">
+            <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-10">
                 <div className="space-y-4">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded-full">
-                        <span className="text-[10px] font-black uppercase tracking-widest">Loyalty Management</span>
+                    <div className="inline-flex items-center gap-3 px-4 py-2 bg-indigo-500/10 border border-indigo-500/20 rounded-full text-indigo-400">
+                        <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-ping"></span>
+                        <span className="text-[10px] font-black uppercase tracking-widest">Regional Meritocracy Protocol</span>
                     </div>
-                    <h1 className="text-5xl font-black italic tracking-tighter text-gray-900 leading-tight">Boutique <span className="text-indigo-600">Rewards.</span></h1>
-                    <p className="text-gray-400 font-medium max-w-md italic text-sm">Create exclusive perks to reward your most loyal shoppers and drive repeat business.</p>
+                    <h1 className="text-6xl font-black italic tracking-tighter uppercase leading-none">Merit <span className="text-indigo-400">Cabinet.</span></h1>
+                    <p className="text-white/40 font-medium max-w-lg italic text-lg leading-relaxed">Your collection of earned regional distinctions and municipal excellence badges.</p>
                 </div>
-                <button
-                    onClick={() => setIsCreating(true)}
-                    className="px-8 py-4 bg-indigo-600 text-white rounded-full font-black text-xs uppercase tracking-widest shadow-xl shadow-indigo-100 hover:bg-indigo-700 transition-all"
-                >
-                    + New Reward
-                </button>
+                <Link href="/manual" className="px-10 py-5 bg-white/5 border border-white/10 rounded-3xl font-black text-[10px] uppercase tracking-widest hover:bg-white/10 transition-all flex items-center gap-3">
+                    View Leaderboard <span className="text-lg">📊</span>
+                </Link>
             </header>
 
-            {isCreating && (
-                <div className="bg-white p-10 rounded-[3rem] border border-gray-100 shadow-xl space-y-8 animate-in slide-in-from-top-4 duration-500">
-                    <h2 className="text-2xl font-black italic tracking-tight">Define Your Perk</h2>
-                    <form onSubmit={handleCreateReward} className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 px-2">Reward Title</label>
-                            <input
-                                type="text"
-                                placeholder="e.g. $10 Off Your Next Order"
-                                value={formData.title}
-                                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                                className="w-full bg-gray-50 border border-gray-100 px-6 py-4 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all"
-                                required
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 px-2">Point Cost</label>
-                            <input
-                                type="number"
-                                value={formData.point_cost}
-                                onChange={(e) => setFormData({ ...formData, point_cost: parseInt(e.target.value) })}
-                                className="w-full bg-gray-50 border border-gray-100 px-6 py-4 rounded-2xl text-sm font-medium outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all"
-                                required
-                            />
-                        </div>
-                        <div className="md:col-span-2 space-y-2">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 px-2">Description</label>
-                            <textarea
-                                placeholder="Explain the benefit of this reward..."
-                                value={formData.description}
-                                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                                className="w-full bg-gray-50 border border-gray-100 px-6 py-5 rounded-3xl text-sm font-medium outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all min-h-[120px]"
-                            />
-                        </div>
-                        <div className="flex gap-4 md:col-span-2 pt-4">
-                            <button type="submit" className="flex-1 py-4 bg-indigo-600 text-white rounded-full font-black text-xs uppercase tracking-widest shadow-xl shadow-indigo-100 hover:bg-indigo-700 transition-all">Publish Reward</button>
-                            <button type="button" onClick={() => setIsCreating(false)} className="px-8 py-4 bg-gray-100 text-gray-400 rounded-full font-black text-xs uppercase tracking-widest hover:bg-gray-200 transition-all">Cancel</button>
-                        </div>
-                    </form>
-                </div>
-            )}
-
-            <main className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {rewards.length === 0 ? (
-                    <div className="md:col-span-2 py-24 flex flex-col items-center justify-center gap-6 bg-gray-50 rounded-[3rem] border border-gray-100 text-center">
-                        <span className="text-5xl grayscale opacity-20 bg-white p-8 rounded-full shadow-sm">💎</span>
-                        <div className="space-y-2">
-                            <p className="font-black text-xl text-gray-900 italic">No rewards active.</p>
-                            <p className="text-sm text-gray-400 max-w-xs">Start building your loyalty network by adding your first reward perk today.</p>
-                        </div>
+            <main className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+                {/* Earned Rewards Showcase */}
+                <section className="lg:col-span-8 space-y-8">
+                    <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-400 px-2 italic">Earned Distinctions</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        {earnedRewards.length === 0 ? (
+                            <div className="md:col-span-2 py-32 bg-white/[0.02] border border-dashed border-white/5 rounded-[4rem] flex flex-col items-center justify-center text-center space-y-6">
+                                <span className="text-6xl opacity-10">🛡️</span>
+                                <div className="space-y-2">
+                                    <p className="text-xl font-black italic uppercase text-white/20">Cabinet Currently Empty.</p>
+                                    <p className="text-[10px] font-black uppercase text-white/10 tracking-widest">Perform regional excellence to earn badges.</p>
+                                </div>
+                            </div>
+                        ) : (
+                            earnedRewards.map(reward => (
+                                <div key={reward.id} className="bg-gradient-to-br from-indigo-600/10 to-transparent border border-indigo-500/30 p-10 rounded-[3.5rem] space-y-6 relative overflow-hidden group hover:scale-[1.02] transition-transform">
+                                    <div className="absolute -top-10 -right-10 text-9xl opacity-[0.05] grayscale group-hover:grayscale-0 transition-all">{reward.icon}</div>
+                                    <div className="text-5xl">{reward.icon}</div>
+                                    <div className="space-y-2 relative z-10">
+                                        <h4 className="text-2xl font-black italic uppercase tracking-tighter">{reward.name}</h4>
+                                        <p className="text-[11px] font-medium text-white/40 italic leading-relaxed">{reward.description}</p>
+                                    </div>
+                                    <div className="pt-4 border-t border-white/5 flex justify-between items-center text-[9px] font-black uppercase tracking-widest text-indigo-400">
+                                        <span>Verified Node Asset</span>
+                                        <span className="text-white/20 italic">Unlocked</span>
+                                    </div>
+                                </div>
+                            ))
+                        )}
                     </div>
-                ) : (
-                    rewards.map((reward) => (
-                        <div key={reward.id} className="bg-white p-8 rounded-[3rem] border border-gray-100 shadow-sm hover:shadow-xl hover:border-indigo-100 transition-all flex flex-col group h-full">
-                            <div className="flex justify-between items-start mb-6">
-                                <div className="space-y-1">
-                                    <h3 className="font-black text-xl text-gray-900 group-hover:text-indigo-600 transition-colors uppercase tracking-tight italic leading-none">{reward.title}</h3>
-                                    <span className="text-[10px] font-bold text-gray-300 uppercase tracking-widest block pt-1">{reward.reward_type}</span>
+                </section>
+
+                {/* Available Rewards / Requirements */}
+                <section className="lg:col-span-4 space-y-8">
+                     <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-amber-500 px-2 italic">Network Potential</h3>
+                     <div className="bg-white/5 border border-white/5 p-10 rounded-[3rem] space-y-10">
+                        {availableRewards.map(reward => {
+                            const isEarned = earnedRewards.some(er => er.id === reward.id);
+                            return (
+                                <div key={reward.id} className={`flex items-start gap-6 group transition-all ${isEarned ? 'opacity-30' : 'opacity-100'}`}>
+                                    <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center text-2xl group-hover:bg-amber-400 transition-all group-hover:text-black">
+                                        {reward.icon}
+                                    </div>
+                                    <div className="space-y-1 flex-1">
+                                        <div className="flex justify-between items-center">
+                                            <h4 className="text-sm font-black italic uppercase tracking-tight">{reward.name}</h4>
+                                            {isEarned && <span className="text-[9px] font-black uppercase text-amber-500 tracking-tighter italic">EARNED</span>}
+                                        </div>
+                                        <p className="text-[9px] font-medium text-white/20 italic leading-snug">{reward.description}</p>
+                                    </div>
                                 </div>
-                                <div className="bg-indigo-50 px-4 py-2 rounded-2xl text-indigo-600 font-black text-xs tracking-tighter">
-                                    {reward.point_cost} Pts
-                                </div>
-                            </div>
-                            <p className="text-gray-400 text-sm font-medium italic leading-relaxed line-clamp-2 mb-8 flex-1">"{reward.description}"</p>
-                            <div className="pt-6 border-t border-gray-50 flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
-                                <span className={reward.is_active ? 'text-emerald-500' : 'text-rose-500'}>{reward.is_active ? '● Active' : '○ Disabled'}</span>
-                                <span className="text-gray-300">Created {new Date(reward.created_at).toLocaleDateString()}</span>
-                            </div>
+                            );
+                        })}
+                        <div className="pt-6 border-t border-white/5">
+                            <p className="text-[10px] font-bold text-white/40 italic text-center">Maintain high throughput and regional rating to level up your node.</p>
                         </div>
-                    ))
-                )}
+                     </div>
+                </section>
             </main>
+
+            <footer className="pt-20 border-t border-white/5 text-[9px] font-black uppercase text-white/10 tracking-[0.4em] flex justify-between items-center">
+                <span>Meritocracy Engine v1.02</span>
+                <span className="italic">Oasis United Regional Governance</span>
+            </footer>
         </div>
     );
 }

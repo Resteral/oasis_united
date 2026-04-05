@@ -12,9 +12,10 @@ interface Stop {
 
 interface RouteMapProps {
     stops: Stop[];
+    isTopology?: boolean;
 }
 
-export default function RouteMap({ stops }: RouteMapProps) {
+export default function RouteMap({ stops, isTopology }: RouteMapProps) {
     const [fleetProgress, setFleetProgress] = useState(0);
 
     // Dynamic Regional Bounds
@@ -56,7 +57,7 @@ export default function RouteMap({ stops }: RouteMapProps) {
 
             <svg className="absolute inset-0 w-full h-full p-20 overflow-visible" viewBox="0 0 100 100" preserveAspectRatio="none">
                 {/* 🛰️ Orbital Route Line */}
-                {validStops.length > 1 && (
+                {!isTopology && validStops.length > 1 && (
                     <polyline
                         points={validStops.map(s => `${getX(s.lng)},${getY(s.lat)}`).join(' ')}
                         fill="none"
@@ -68,7 +69,7 @@ export default function RouteMap({ stops }: RouteMapProps) {
                 )}
 
                 {/* 🧬 Active Transit Path */}
-                {validStops.length > 1 && (
+                {!isTopology && validStops.length > 1 && (
                     <polyline
                         points={validStops.map(s => `${getX(s.lng)},${getY(s.lat)}`).join(' ')}
                         fill="none"
@@ -115,12 +116,12 @@ export default function RouteMap({ stops }: RouteMapProps) {
             {/* 🛸 Legend & Metadata */}
             <div className="absolute bottom-10 left-10 space-y-4">
                 <div className="flex items-center gap-4 bg-black/60 backdrop-blur-2xl px-6 py-3 rounded-full border border-white/10">
-                    <span className="w-2.5 h-2.5 bg-indigo-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(99,102,241,1)]"></span>
-                    <span className="text-[10px] font-black text-white uppercase tracking-[0.3em]">MUNICIPAL TRANSIT RADAR: ACTIVE</span>
+                    <span className={`w-2.5 h-2.5 ${isTopology ? 'bg-amber-400' : 'bg-indigo-500'} rounded-full animate-pulse shadow-lg`}></span>
+                    <span className="text-[10px] font-black text-white uppercase tracking-[0.3em]">{isTopology ? 'MUNICIPAL TOWN TOPOLOGY: FULL SCAN' : 'MUNICIPAL TRANSIT RADAR: ACTIVE'}</span>
                 </div>
                 <div className="flex -space-x-2">
                     {validStops.slice(0, 5).map((s, i) => (
-                        <div key={i} className="w-8 h-8 rounded-full border-2 border-[#0a0a0b] bg-indigo-900 flex items-center justify-center text-[10px] font-black text-white shadow-xl">
+                        <div key={i} className={`w-8 h-8 rounded-full border-2 border-[#0a0a0b] ${isTopology ? 'bg-amber-900 shadow-amber-500/20' : 'bg-indigo-900'} flex items-center justify-center text-[10px] font-black text-white shadow-xl`}>
                             {s.name[0]}
                         </div>
                     ))}
@@ -133,8 +134,8 @@ export default function RouteMap({ stops }: RouteMapProps) {
             </div>
 
             <div className="absolute top-10 right-10 flex flex-col items-end gap-2">
-                <span className="text-[8px] font-black text-white/20 uppercase tracking-[0.5em]">Regional Grid.</span>
-                <span className="text-[10px] font-black text-amber-400/60 italic uppercase tracking-widest">{validStops.length} Registered Stops</span>
+                <span className="text-[8px] font-black text-white/20 uppercase tracking-[0.5em]">{isTopology ? 'Jurisdiction Grid.' : 'Regional Grid.'}</span>
+                <span className={`text-[10px] font-black ${isTopology ? 'text-amber-400' : 'text-amber-400/60'} italic uppercase tracking-widest`}>{validStops.length} {isTopology ? 'Governed Nodes' : 'Registered Stops'}</span>
             </div>
         </div>
     );

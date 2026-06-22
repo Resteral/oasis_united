@@ -9,6 +9,7 @@ export default function UnifiedHeader() {
     const pathname = usePathname();
     const [role, setRole] = useState<string | null>(null);
     const [scrolled, setScrolled] = useState(false);
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
 
     useEffect(() => {
         const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -17,26 +18,71 @@ export default function UnifiedHeader() {
         async function getRole() {
             const { data: { user } } = await supabase.auth.getUser();
             if (user) {
+                setIsAuthenticated(true);
                 const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
                 setRole(profile?.role || 'consumer');
+            } else {
+                setIsAuthenticated(false);
+                setRole(null);
             }
         }
         getRole();
 
-        return () => window.removeEventListener('scroll', handleScroll);
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            setIsAuthenticated(!!session);
+            if (session?.user) {
+                getRole();
+            } else {
+                setRole(null);
+            }
+        });
+
+        return () => {
+            window.removeEventListener('scroll', handleScroll);
+            subscription.unsubscribe();
+        };
     }, []);
 
-    // Hide header on landing page sections if needed, or keep it consistent
-    const isLanding = pathname === '/';
+    const handleLogout = async () => {
+        await supabase.auth.signOut();
+        window.location.href = '/';
+    };
 
     return (
         <header className={`fixed top-0 left-0 right-0 z-[150] transition-all duration-500 ${
-            scrolled ? 'bg-black/80 backdrop-blur-2xl py-3 border-b border-white/5' : 'bg-transparent py-6'
+            scrolled ? 'bg-black/90 backdrop-blur-2xl py-3 border-b border-white/5' : 'bg-transparent py-6'
         }`}>
             <div className="max-w-7xl mx-auto px-6 md:px-10 flex justify-between items-center">
-                <Link href="/" className="hover:scale-105 transition-transform">
+                <Link href="/" className="hover:scale-105 transition-transform flex items-center gap-2">
                     <OasisLogo size="sm" />
                 </Link>
+
+                {/* Center / Desktop Navigation Links (Only visible on md+ viewports) */}
+                <nav className="hidden md:flex items-center gap-8">
+                    <Link href="/marketplace" className={`text-[10px] font-black uppercase tracking-[0.2em] hover:text-indigo-400 transition-colors ${pathname === '/marketplace' ? 'text-indigo-400' : 'text-white/60'}`}>
+                        Marketplace
+                    </Link>
+                    <Link href="/hub" className={`text-[10px] font-black uppercase tracking-[0.2em] hover:text-indigo-400 transition-colors ${pathname === '/hub' ? 'text-indigo-400' : 'text-white/60'}`}>
+                        System Hub
+                    </Link>
+                    
+                    {role === 'business' && (
+                        <>
+                            <Link href="/dashboard" className={`text-[10px] font-black uppercase tracking-[0.2em] hover:text-amber-400 transition-colors ${pathname === '/dashboard' ? 'text-amber-400' : 'text-white/60'}`}>
+                                Merchant Ops
+                            </Link>
+                            <Link href="/dashboard/hardware" className={`text-[10px] font-black uppercase tracking-[0.2em] hover:text-amber-400 transition-colors ${pathname === '/dashboard/hardware' ? 'text-amber-400' : 'text-white/60'}`}>
+                                ESP32 Link
+                            </Link>
+                        </>
+                    )}
+
+                    {role === 'deliverer' && (
+                        <Link href="/deliverer/dashboard" className={`text-[10px] font-black uppercase tracking-[0.2em] hover:text-indigo-400 transition-colors ${pathname === '/deliverer/dashboard' ? 'text-indigo-400' : 'text-white/60'}`}>
+                            Driver Fleet
+                        </Link>
+                    )}
+                </nav>
 
                 <div className="flex items-center gap-6">
                     {/* Status Signal Node */}
@@ -49,26 +95,17 @@ export default function UnifiedHeader() {
                         </span>
                     </div>
 
-                    <nav className="flex items-center gap-3">
-                        {role === 'business' && (
-                            <Link href="/dashboard" className="px-6 py-2.5 bg-amber-400 text-black rounded-2xl text-[9px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-xl shadow-amber-400/20">
-                                Global Ops
-                            </Link>
-                        )}
-                        {role === 'deliverer' && (
-                            <Link href="/deliverer/dashboard" className="px-6 py-2.5 bg-indigo-600 text-white rounded-2xl text-[9px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-xl shadow-indigo-600/20">
-                                Fleet Command
-                            </Link>
-                        )}
-                        {!role && (
+                    <div className="flex items-center gap-3">
+                        {isAuthenticated ? (
+                            <button onClick={handleLogout} className="px-6 py-2.5 bg-white/5 border border-white/10 text-white rounded-2xl text-[9px] font-black uppercase tracking-widest hover:bg-white/10 transition-all hover:border-white/20">
+                                Disconnect
+                            </button>
+                        ) : (
                             <Link href="/login" className="px-6 py-2.5 bg-white text-black rounded-2xl text-[9px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-2xl">
                                 Uplink Portal
                             </Link>
                         )}
-                        <Link href="/hub" className="p-2.5 bg-white/5 border border-white/10 rounded-2xl hover:bg-white/10 transition-all group" title="System Hub">
-                           <span className="text-sm group-hover:scale-125 block transition-transform">🛰️</span>
-                        </Link>
-                    </nav>
+                    </div>
                 </div>
             </div>
         </header>

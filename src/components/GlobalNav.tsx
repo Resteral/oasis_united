@@ -37,7 +37,7 @@ export default function GlobalNav() {
 
     // The Cinematic Dock
     return (
-        <nav className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[200] px-3 py-3 bg-[#0c0c0e]/80 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] shadow-[0_32px_128px_-16px_rgba(0,0,0,0.8)] flex items-center gap-1.5 group/nav">
+        <nav className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[200] px-3 py-3 bg-[#0c0c0e]/80 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] shadow-[0_32px_128px_-16px_rgba(0,0,0,0.8)] flex items-center gap-1.5 group/nav md:hidden">
             <Link 
                 href="/marketplace" 
                 className={`flex items-center gap-3 px-6 py-3.5 rounded-3xl transition-all duration-500 hover:bg-white/5 active:scale-90 ${

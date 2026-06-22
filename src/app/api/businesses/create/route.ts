@@ -7,17 +7,29 @@ export async function POST(req: Request) {
         const { data: { user } } = await supabase.auth.getUser();
 
         if (!user) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+            return NextResponse.json({ error: 'Uplink Failed: Unauthorized operational context.' }, { status: 401 });
         }
 
         const body = await req.json();
         const { name, category, description, townId, slug, imageUrl, theme } = body;
 
+        // Validation for high-fidelity registration
         if (!name || !category || !slug || !townId) {
-            return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+            return NextResponse.json({ error: 'Protocol Violation: Identity, Classification, and Hub must be established.' }, { status: 400 });
         }
 
-        // 1. Create the business
+        // 1. Check for existing node to prevent duplication conflicts
+        const { data: existingBiz } = await supabase
+            .from('businesses')
+            .select('id')
+            .eq('owner_id', user.id)
+            .single();
+
+        if (existingBiz) {
+            return NextResponse.json({ error: 'Conflict Detected: Identity node already active on this uplink.' }, { status: 409 });
+        }
+
+        // 2. Provision the business node
         const { data: business, error: bizError } = await supabase
             .from('businesses')
             .insert({
@@ -27,7 +39,7 @@ export async function POST(req: Request) {
                 category,
                 description,
                 town_id: townId,
-                image_url: imageUrl,
+                image_url: imageUrl || 'https://images.unsplash.com/photo-1541167760496-1628856ab772?q=80&w=1000&auto=format&fit=crop',
                 theme: theme || { primaryColor: '#4F46E5', backgroundColor: '#0a0a0b' }
             })
             .select()
@@ -35,10 +47,14 @@ export async function POST(req: Request) {
 
         if (bizError) {
             console.error('Error creating business:', bizError);
-            return NextResponse.json({ error: bizError.message }, { status: 500 });
+            // Handle specific Supabase errors for clearer UI feedback
+            if (bizError.code === '23505') {
+                return NextResponse.json({ error: 'Identity Conflict: Slug/URL already claimed in the regional matrix.' }, { status: 400 });
+            }
+            return NextResponse.json({ error: `Registry Error: ${bizError.message}` }, { status: 500 });
         }
 
-        // 2. Update user role to 'business'
+        // 3. Update user role to 'business' in the global lattice
         const { error: profileError } = await supabase
             .from('profiles')
             .update({ role: 'business' })
@@ -46,13 +62,16 @@ export async function POST(req: Request) {
 
         if (profileError) {
             console.error('Error updating profile role:', profileError);
-            // We don't fail the whole request because the business was created, 
-            // but we might want to log this or notify the user.
+            // We proceed as business is created, but log for audit.
         }
 
-        return NextResponse.json({ business });
+        return NextResponse.json({ 
+            success: true, 
+            business,
+            message: 'Uplink Established: Business node provisioned successfully.' 
+        });
     } catch (err: any) {
-        console.error('Unexpected error:', err);
-        return NextResponse.json({ error: err.message }, { status: 500 });
+        console.error('Unexpected Protocol Error:', err);
+        return NextResponse.json({ error: `System Exception: ${err.message}` }, { status: 500 });
     }
 }

@@ -17,25 +17,17 @@ export default function RouteManagement() {
         setLoading(true);
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
-
         const { data: myTowns } = await supabase.from('towns').select('*').eq('added_by', user.id);
         const { data: myRoutes } = await supabase.from('delivery_routes').select('*, towns(name)').eq('deliverer_id', user.id);
-        
         setTowns(myTowns || []);
         setRoutes(myRoutes || []);
         setLoading(false);
     };
 
-    useEffect(() => {
-        fetchMyNetwork();
-    }, []);
+    useEffect(() => { fetchMyNetwork(); }, []);
 
-    // Fetch businesses when town changes
     useEffect(() => {
-        if (!townId) {
-            setBusinesses([]);
-            return;
-        }
+        if (!townId) { setBusinesses([]); return; }
         async function fetchBusinesses() {
             const { data } = await supabase.from('businesses').select('id, name').eq('town_id', townId);
             setBusinesses(data || []);
@@ -56,124 +48,126 @@ export default function RouteManagement() {
         e.preventDefault();
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
-
         const filteredStops = stops.filter(s => s.id !== '');
-
-        const { error } = await supabase.from('delivery_routes').insert([{
-            deliverer_id: user.id,
-            town_id: townId,
-            name,
-            stops: filteredStops
-        }]);
-
-        if (!error) {
-            setName('');
-            setStops([]);
-            fetchMyNetwork();
-        }
+        const { error } = await supabase.from('delivery_routes').insert([{ deliverer_id: user.id, town_id: townId, name, stops: filteredStops }]);
+        if (!error) { setName(''); setStops([]); fetchMyNetwork(); }
     };
 
     return (
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-12">
-            <div className="xl:col-span-2 space-y-12">
-                <section className="space-y-8 bg-white/[0.02] border border-white/5 p-12 rounded-[3.5rem] shadow-3xl">
-                    <div className="space-y-4">
-                        <div className="inline-flex items-center gap-3 px-4 py-2 bg-indigo-400/10 border border-indigo-400/20 rounded-full">
-                            <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-pulse"></span>
-                            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-400">Logistics Hub</span>
-                        </div>
-                        <h2 className="text-4xl font-black italic tracking-tighter uppercase leading-none">Map Your <br />Routes.</h2>
-                        <p className="text-gray-400 text-sm font-medium max-w-sm">Define custom delivery paths within your registered territories.</p>
-                    </div>
-
-                    <form onSubmit={handleCreateRoute} className="space-y-8 mt-12">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-black uppercase tracking-widest text-indigo-400 ml-4">Select Town</label>
-                                <select 
-                                    required
-                                    value={townId}
-                                    onChange={(e) => setTownId(e.target.value)}
-                                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 focus:ring-2 focus:ring-indigo-500/50 outline-none transition-all placeholder:text-white/20 font-bold text-white"
-                                >
-                                    <option value="" className="bg-[#0c0c0e]">-- Choose Target --</option>
-                                    {towns.map(t => <option key={t.id} value={t.id} className="bg-[#0c0c0e]">{t.name}, {t.state}</option>)}
-                                </select>
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-black uppercase tracking-widest text-indigo-400 ml-4">Route Name</label>
-                                <input 
-                                    type="text" 
-                                    required
-                                    placeholder="Morning Coffee Run"
-                                    value={name}
-                                    onChange={(e) => setName(e.target.value)}
-                                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 focus:ring-2 focus:ring-indigo-500/50 outline-none transition-all placeholder:text-white/20 font-bold text-white"
-                                />
-                            </div>
-                        </div>
-
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-16 animate-in fade-in slide-in-from-bottom-12 duration-1000">
+            
+            {/* 🏗️ ROUTE ESTABLISHMENT TERMINAL */}
+            <div className="xl:col-span-7 space-y-12">
+                <section className="bg-white/[0.02] border border-white/5 p-12 md:p-16 rounded-[4.5rem] shadow-3xl relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 p-16 opacity-[0.02] pointer-events-none scale-150 rotate-45 group-hover:scale-125 transition-transform duration-1000">🗺️</div>
+                    
+                    <div className="space-y-8 relative z-10">
                         <div className="space-y-4">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-indigo-400 ml-4">Discovery Stops (Registered Businesses)</label>
-                            {stops.map((stop, idx) => (
-                                <select 
-                                    key={idx}
-                                    required
-                                    value={stop.id}
-                                    onChange={(e) => updateStop(e.target.value, idx)}
-                                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 focus:ring-2 focus:ring-indigo-500/50 outline-none transition-all font-bold text-white"
-                                >
-                                    <option value="" className="bg-[#0c0c0e]">-- Select Store --</option>
-                                    {businesses.map(b => <option key={b.id} value={b.id} className="bg-[#0c0c0e]">{b.name}</option>)}
-                                </select>
-                            ))}
-                            <button 
-                                type="button" 
-                                onClick={addStop}
-                                disabled={!townId}
-                                className="px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/5 flex items-center gap-2 rounded-2xl text-[9px] font-black uppercase tracking-widest transition-all disabled:opacity-30"
-                            >
-                                ➕ Add Sequence Stop
-                            </button>
+                            <div className="inline-flex items-center gap-3 px-5 py-2 bg-indigo-500/10 border border-indigo-500/20 rounded-full">
+                                <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-ping"></span>
+                                <span className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-400 italic">Route Deployment Uplink</span>
+                            </div>
+                            <h2 className="text-6xl font-black italic tracking-tighter uppercase leading-none text-white whitespace-nowrap">Map Your <br /><span className="text-indigo-500">Deployments.</span></h2>
+                            <p className="text-white/40 font-medium text-lg italic max-w-sm">Establish custom logistical paths within your specific regional territories.</p>
                         </div>
 
-                        <button className="w-full py-5 bg-indigo-600 text-white rounded-3xl font-black uppercase tracking-widest text-[11px] hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-indigo-900/20">
-                            Establish Deployment Route
-                        </button>
-                    </form>
+                        <form onSubmit={handleCreateRoute} className="space-y-12 mt-16 pb-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                                <div className="space-y-4">
+                                    <label className="text-[10px] font-black uppercase tracking-[0.3em] text-white/20 italic px-2">Regional Hub Target</label>
+                                    <select 
+                                        required
+                                        value={townId}
+                                        onChange={(e) => setTownId(e.target.value)}
+                                        className="w-full bg-white/5 border border-white/10 rounded-[2.5rem] p-8 focus:border-indigo-500/50 outline-none transition-all font-black text-2xl italic tracking-tighter text-white appearance-none cursor-pointer uppercase"
+                                    >
+                                        <option value="" className="bg-[#0a0a0b]">Select Regional Node</option>
+                                        {towns.map(t => <option key={t.id} value={t.id} className="bg-[#0a0a0b]">{t.name}</option>)}
+                                    </select>
+                                </div>
+                                <div className="space-y-4">
+                                    <label className="text-[10px] font-black uppercase tracking-[0.3em] text-white/20 italic px-2">Deployment Title</label>
+                                    <input 
+                                        type="text" 
+                                        required
+                                        placeholder="MORNING_CORE_LOOP"
+                                        value={name}
+                                        onChange={(e) => setName(e.target.value)}
+                                        className="w-full bg-white/5 border border-white/10 rounded-[2.5rem] p-8 focus:border-indigo-500/50 outline-none transition-all placeholder:text-white/5 font-black text-2xl italic tracking-tighter text-white uppercase"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="space-y-6">
+                                <label className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-400 italic px-2">Node Sequence (Discovery Stops)</label>
+                                <div className="space-y-4">
+                                    {stops.map((stop, idx) => (
+                                        <div key={idx} className="flex gap-4 animate-in slide-in-from-right-4 duration-500">
+                                            <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center font-black italic text-white/40 shrink-0">0{idx + 1}</div>
+                                            <select 
+                                                required
+                                                value={stop.id}
+                                                onChange={(e) => updateStop(e.target.value, idx)}
+                                                className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 focus:border-indigo-500/50 outline-none transition-all font-bold text-white uppercase tracking-tight italic"
+                                            >
+                                                <option value="" className="bg-[#0a0a0b]">Select Boutique Node</option>
+                                                {businesses.map(b => <option key={b.id} value={b.id} className="bg-[#0a0a0b]">{b.name}</option>)}
+                                            </select>
+                                        </div>
+                                    ))}
+                                </div>
+                                <button 
+                                    type="button" 
+                                    onClick={addStop}
+                                    disabled={!townId}
+                                    className="px-8 py-4 bg-white/5 hover:bg-white/10 border border-white/10 flex items-center gap-4 rounded-full text-[10px] font-black uppercase tracking-[0.3em] transition-all disabled:opacity-20 italic"
+                                >
+                                    ➕ ADD_SEQUENCE_NODE
+                                </button>
+                            </div>
+
+                            <button className="w-full py-8 md:py-10 bg-indigo-600 text-white rounded-[3rem] font-black uppercase tracking-[0.5em] text-xs hover:scale-[1.01] active:scale-95 transition-all shadow-3xl shadow-indigo-600/20 italic">
+                                Activate Deployment Route
+                            </button>
+                        </form>
+                    </div>
                 </section>
             </div>
 
-            <aside className="space-y-8">
-                <div className="space-y-4 px-4">
-                    <h3 className="text-xl font-black italic tracking-tighter uppercase uppercase leading-none">Active <br />Deployments.</h3>
-                    <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest leading-none">My Network Status</p>
+            {/* 🚥 ACTIVE DEPLOYMENTS SIDEBAR */}
+            <div className="xl:col-span-5 space-y-12">
+                <div className="space-y-3 px-4 border-b border-white/5 pb-8">
+                    <h3 className="text-4xl font-black italic tracking-tighter uppercase leading-none text-white">Active <br />Deployments.</h3>
+                    <p className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.5em] italic">Operational Network Loop</p>
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-6">
                     {routes.map(r => (
-                        <div key={r.id} className="bg-white/[0.03] border border-white/5 p-8 rounded-[2.5rem] space-y-4 group hover:bg-indigo-600/5 transition-all duration-700">
-                             <div className="flex justify-between items-start">
-                                <div className="space-y-1">
-                                    <h4 className="font-black italic text-lg tracking-tight uppercase leading-none">{r.name}</h4>
-                                    <p className="text-[9px] font-black uppercase tracking-widest text-indigo-400/60">{r.towns?.name}</p>
+                        <div key={r.id} className="relative p-10 bg-white/[0.02] border border-white/5 rounded-[4rem] group hover:bg-white/[0.04] hover:border-indigo-500/20 transition-all duration-700 shadow-3xl overflow-hidden">
+                             <div className="absolute top-0 right-0 p-10 opacity-[0.03] scale-150 group-hover:scale-110 transition-transform duration-1000 rotate-12">🏁</div>
+                             <div className="flex justify-between items-start relative z-10">
+                                <div className="space-y-2">
+                                    <h4 className="font-black italic text-2xl tracking-tighter uppercase text-white leading-none whitespace-nowrap overflow-hidden text-ellipsis">{r.name}</h4>
+                                    <p className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-400/60 italic">{r.towns?.name}</p>
                                 </div>
-                                <span className={r.is_active ? "w-2 h-2 bg-green-500 rounded-full shadow-[0_0_10px_rgba(34,197,94,0.5)]" : "w-2 h-2 bg-gray-600 rounded-full"}></span>
+                                <div className={`w-2.5 h-2.5 rounded-full shadow-[0_0_15px_rgba(79,70,229,0.5)] ${r.is_active ? 'bg-indigo-500 animate-pulse' : 'bg-white/10'}`}></div>
                              </div>
-                             <div className="flex flex-wrap gap-2 pt-2">
+                             <div className="flex flex-wrap gap-2 pt-8 relative z-10">
                                 {r.stops?.map((s: any, i: number) => (
-                                    <span key={i} className="text-[8px] font-black uppercase tracking-widest px-2 py-1 bg-white/5 rounded-md border border-white/5">{s.name || s}</span>
+                                    <span key={i} className="text-[8px] font-black uppercase tracking-widest px-4 py-2 bg-white/5 rounded-2xl border border-white/5 text-white/40 italic group-hover:border-indigo-400/20 group-hover:text-white transition-all">
+                                        {s.name || s}
+                                    </span>
                                 ))}
                              </div>
                         </div>
                     ))}
                     {routes.length === 0 && (
-                        <div className="p-12 text-center bg-white/[0.01] border border-dashed border-white/5 rounded-[2.5rem] opacity-30 italic font-medium">
+                        <div className="p-20 text-center bg-white/[0.01] border border-dashed border-white/5 rounded-[4.5rem] opacity-20 italic font-medium text-xl">
                             No dispatch routes established.
                         </div>
                     )}
                 </div>
-            </aside>
+            </div>
         </div>
     );
 }

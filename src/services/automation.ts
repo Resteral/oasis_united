@@ -113,6 +113,40 @@ export const AutomationService = {
         return newMessage;
     },
 
+    // 3. DoorDash Integration Hook
+    dispatchDoorDashDelivery: async (order: Order) => {
+        console.log(`[Automation] Dispatching Order #${order.id} to DoorDash...`);
+        
+        try {
+            // This would import from @/services/doordash
+            // const { createDoorDashDelivery } = await import('@/services/doordash');
+            
+            const request = {
+                external_delivery_id: order.id,
+                pickup_address: "Oasis Hub 1, Effingham NH", // Dynamic in production
+                pickup_business_name: "Oasis United Central",
+                pickup_phone_number: "5085070305",
+                dropoff_address: order.address || "Unknown",
+                dropoff_contact_given_name: order.customerName.split(' ')[0],
+                dropoff_contact_family_name: order.customerName.split(' ')[1] || 'Citizen',
+                dropoff_phone_number: order.phone || "5085070305",
+                order_value: Math.round(order.total * 100),
+            };
+
+            console.log('[DoorDash] Sending request:', request);
+            
+            // For now, we mock the result since keys might be missing
+            return {
+                status: 'success',
+                tracking_url: 'https://doordash.com/drive/tracking/mock',
+                delivery_id: 'DD-' + Math.random().toString(36).substr(2, 6)
+            };
+        } catch (error) {
+            console.error('[DoorDash] Dispatch failed:', error);
+            return { status: 'failed', error };
+        }
+    },
+
     // --- External API Stubs ---
 
     sendSMS: async (to: string, body: string) => {

@@ -1,6 +1,8 @@
 export interface Theme {
     primaryColor: string;
     backgroundColor: string;
+    bgTheme?: string;
+    fontFamily?: string;
 }
 
 export interface DeliverySettings {
@@ -98,6 +100,11 @@ export interface Product {
     image_url?: string;
     category?: string;
     stock: number;
+    is_featured: boolean;
+    is_shippable: boolean;
+    shipping_cost: number;
+    metadata?: any;
+    businesses?: { name: string };
     created_at: string;
     embedding?: number[];
 }

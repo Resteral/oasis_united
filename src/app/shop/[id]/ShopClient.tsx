@@ -1,13 +1,14 @@
 "use client";
 import { useState, useEffect, Suspense } from 'react';
-import styles from './page.module.css';
 import { supabase } from '@/lib/supabase';
 import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import Cart from '@/components/Cart';
 import ChatInterface from '@/components/ChatInterface';
 import ReviewModal from '@/components/ReviewModal';
 import BusinessFeed from '@/components/BusinessFeed';
 import { Business } from '@/lib/types';
+import AIPanel from '@/components/AIPanel';
 
 interface CartItem {
     id: string;
@@ -33,7 +34,7 @@ export default function ShopClient(props: ShopClientProps) {
 function ShopClientInner({ business, products, posts }: ShopClientProps) {
     const searchParams = useSearchParams();
     const [cartItems, setCartItems] = useState<CartItem[]>([]);
-    const theme = business.theme || { primaryColor: '#000000', backgroundColor: '#ffffff' };
+    const theme = business.theme || { primaryColor: '#4F46E5', backgroundColor: '#0a0a0b' };
     const [isMessageModalOpen, setIsMessageModalOpen] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState<any>(null);
     const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
@@ -53,7 +54,6 @@ function ShopClientInner({ business, products, posts }: ShopClientProps) {
         if (buyId && products.length > 0) {
             const product = products.find(p => p.id === buyId);
             if (product) {
-                // Pre-add to cart only if not already added
                 setCartItems(prev => {
                     if (prev.some(i => i.id === buyId)) return prev;
                     return [...prev, { id: product.id, name: product.name, price: Number(product.price), quantity: 1 }];
@@ -112,191 +112,221 @@ function ShopClientInner({ business, products, posts }: ShopClientProps) {
     };
 
     return (
-        <div className={styles.container} style={{ backgroundColor: theme.backgroundColor }}>
+        <div className={`min-h-screen text-white selection:bg-indigo-500 selection:text-white pb-32 ${theme.bgTheme === 'neon' ? 'neon-grid' : ''}`}>
             <style jsx global>{`
                 :root {
-                    --primary: ${theme.primaryColor};
+                    --primary: ${theme.primaryColor || '#4F46E5'};
                 }
                 .btn-primary {
-                    background-color: ${theme.primaryColor} !important;
-                    border-color: ${theme.primaryColor} !important;
+                    background-color: ${theme.primaryColor || '#4F46E5'} !important;
+                    border-color: ${theme.primaryColor || '#4F46E5'} !important;
+                    box-shadow: 0 10px 40px -10px ${theme.primaryColor || '#4F46E5'}44;
                 }
                 .text-primary {
-                    color: ${theme.primaryColor} !important;
+                    color: ${theme.primaryColor || '#4F46E5'} !important;
+                }
+                body {
+                    background-color: ${
+                        theme.bgTheme === 'cozy' ? '#12100e' : 
+                        theme.bgTheme === 'neon' ? '#020205' : '#0a0a0b'
+                    } !important;
+                    font-family: ${
+                        theme.fontFamily === 'serif' ? 'Georgia, serif' :
+                        theme.fontFamily === 'mono' ? 'monospace' : 'var(--font-outfit), sans-serif'
+                    } !important;
+                }
+                .neon-grid {
+                    background-image: linear-gradient(to right, rgba(255,255,255,0.015) 1px, transparent 1px),
+                                      linear-gradient(to bottom, rgba(255,255,255,0.015) 1px, transparent 1px);
+                    background-size: 50px 50px;
                 }
             `}</style>
 
-            <div className={styles.hero} style={{ borderColor: theme.primaryColor }}>
-                <div className={styles.heroContent}>
-                    <h1 className={styles.businessName}>{business.name}</h1>
-                    <p className={styles.tagline}>{business.description || "Welcome to our store!"}</p>
+            {/* Immersive Cinematic Hero */}
+            <div className="relative min-h-[85vh] flex items-center justify-center overflow-hidden border-b border-white/5 bg-[#0c0c0e]">
+                {/* Brand Identity Hue Glow */}
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] opacity-20 blur-[120px] rounded-full pointer-events-none transition-all duration-1000" style={{ background: `radial-gradient(circle, ${theme.primaryColor} 0%, transparent 70%)` }}></div>
+                <div className="absolute bottom-0 right-0 p-32 opacity-[0.03] select-none pointer-events-none group-hover:opacity-10 transition-all italic leading-none">
+                     <span className="text-[240px] font-black italic tracking-tighter uppercase text-white">{business.name[0]}</span>
+                </div>
 
-                    {/* Oasis Delivery Banner */}
-                    <div className="bg-white/10 backdrop-blur-md p-4 rounded-2xl mb-8 border border-white/20 inline-flex flex-col items-center">
-                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/70 mb-1">Oasis Delivery Service</span>
-                        <div className="flex items-center gap-3">
-                            <span className="text-xl">🚚</span>
-                            <span className="text-sm font-bold text-white">Order by Phone: {business.integrations?.twilio?.phone || "(555) 000-0000"}</span>
+                <div className="max-w-7xl mx-auto px-8 w-full relative z-10 text-center space-y-12">
+                     <div className="space-y-4">
+                        <div className="inline-flex items-center gap-3 px-6 py-2 bg-white/5 border border-white/10 rounded-full backdrop-blur-xl animate-in fade-in slide-in-from-top-4 duration-700">
+                             <span className="w-2 h-2 rounded-full animate-ping" style={{ backgroundColor: theme.primaryColor }}></span>
+                             <span className="text-[10px] font-black uppercase tracking-[0.4em] text-white/40">Verified Oasis Independent Node</span>
                         </div>
-                    </div>
+                        <h1 className="text-7xl md:text-9xl font-black italic tracking-tighter uppercase leading-[0.85] text-white animate-in fade-in slide-in-from-bottom-8 duration-1000">
+                            {business.name.split(' ').map((word, i) => (
+                                <span key={i}>{i === 0 ? word : <><br /><span style={{ color: theme.primaryColor }}>{word}.</span></>}</span>
+                            ))}
+                        </h1>
+                        <p className="max-w-2xl mx-auto text-lg md:text-xl font-medium text-white/40 leading-relaxed italic animate-in fade-in slide-in-from-bottom-4 delay-500 duration-1000">{business.description || "Welcome to our regional discovery hub."}</p>
+                        {business.integrations?.twilio?.phone && (
+                            <div className="inline-flex items-center gap-4 px-6 py-4 bg-indigo-500/10 border border-indigo-500/20 rounded-3xl max-w-md mx-auto text-left animate-in fade-in slide-in-from-bottom-4 delay-700 duration-1000">
+                                <span className="text-2xl animate-pulse">💬</span>
+                                <div>
+                                    <h4 className="text-[9px] font-black text-indigo-400 uppercase tracking-widest leading-none">Order via SMS Text</h4>
+                                    <p className="text-[11px] font-black text-white mt-1">Text us directly at <span className="underline select-all text-white font-mono">{business.integrations.twilio.phone}</span> to place orders via AI Chat!</p>
+                                </div>
+                            </div>
+                        )}
+                     </div>
 
-                    <div className={styles.heroActions}>
-                        <button className="btn btn-primary" style={{ backgroundColor: theme.primaryColor }}>Start Order</button>
-                        <button
-                            className={`btn ${isFollowing ? 'btn-outline' : 'glass'}`}
+                     {/* Tactical Actions Matrix */}
+                     <div className="flex flex-wrap items-center justify-center gap-6 animate-in fade-in zoom-in delay-700 duration-1000">
+                        <button className="px-12 py-6 bg-white text-black rounded-3xl font-black text-xs uppercase tracking-[0.4em] hover:scale-105 transition-all shadow-2xl active:scale-95">Establish Order</button>
+                        <button 
                             onClick={handleFollow}
-                            style={isFollowing ? { borderColor: theme.primaryColor, color: theme.primaryColor } : {}}
+                            className={`px-10 py-6 rounded-3xl font-black text-xs uppercase tracking-[0.4em] border transition-all ${isFollowing ? 'bg-white/10 border-white/20 text-white' : 'bg-transparent border-white/10 text-white/60 hover:border-white/40'}`}
                         >
-                            {isFollowing ? '✓ Following' : '+ Follow'}
+                            {isFollowing ? '✓ Synchronized' : '+ Sync Node'}
                         </button>
-                        <button className="btn glass" onClick={() => setIsMessageModalOpen(true)}>Contact Us</button>
-                        <button
-                            className="btn glass p-4 rounded-2xl flex items-center justify-center gap-2"
-                            onClick={() => {
-                                if (navigator.share) {
-                                    navigator.share({
-                                        title: business.name,
-                                        text: `Check out ${business.name} on Oasis United!`,
-                                        url: window.location.href,
-                                    }).catch(() => { });
-                                } else {
-                                    navigator.clipboard.writeText(window.location.href);
-                                    alert('Link copied to clipboard!');
-                                }
-                            }}
-                        >
-                            <span className="text-lg">🔗</span> Share
-                        </button>
-                    </div>
+                        <button onClick={() => setIsMessageModalOpen(true)} className="px-10 py-6 bg-white/5 border border-white/10 rounded-3xl font-black text-xs uppercase tracking-[0.4em] text-white/60 hover:bg-white/10 transition-all">Direct Uplink</button>
+                     </div>
+
+                     {/* Interactive Seating Radar Peek */}
+                     {(business.category === 'Restaurant' || business.category === 'Cafe') && (
+                        <div className="mt-20 p-10 bg-black/20 border border-white/5 rounded-[4rem] backdrop-blur-3xl inline-block group hover:scale-[1.02] transition-all duration-700">
+                            <div className="flex items-center gap-6 text-left">
+                                <div className="p-4 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl">
+                                    <span className="text-2xl animate-pulse">🛰️</span>
+                                </div>
+                                <div>
+                                    <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-400">Tactical Seating Grid</h3>
+                                    <p className="text-lg font-black italic text-white uppercase tracking-tighter leading-none mt-1">Live Occupancy Audit</p>
+                                </div>
+                            </div>
+                        </div>
+                     )}
                 </div>
             </div>
 
-            <div className="container">
-                <div className={styles.infoSection}>
-                    <div className={styles.mapPlaceholder}>
-                        <span>📍 {business.location || "Location not set"}</span>
-                    </div>
-                    <div className={styles.details}>
-                        <h3>Visit Us</h3>
-                        <p>{business.location}</p>
-                        {business.delivery_settings?.selfDelivery && (
-                            <p className="text-sm font-medium text-green-600">✓ We deliver locally ({business.delivery_settings.radius} miles)</p>
-                        )}
-                        <div className={styles.contactMethods}>
-                            <button className="btn btn-outline" style={{ borderColor: theme.primaryColor, color: theme.primaryColor }}>Call Now</button>
-                            <button className="btn btn-outline" style={{ borderColor: theme.primaryColor, color: theme.primaryColor }} onClick={() => setIsMessageModalOpen(true)}>Message</button>
-                            {business.integrations?.facebook?.connected && business.integrations?.facebook?.id && (
-                                <a
-                                    href={`https://m.me/${business.integrations.facebook.id}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="btn btn-outline"
-                                    style={{ borderColor: '#1877F2', color: '#1877F2', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-                                >
-                                    <span style={{ fontSize: '1.2rem' }}>📘</span> Messenger
-                                </a>
-                            )}
+            <main className="max-w-7xl mx-auto px-8 py-32 space-y-32">
+                {/* 1. Global Logistics & Map Integration */}
+                <section className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                    <div className="bg-white/[0.03] border border-white/5 rounded-[4rem] p-12 space-y-8 flex flex-col justify-between group hover:bg-white/[0.05] transition-all">
+                        <div className="space-y-4">
+                            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/20 italic italic">PHYSICAL CO-ORDINATES</p>
+                            <h3 className="text-5xl font-black italic tracking-tighter uppercase text-white leading-none">Visit <br />Node.</h3>
+                            <p className="text-xl font-medium text-white/60">{business.location || "Co-ordinates pending."}</p>
+                        </div>
+                        <div className="flex gap-4">
+                             <button className="flex-1 py-4 bg-white/5 border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:text-white transition-all">Navigate To Node</button>
+                             <button className="flex-1 py-4 bg-white/5 border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:text-white transition-all" onClick={() => setIsMessageModalOpen(true)}>Secure Channel</button>
                         </div>
                     </div>
-                </div>
-
-                <h2 className={styles.sectionTitle}>Our Menu</h2>
-                <div className={styles.productGrid}>
-                    {products.length > 0 ? products.map((product) => (
-                        <div key={product.id} className={styles.productCard}>
-                            <div className={styles.productImage} style={{ backgroundImage: `url(${product.image_url || 'https://via.placeholder.com/400'})` }}>
-                                {business.delivery_settings?.selfDelivery && (
-                                    <div className="absolute top-3 left-3 bg-white/95 backdrop-blur shadow-sm p-1.5 px-3 rounded-full flex items-center gap-1.5 border border-white">
-                                        <span className="text-[10px] font-black text-gray-900 uppercase tracking-tighter">Oasis Order</span>
-                                    </div>
-                                )}
+                    
+                    <div className="bg-white/[0.03] border border-white/5 rounded-[4rem] p-12 space-y-8 group hover:bg-white/[0.05] transition-all">
+                         <div className="flex justify-between items-start">
+                            <div className="space-y-4">
+                                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-400 italic">LOGISTICS STATUS</p>
+                                <h3 className="text-5xl font-black italic tracking-tighter uppercase text-white leading-none">Regional <br />Transit.</h3>
                             </div>
-                            <div className={styles.productInfo}>
-                                <div className={styles.productHeader}>
-                                    <div>
-                                        <h4>{product.name}</h4>
-                                        <button
-                                            onClick={() => {
-                                                setSelectedProduct(product);
-                                                setIsReviewModalOpen(true);
-                                            }}
-                                            className="text-[10px] font-black text-amber-500 uppercase tracking-widest flex items-center gap-1 hover:text-amber-600 transition-colors"
-                                        >
-                                            ★ View Reviews
-                                        </button>
-                                    </div>
-                                    <span className={styles.price} style={{ color: theme.primaryColor }}>${product.price}</span>
-                                </div>
-                                <p className={styles.description}>{product.description}</p>
-                                <div className="mt-auto">
-                                    {product.stock > 0 ? (
-                                        <button
-                                            className="btn btn-primary"
-                                            style={{ width: '100%', backgroundColor: theme.primaryColor }}
-                                            onClick={() => addToCart(product)}
-                                        >
-                                            Add to Cart
-                                        </button>
+                            <span className="text-4xl">🚚</span>
+                         </div>
+                         <div className="p-8 bg-black/20 border border-white/5 rounded-[2.5rem] items-center gap-6">
+                            <p className="text-sm font-bold text-white/80 leading-relaxed italic">"Verified local delivery active across the Oasis regional matrix. Automated dispatch on settlement."</p>
+                         </div>
+                    </div>
+                </section>
+
+                {/* 2. THE BOUTIQUE MENU (Oasis Dark Item Cards) */}
+                <section className="space-y-16">
+                    <div className="flex justify-between items-end">
+                        <div className="space-y-4">
+                            <h2 className="text-6xl font-black italic tracking-tighter uppercase leading-none">Boutique <span style={{ color: theme.primaryColor }}>Inventory.</span></h2>
+                            <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.4em]">Autonomous asset drops for {business.name}</p>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+                        {products.length > 0 ? products.map((product) => (
+                            <div key={product.id} className="group relative bg-white/[0.03] rounded-[3.5rem] overflow-hidden border border-white/5 hover:border-white/20 transition-all shadow-3xl hover:-translate-y-4 duration-700">
+                                <div className="aspect-square overflow-hidden relative bg-zinc-900 flex items-center justify-center">
+                                    {product.image_url ? (
+                                        <img src={product.image_url} className="w-full h-full object-cover grayscale group-hover:grayscale-0 group-hover:scale-110 transition-all duration-1000" alt="" />
                                     ) : (
-                                        <button className="btn" disabled style={{ width: '100%' }}>Out of Stock</button>
+                                        <span className="text-[120px] font-black italic text-white/5 select-none">{product.name[0]}</span>
                                     )}
-                                    {product.stock > 0 && product.stock < 10 && (
-                                        <p className="text-[10px] text-red-500 mt-1 font-bold">Only {product.stock} left!</p>
-                                    )}
+                                    <div className="absolute top-6 left-6">
+                                        <div className="px-4 py-1.5 bg-black/40 backdrop-blur-xl border border-white/10 rounded-full text-[8px] font-black uppercase tracking-widest text-white/60">
+                                            {product.stock > 0 ? 'Verified Stock' : 'Node Depleted'}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="p-10 space-y-6 relative">
+                                    <div className="space-y-2">
+                                        <h4 className="font-black italic text-3xl tracking-tighter uppercase truncate text-white leading-none">{product.name}</h4>
+                                        <button
+                                            onClick={() => { setSelectedProduct(product); setIsReviewModalOpen(true); }}
+                                            className="text-[8px] font-black text-amber-500 uppercase tracking-widest flex items-center gap-2 hover:opacity-100 opacity-60 transition-all"
+                                        >
+                                            ★ VIEW PEER REVIEWS
+                                        </button>
+                                    </div>
+                                    <p className="text-sm font-medium text-white/40 line-clamp-2 h-10">{product.description}</p>
+                                    <div className="flex items-center justify-between pt-8 border-t border-white/5">
+                                        <div className="text-3xl font-black italic tracking-tighter" style={{ color: theme.primaryColor }}>${product.price}</div>
+                                        {product.stock > 0 ? (
+                                            <button
+                                                className="px-8 py-3 bg-white text-black rounded-2xl font-black text-[10px] uppercase tracking-widest hover:scale-105 transition-all shadow-xl active:scale-95"
+                                                onClick={() => addToCart(product)}
+                                            >
+                                                Add to Cart
+                                            </button>
+                                        ) : (
+                                            <span className="text-[10px] font-black uppercase text-white/20 italic">Awaiting Restock</span>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    )) : (
-                        <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '2rem' }}>
-                            <p>No products added yet.</p>
-                        </div>
-                    )}
-                </div>
+                        )) : (
+                            <div className="col-span-full py-20 text-center bg-white/[0.01] border border-dashed border-white/10 rounded-[4rem]">
+                                <p className="text-[10px] font-black uppercase tracking-[0.5em] text-white/20 italic">Node Inventory Currently Offline</p>
+                            </div>
+                        )}
+                    </div>
+                </section>
 
-                {/* News & Events Section */}
-                {posts && posts.length > 0 && (
-                    <div className={styles.postsSection} style={{ marginTop: '3rem', marginBottom: '3rem' }}>
-                        <h2 className={styles.sectionTitle}>Latest News & Events</h2>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
+                {/* 3. BUSINESS UPDATES & FEED */}
+                <section className="space-y-16">
+                    <div className="space-y-4">
+                         <h2 className="text-5xl font-black italic tracking-tighter uppercase text-white leading-none">Node <span className="text-white/20">Pulse.</span></h2>
+                         <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.4em]">Direct broadcast from the {business.name} command center</p>
+                    </div>
+                    
+                    {posts && posts.length > 0 ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                             {posts.map((post: any) => (
-                                <div key={post.id} style={{
-                                    padding: '1.5rem',
-                                    border: '1px solid #eee',
-                                    borderRadius: '8px',
-                                    backgroundColor: '#fff',
-                                    boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
-                                }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                                        <span style={{
-                                            textTransform: 'uppercase',
-                                            fontSize: '0.75rem',
-                                            fontWeight: 'bold',
-                                            color: theme.primaryColor,
-                                            border: `1px solid ${theme.primaryColor}`,
-                                            padding: '2px 6px',
-                                            borderRadius: '4px'
-                                        }}>
+                                <div key={post.id} className="bg-white/[0.03] border border-white/5 p-10 rounded-[3rem] space-y-6 hover:bg-white/[0.05] transition-all">
+                                    <div className="flex justify-between items-start">
+                                        <span className="px-4 py-1.5 bg-white/5 border border-white/10 rounded-full text-[8px] font-black uppercase tracking-[0.4em] text-white/40">
                                             {post.type}
                                         </span>
-                                        <span style={{ fontSize: '0.85rem', color: '#888' }}>
+                                        <span className="text-[9px] font-black text-white/20 uppercase">
                                             {new Date(post.created_at).toLocaleDateString()}
                                         </span>
                                     </div>
+                                    <p className="text-lg font-bold text-white/80 leading-relaxed italic">{post.content}</p>
                                     {post.event_date && (
-                                        <div style={{ marginBottom: '0.5rem', fontWeight: 'bold', color: '#e91e63' }}>
-                                            📅 {new Date(post.event_date).toLocaleString()}
+                                        <div className="inline-flex items-center gap-3 px-5 py-2 bg-rose-500/10 border border-rose-500/20 rounded-full">
+                                            <span className="text-xs">📅</span>
+                                            <span className="text-[9px] font-black text-rose-400 uppercase tracking-widest">{new Date(post.event_date).toLocaleString()}</span>
                                         </div>
                                     )}
-                                    <p style={{ lineHeight: '1.5', color: '#444' }}>{post.content}</p>
                                 </div>
                             ))}
                         </div>
-                    </div>
-                )}
-
-                {/* Business Feed (Shoutouts) */}
+                    ) : (
+                        <div className="py-20 text-center bg-white/[0.01] border border-dashed border-white/10 rounded-[4rem]">
+                            <p className="text-[10px] font-black uppercase tracking-[0.5em] text-white/20 italic">Satellite Silent</p>
+                        </div>
+                    )}
+                </section>
+                
                 <BusinessFeed businessId={business.id} />
-            </div>
+            </main>
 
             <Cart businessId={business.id} items={cartItems} setItems={setCartItems} />
 
@@ -320,6 +350,15 @@ function ShopClientInner({ business, products, posts }: ShopClientProps) {
                     theme={theme}
                 />
             )}
+
+            <AIPanel
+                businessId={business.id}
+                businessName={business.name}
+                primaryColor={theme.primaryColor}
+                onOrderPlaced={() => {
+                    window.location.reload();
+                }}
+            />
         </div>
     );
 }

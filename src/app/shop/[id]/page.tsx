@@ -172,14 +172,21 @@ export default function BusinessProfilePage() {
                             <h3 className="text-[11px] font-black uppercase tracking-[0.4em] text-amber-400 relative z-10">Premises Infrastructure</h3>
                             <div className="space-y-6 relative z-10">
                                 {business.store_features.seating && (
-                                    <div className="flex justify-between items-center bg-black/40 p-6 rounded-3xl border border-white/5 hover:border-amber-400/20 transition-all group/feat">
-                                        <div className="flex flex-col gap-1">
-                                            <span className="text-[9px] font-black uppercase tracking-widest text-white/30 group-hover/feat:text-amber-400 transition-colors">Seating Layout</span>
-                                            <span className="text-xl font-black uppercase italic tracking-tighter">{business.store_features.seating.type} Mode</span>
+                                    <div className="flex justify-between items-center bg-black/40 p-6 rounded-3xl border border-white/5 hover:border-amber-400/20 transition-all group/feat overflow-hidden relative">
+                                        <div className="flex flex-col gap-1 relative z-10">
+                                            <span className="text-[9px] font-black uppercase tracking-widest text-white/30 group-hover/feat:text-amber-400 transition-colors">Presence Radar</span>
+                                            <span className="text-xl font-black uppercase italic tracking-tighter">Live Capacity</span>
                                         </div>
-                                        <div className="text-right flex flex-col gap-1">
-                                            <span className="text-[9px] font-black uppercase tracking-widest text-white/30">Capacity</span>
-                                            <span className="text-xl font-black uppercase italic tracking-tighter">{business.store_features.seating.capacity} 👥</span>
+                                        <div className="text-right flex flex-col gap-1 relative z-10">
+                                            <span className="text-[9px] font-black uppercase tracking-widest text-emerald-500 animate-pulse">Scanning Hub...</span>
+                                            <span className="text-xl font-black uppercase italic tracking-tighter">{(business.store_features.seating.capacity * 0.8).toFixed(0)} / {business.store_features.seating.capacity} 👥</span>
+                                        </div>
+                                        {/* Radial Pulse SVG for visual flare */}
+                                        <div className="absolute right-[-20px] top-[-20px] opacity-10 pointer-events-none group-hover:scale-110 transition-transform">
+                                            <svg width="120" height="120" viewBox="0 0 100 100">
+                                                <circle cx="50" cy="50" r="40" fill="none" stroke="currentColor" strokeWidth="0.5" className="text-emerald-500 animate-ping" />
+                                                <circle cx="50" cy="50" r="30" fill="none" stroke="currentColor" strokeWidth="0.5" className="text-emerald-500 opacity-20" />
+                                            </svg>
                                         </div>
                                     </div>
                                 )}

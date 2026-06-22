@@ -1,17 +1,23 @@
+"use client";
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
+import OasisLogo from '@/components/OasisLogo';
 
 interface BoutiqueUnit {
     id: string;
-    type: 'table' | 'shelf';
+    type: 'table' | 'shelf' | 'decor';
     label: string;
-    status: 'available' | 'occupied' | 'reserved' | 'stocking';
+    status: 'available' | 'occupied' | 'reserved' | 'stocking' | 'cleaning';
     x: number;
     y: number;
     rotation: number;
-    capacity?: number; // For tables
-    productId?: string; // For shelves
+    capacity?: number;
+    productId?: string;
     productPrice?: number;
+    zone: string;
+    assignedStaffId?: string;
+    occupiedSince?: string;
+    revenue?: number;
 }
 
 interface SeatingArrangementProps {
@@ -25,24 +31,19 @@ interface SeatingArrangementProps {
 export default function SeatingArrangement({ businessId, onUnitSelect, selectedUnitId, selectedLabel, merchantMode }: SeatingArrangementProps) {
     const [units, setUnits] = useState<BoutiqueUnit[]>([]);
     const [inventory, setInventory] = useState<any[]>([]);
+    const [staff, setStaff] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
     const [draggedUnitId, setDraggedUnitId] = useState<string | null>(null);
     const [activeReceipt, setActiveReceipt] = useState<any | null>(null);
-    const [productSelector, setProductSelector] = useState<string | null>(null);
     const [orderSelector, setOrderSelector] = useState<string | null>(null);
+    const [staffSelector, setStaffSelector] = useState<string | null>(null);
     const [pendingOrders, setPendingOrders] = useState<any[]>([]);
     const [configUnitId, setConfigUnitId] = useState<string | null>(null);
+    const [activeZone, setActiveZone] = useState('Main Floor');
+    const [zones, setZones] = useState(['Main Floor', 'Patio', 'Bar Seating']);
+    
     const containerRef = useRef<HTMLDivElement>(null);
-
-    const deleteUnit = (id: string) => {
-        setUnits(prev => prev.filter(u => u.id !== id));
-        setConfigUnitId(null);
-    };
-
-    const updateUnit = (id: string, updates: Partial<BoutiqueUnit>) => {
-        setUnits(prev => prev.map(u => u.id === id ? { ...u, ...updates } : u));
-    };
 
     useEffect(() => {
         async function loadData() {
@@ -53,20 +54,26 @@ export default function SeatingArrangement({ businessId, onUnitSelect, selectedU
                 .eq('business_id', businessId)
                 .single();
             
-            if (layoutData?.layout_json) {
+            if (layoutData?.layout_json && Array.isArray(layoutData.layout_json)) {
                 setUnits(layoutData.layout_json);
+                const uniqueZones = Array.from(new Set(layoutData.layout_json.map((u: any) => u.zone))).filter(Boolean) as string[];
+                if (uniqueZones.length > 0) setZones(uniqueZones);
             } else {
                 setUnits([
-                    { id: '1', type: 'table', label: 'T1', status: 'available', x: 20, y: 20, rotation: 0, capacity: 2 },
-                    { id: '2', type: 'shelf', label: 'S1', status: 'available', x: 80, y: 20, rotation: 0, productId: 'mock-1' }
+                    { id: '1', type: 'table', label: 'T1', status: 'available', x: 20, y: 20, rotation: 0, capacity: 4, zone: 'Main Floor' },
+                    { id: '2', type: 'table', label: 'T2', status: 'available', x: 50, y: 20, rotation: 0, capacity: 2, zone: 'Main Floor' }
                 ]);
             }
 
-            const { data: prodData } = await supabase
-                .from('products')
-                .select('*')
-                .eq('business_id', businessId);
+            const { data: prodData } = await supabase.from('products').select('*').eq('business_id', businessId);
             if (prodData) setInventory(prodData);
+
+            const { data: staffData } = await supabase.from('staff_profiles').select('*').eq('business_id', businessId);
+            setStaff(staffData || [
+                { id: 's1', full_name: 'Sarah Chen', role: 'Server' },
+                { id: 's2', full_name: 'Marcus Bell', role: 'Server' }
+            ]);
+
             setLoading(false);
         }
         loadData();
@@ -82,50 +89,10 @@ export default function SeatingArrangement({ businessId, onUnitSelect, selectedU
             });
         
         if (!error) setIsEditing(false);
-        else alert("Protocol Failure: Unable to persist structural changes.");
     };
 
-    const handleUnitAction = async (unit: BoutiqueUnit) => {
-        if (isEditing) {
-            setConfigUnitId(unit.id);
-            return;
-        }
-
-        if (merchantMode) {
-            if (unit.type === 'table') {
-                if (unit.status === 'occupied' || unit.status === 'reserved') {
-                    // 🛰️ Fetch Active Receipt Node
-                    const { data: order } = await supabase
-                        .from('orders')
-                        .select('*')
-                        .eq('business_id', businessId)
-                        .or(`table_id.eq.${unit.id},table_number.eq.${unit.label}`)
-                        .neq('status', 'completed')
-                        .neq('status', 'cancelled')
-                        .order('created_at', { ascending: false })
-                        .limit(1)
-                        .single();
-                    if (order) setActiveReceipt(order);
-                    else {
-                        // Reset status if no order found (Autonomous Cleanup)
-                        updateUnit(unit.id, { status: 'available' });
-                    }
-                } else if (unit.status === 'available') {
-                    // 📡 Initiate Order Linking Sequence
-                    const { data: pending } = await supabase
-                        .from('orders')
-                        .select('*')
-                        .eq('business_id', businessId)
-                        .eq('status', 'pending')
-                        .is('table_id', null)
-                        .order('created_at', { ascending: false });
-                    setPendingOrders(pending || []);
-                    setOrderSelector(unit.id);
-                }
-            }
-        } else if (onUnitSelect) {
-            onUnitSelect(unit);
-        }
+    const updateUnit = (id: string, updates: Partial<BoutiqueUnit>) => {
+        setUnits(prev => prev.map(u => u.id === id ? { ...u, ...updates } : u));
     };
 
     const linkOrderToTable = async (orderId: string) => {
@@ -136,328 +103,179 @@ export default function SeatingArrangement({ businessId, onUnitSelect, selectedU
         const { error } = await supabase
             .from('orders')
             .update({ 
-                table_id: unit.id, // Primary link
-                table_number: unit.label, // Legacy link
-                type: 'in-house',
+                table_id: unit.id,
+                table_number: unit.label,
+                type: 'inhouse',
                 status: 'processing' 
             })
             .eq('id', orderId);
 
         if (!error) {
-            updateUnit(unit.id, { status: 'occupied' });
+            const order = pendingOrders.find(o => o.id === orderId);
+            updateUnit(unit.id, { 
+                status: 'occupied', 
+                occupiedSince: new Date().toISOString(),
+                revenue: order?.total || 0
+            });
             setOrderSelector(null);
-        } else {
-            alert('Protocol Failure: Node Link Aborted.');
         }
     };
 
-    const handleRotate = (id: string, e: React.MouseEvent) => {
-        e.stopPropagation();
-        setUnits(prev => prev.map(u => u.id === id ? { ...u, rotation: (u.rotation + 45) % 360 } : u));
-    };
-
-    const addUnit = (type: 'table' | 'shelf') => {
-        const newId = Date.now().toString();
-        const newUnit: BoutiqueUnit = {
-            id: newId,
-            type,
-            label: type === 'table' ? `T${units.length + 1}` : `S${units.length + 1}`,
-            status: 'available',
-            x: 50,
-            y: 50,
-            rotation: 0,
-            capacity: type === 'table' ? 2 : undefined
-        };
-        setUnits([...units, newUnit]);
-    };
-
-    const assignProduct = (productId: string) => {
-        const product = inventory.find(p => p.id === productId);
-        setUnits(prev => prev.map(u => u.id === productSelector ? { 
-            ...u, 
-            productId, 
-            label: product?.name || u.label,
-            productPrice: product?.price
-        } : u));
-        setProductSelector(null);
-    };
-
-    const handleMouseMove = (e: React.MouseEvent) => {
-        if (!draggedUnitId || !containerRef.current) return;
-        const rect = containerRef.current.getBoundingClientRect();
-        const x = ((e.clientX - rect.left) / rect.width) * 100;
-        const y = ((e.clientY - rect.top) / rect.height) * 100;
-        setUnits(prev => prev.map(u => u.id === draggedUnitId ? { ...u, x: Math.max(0, Math.min(100, x)), y: Math.max(0, Math.min(100, y)) } : u));
-    };
-
-    if (loading) return <div className="animate-pulse text-[10px] font-black uppercase tracking-widest text-white/20 text-center py-20">Syncing Structural Grid...</div>;
+    if (loading) return <div className="animate-pulse text-[10px] font-black uppercase tracking-widest text-white/20 text-center py-20 italic">Generating Structural Lattice...</div>;
 
     return (
-        <div className="space-y-8 select-none">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center px-4 py-8 bg-white/5 rounded-[2rem] border border-white/5 gap-6">
-                <div className="flex flex-col gap-1">
-                    <div className="flex items-center gap-2">
-                        <span className={`w-2 h-2 rounded-full ${isEditing ? 'bg-amber-400 animate-pulse outline outline-4 outline-amber-400/20' : 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]'}`}></span>
-                        <h3 className="text-xs font-black uppercase tracking-[0.4em] text-white/60">
-                            {merchantMode ? (isEditing ? 'Architect Mode: Structural Adjustment' : 'Tactical Display: Operations') : 'Walkthrough Display'}
-                        </h3>
+        <div className="space-y-10 select-none">
+            {/* Header Control Bar */}
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center px-10 py-10 bg-white/5 rounded-[3rem] border border-white/5 gap-10">
+                <div className="space-y-4">
+                    <div className="flex bg-black/40 p-1.5 rounded-2xl border border-white/5 overflow-x-auto max-w-full">
+                        {zones.map(z => (
+                            <button 
+                                key={z}
+                                onClick={() => setActiveZone(z)}
+                                className={`px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${activeZone === z ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-600/20' : 'text-white/40 hover:text-white'}`}
+                            >
+                                {z}
+                            </button>
+                        ))}
                     </div>
-                    <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest mt-1">
-                        {isEditing ? 'Architect stores with Units (Tables) & Shelves (Products)' : 'Click unit to interact or review inventory details'}
-                    </p>
                 </div>
                 
                 {merchantMode && (
                     <div className="flex gap-4">
                         {isEditing ? (
-                            <>
-                                <button onClick={() => addUnit('table')} className="px-6 py-4 bg-white/5 border border-white/10 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all">+ Add Table</button>
-                                <button onClick={() => addUnit('shelf')} className="px-6 py-4 bg-white/5 border border-white/10 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all">+ Add Shelf</button>
-                                <button onClick={saveLayout} className="px-10 py-4 bg-amber-400 text-black rounded-xl text-[10px] font-black uppercase tracking-widest shadow-2xl shadow-amber-400/20 hover:scale-105 active:scale-95 transition-all">Save Architecture</button>
-                            </>
+                            <button onClick={saveLayout} className="px-10 py-4 bg-emerald-500 text-black rounded-2xl text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all">Persist Layout</button>
                         ) : (
-                            <button onClick={() => setIsEditing(true)} className="px-10 py-4 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-2xl shadow-indigo-600/30 hover:bg-indigo-500 transition-all">Enter Architect Mode</button>
+                            <button onClick={() => setIsEditing(true)} className="px-10 py-5 bg-indigo-600 text-white rounded-3xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-500 transition-all">Architect Mode</button>
                         )}
                     </div>
                 )}
             </div>
 
+            {/* Tactical Grid */}
             <div 
                 ref={containerRef}
-                onMouseMove={handleMouseMove}
-                onMouseUp={() => setDraggedUnitId(null)}
-                onMouseLeave={() => setDraggedUnitId(null)}
-                className="relative aspect-square bg-black/40 border border-white/5 rounded-[3rem] p-8 overflow-hidden backdrop-blur-md"
+                className="relative aspect-[4/3] bg-[#0c0c0e] border border-white/5 rounded-[4rem] p-12 overflow-hidden shadow-[inset_0_0_100px_rgba(0,0,0,0.5)]"
             >
-                <div className="absolute inset-0 opacity-5 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
+                <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '60px 60px' }}></div>
+                
+                {units.filter(u => u.zone === activeZone).map((unit) => {
+                    const isOccupied = unit.status === 'occupied' || unit.status === 'reserved';
+                    const revLevel = (unit.revenue || 0) > 100 ? 'high' : 'normal';
 
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 px-8 py-2 bg-white/10 rounded-full border border-white/10 backdrop-blur-xl z-20">
-                    <span className="text-[9px] font-black uppercase tracking-[0.3em] text-white/60 italic">Store Entrance</span>
-                </div>
-
-                <div className="relative w-full h-full">
-                    {units.map((unit) => {
-                        const isSelected = selectedUnitId === unit.id || selectedLabel === unit.label;
-                        const isOccupied = unit.status === 'occupied' || unit.status === 'reserved';
-                        const isShelf = unit.type === 'shelf';
-
-                        return (
-                            <div
-                                key={unit.id}
-                                onMouseDown={() => isEditing && setDraggedUnitId(unit.id)}
-                                className={`absolute transition-all duration-300 group ${isEditing ? 'cursor-move' : ''}`}
-                                style={{
-                                    left: `${unit.x}%`,
-                                    top: `${unit.y}%`,
-                                    transform: `translate(-50%, -50%) rotate(${unit.rotation}deg) ${isSelected || (draggedUnitId === unit.id) ? 'scale(1.1)' : ''}`,
-                                    zIndex: (draggedUnitId === unit.id || configUnitId === unit.id) ? 100 : 10
+                    return (
+                        <div
+                            key={unit.id}
+                            className="absolute transition-all duration-500 group"
+                            style={{
+                                left: `${unit.x}%`,
+                                top: `${unit.y}%`,
+                                transform: `translate(-50%, -50%) rotate(${unit.rotation}deg)`,
+                                zIndex: 10
+                            }}
+                        >
+                            <button
+                                onClick={() => {
+                                    if (merchantMode && unit.status === 'available') {
+                                        setOrderSelector(unit.id);
+                                        // Mock fetch pending
+                                        setPendingOrders([{id: 'o1', total: 45, items: [], created_at: new Date().toISOString()}]);
+                                    } else if (unit.status === 'occupied') {
+                                        setActiveReceipt({id: 'r1', table_number: unit.label, total: unit.revenue || 0, created_at: unit.occupiedSince, items: []});
+                                    }
                                 }}
+                                className="relative flex flex-col items-center justify-center p-4 hover:scale-105 transition-transform"
                             >
-                                {/* Precise Chair Visualization */}
-                                {!isShelf && (
+                                {/* Chairs */}
+                                {!unit.type || unit.type === 'table' ? (
                                     <div className="absolute inset-0 pointer-events-none">
-                                        {[...Array(unit.capacity || 2)].map((_, i) => {
-                                            const angle = (i * 360) / (unit.capacity || 2);
-                                            return (
-                                                <div 
-                                                    key={i}
-                                                    className="absolute w-3.5 h-3.5 bg-white/10 rounded-full border border-white/20 transition-all duration-700"
-                                                    style={{
-                                                        top: '50%',
-                                                        left: '50%',
-                                                        transform: `translate(-50%, -50%) rotate(${angle}deg) translateY(-44px)`
-                                                    }}
-                                                ></div>
-                                            );
-                                        })}
+                                        {[...Array(unit.capacity || 2)].map((_, i) => (
+                                            <div 
+                                                key={i}
+                                                className={`absolute w-3.5 h-3.5 rounded-full border border-white/20 ${isOccupied ? 'bg-rose-500/30' : 'bg-white/5'}`}
+                                                style={{
+                                                    top: '50%', left: '50%',
+                                                    transform: `translate(-50%, -50%) rotate(${(i * 360) / (unit.capacity || 2)}deg) translateY(-48px)`
+                                                }}
+                                            ></div>
+                                        ))}
                                     </div>
-                                )}
-                                <button
-                                    disabled={!merchantMode && isOccupied && !isShelf}
-                                    onClick={() => handleUnitAction(unit)}
-                                    className="relative flex flex-col items-center justify-center p-2"
-                                >
-                                    <div className={`rounded-[1.2rem] border-2 flex items-center justify-center shadow-3xl transition-all duration-500 overflow-hidden ${
-                                        isShelf 
-                                            ? 'w-24 h-12 bg-white/5 border-white/20 hover:border-amber-400/50' 
-                                            : 'w-16 h-16 bg-white/10 border-white/20 hover:border-indigo-500/50'
-                                    } ${isSelected ? 'border-amber-400 bg-amber-400/25 shadow-[0_0_20px_rgba(251,191,36,0.3)]' : ''} ${isOccupied ? 'bg-red-500/20 border-red-500/40 text-red-500' : 'text-white/80'}`}>
-                                        <div className="flex flex-col items-center gap-0.5 px-2 text-center">
-                                            <span className={`${isShelf ? 'text-[8px]' : 'text-xl'} font-black italic tracking-tighter uppercase line-clamp-2`}>{unit.label}</span>
-                                            {isShelf && !isEditing && (
-                                                <span className="text-[6px] font-black text-amber-400/60 uppercase">Unit Stock</span>
-                                            )}
-                                        </div>
-                                    </div>
+                                ) : null}
 
-                                    <div className={`mt-2 px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest transition-all ${
-                                        isShelf ? 'bg-amber-400/10 text-amber-400' : 'bg-white/10 text-white/60'
-                                    }`}>
-                                        {isShelf ? (unit.productPrice ? `$${unit.productPrice}` : 'Unassigned') : `${unit.capacity || 2} Pax`}
-                                    </div>
-
-                                    {isEditing && (
-                                        <div 
-                                            onClick={(e) => handleRotate(unit.id, e)}
-                                            className="absolute -top-1 -right-1 w-7 h-7 bg-indigo-600 rounded-full flex items-center justify-center text-[10px] border-2 border-black/40 hover:scale-110 active:rotate-180 transition-all cursor-pointer shadow-xl z-20"
-                                        >
-                                            🔄
+                                {/* Table Body */}
+                                <div className={`w-20 h-20 rounded-[1.5rem] border-2 flex flex-col items-center justify-center transition-all duration-300 ${
+                                    isOccupied 
+                                        ? (revLevel === 'high' ? 'border-amber-400 bg-amber-400/10 shadow-[0_0_20px_rgba(251,191,36,0.3)]' : 'border-rose-500/40 bg-rose-500/5') 
+                                        : 'border-white/10 bg-[#111113]'
+                                }`}>
+                                    <span className="text-xl font-black italic uppercase text-white leading-none">{unit.label}</span>
+                                    {isOccupied && (
+                                        <div className="flex flex-col items-center gap-0.5 mt-1">
+                                            <span className="text-[6px] font-black uppercase tracking-widest text-indigo-400">
+                                                {unit.occupiedSince ? `${Math.floor((Date.now() - new Date(unit.occupiedSince).getTime()) / 60000)}m Open` : 'Active'}
+                                            </span>
                                         </div>
                                     )}
-                                </button>
-                            </div>
-                        );
-                    })}
-                </div>
+                                </div>
 
-                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 px-12 py-4 bg-indigo-600 rounded-full border border-white/20 shadow-3xl z-20">
-                    <span className="text-[10px] font-black uppercase tracking-[0.4em] text-white">Bar & Operations</span>
-                </div>
+                                {/* Performance Badges */}
+                                {isOccupied && (
+                                    <div className="mt-3 flex gap-1.5 animate-in fade-in slide-in-from-bottom-2 duration-500">
+                                        <div className="px-2 py-0.5 bg-amber-400 text-black rounded-full text-[7px] font-black uppercase">
+                                            ${unit.revenue || 0}
+                                        </div>
+                                        {unit.assignedStaffId && (
+                                            <div className="px-2 py-0.5 bg-white/10 text-white/50 rounded-full text-[7px] font-black uppercase">
+                                                ID: {unit.assignedStaffId}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </button>
+                        </div>
+                    );
+                })}
             </div>
+
+            {/* Order Selector Terminal */}
+            {orderSelector && (
+                <div className="fixed inset-0 bg-black/95 backdrop-blur-3xl z-[600] flex items-center justify-center p-6 animate-in zoom-in-95 duration-500">
+                     <div className="w-full max-w-sm bg-[#0a0a0b] border border-white/10 rounded-[3.5rem] p-12 space-y-10 shadow-3xl">
+                        <div className="text-center space-y-2">
+                            <h4 className="text-3xl font-black italic tracking-tighter text-white uppercase">Assign Order.</h4>
+                            <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest italic">Unit: {units.find(u => u.id === orderSelector)?.label}</p>
+                        </div>
+                        <div className="space-y-3">
+                            {pendingOrders.map(o => (
+                                <button key={o.id} onClick={() => linkOrderToTable(o.id)} className="w-full p-6 bg-white/5 border border-white/10 rounded-3xl flex justify-between items-center hover:bg-indigo-600 transition-all group">
+                                    <div className="text-left">
+                                        <p className="text-lg font-black italic text-white uppercase leading-none">Order #{o.id.slice(0,5)}</p>
+                                        <p className="text-[9px] font-black text-white/30 uppercase mt-1">${o.total} Settlement</p>
+                                    </div>
+                                    <span className="text-xl group-hover:translate-x-2 transition-transform">→</span>
+                                </button>
+                            ))}
+                        </div>
+                        <button onClick={() => setOrderSelector(null)} className="w-full py-4 text-white/20 text-[10px] font-black uppercase tracking-widest">Abort Selection</button>
+                     </div>
+                </div>
+            )}
 
             {/* Receipt Modal */}
             {activeReceipt && (
-                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-6 animate-in fade-in duration-300">
-                    <div className="bg-white text-black w-full max-w-sm rounded-[2.5rem] p-10 space-y-8 relative overflow-hidden shadow-2xl">
-                        <div className="text-center space-y-2">
-                            <h4 className="text-4xl font-black italic tracking-tighter uppercase">Receipt.</h4>
-                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Unit {activeReceipt.table_number || '??'} &bull; {new Date(activeReceipt.created_at).toLocaleTimeString()}</p>
-                        </div>
-                        <div className="border-t border-b border-dashed border-gray-200 py-6 space-y-4">
-                            <div className="flex justify-between items-center text-xs font-black uppercase tracking-tight">
-                                <span>Customer</span>
-                                <span>{activeReceipt.customer_name || 'Anonymous'}</span>
+                <div className="fixed inset-0 bg-black/95 backdrop-blur-3xl z-[500] flex items-center justify-center p-6 animate-in zoom-in-95 duration-500">
+                    <div className="bg-white rounded-[4.5rem] w-full max-w-sm overflow-hidden flex flex-col shadow-3xl">
+                         <header className="p-12 bg-black text-white space-y-4">
+                            <div className="flex justify-between items-start">
+                                <OasisLogo size="sm" />
+                                <button onClick={() => setActiveReceipt(null)} className="text-[8px] font-black uppercase text-white/30 hover:text-white transition-colors">Close</button>
                             </div>
-                            <div className="space-y-2">
-                                {activeReceipt.items && Array.isArray(activeReceipt.items) ? activeReceipt.items.map((item: any, i: number) => (
-                                    <div key={i} className="flex justify-between text-sm font-bold text-gray-600">
-                                        <span>{item.quantity}x {item.name}</span>
-                                        <span>${Number(item.price * item.quantity).toFixed(2)}</span>
-                                    </div>
-                                )) : (
-                                    <p className="text-[10px] text-gray-400 italic font-medium">No items in cart yet.</p>
-                                )}
-                            </div>
-                        </div>
-                        <div className="flex justify-between items-center">
-                            <span className="text-sm font-black uppercase tracking-widest text-gray-400">Total</span>
-                            <span className="text-3xl font-black italic tracking-tighter">${Number(activeReceipt.total).toFixed(2)}</span>
-                        </div>
-                        <div className="grid grid-cols-2 gap-4 pt-4">
-                            <button onClick={() => setActiveReceipt(null)} className="w-full py-4 bg-gray-100 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-gray-200 transition-all">Close</button>
-                            <button className="w-full py-4 bg-black text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl">Process Pay</button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Order Selector (Link Pending Order to Table) */}
-            {orderSelector && (
-                <div className="fixed inset-0 bg-black/90 backdrop-blur-xl z-[200] flex items-center justify-center p-6 animate-in fade-in zoom-in-95 duration-500">
-                    <div className="bg-[#0a0a0b] border border-white/10 w-full max-w-[440px] rounded-[3.5rem] p-12 space-y-10 shadow-3xl relative overflow-hidden">
-                        <div className="absolute top-0 right-0 p-12 opacity-[0.03] pointer-events-none">
-                            <span className="text-[200px] font-black italic select-none leading-none">📋</span>
-                        </div>
-
-                        <div className="text-center space-y-3 relative z-10">
-                            <h4 className="text-4xl font-black italic tracking-tighter uppercase text-white leading-none">Assign Hub.</h4>
-                            <p className="text-[10px] font-black text-amber-400 uppercase tracking-widest leading-none bg-amber-400/10 px-4 py-2 rounded-full inline-block italic">Link Order Node to Unit: {units.find(u => u.id === orderSelector)?.label}</p>
-                        </div>
-
-                        <div className="max-h-[400px] overflow-y-auto space-y-3 pr-2 custom-scrollbar relative z-10">
-                            {pendingOrders.length > 0 ? pendingOrders.map((order) => (
-                                <button 
-                                    key={order.id}
-                                    onClick={() => linkOrderToTable(order.id)}
-                                    className="w-full p-8 bg-white/5 border border-white/10 rounded-3xl flex justify-between items-center hover:bg-indigo-600/20 hover:border-indigo-400/30 transition-all group"
-                                >
-                                    <div className="flex flex-col items-start gap-1">
-                                        <div className="flex items-center gap-3">
-                                            <span className="text-xl font-black uppercase text-white/80 group-hover:text-indigo-400 transition-colors italic tracking-tighter leading-none">{order.customer_name || 'Guest'}</span>
-                                            <span className="text-[9px] font-black text-white/20 bg-white/5 px-2 py-0.5 rounded-full">{order.items?.length || 0} Items</span>
-                                        </div>
-                                        <span className="text-[9px] font-bold text-white/30 uppercase tracking-widest mt-1 italic">{new Date(order.created_at).toLocaleTimeString()}</span>
-                                    </div>
-                                    <div className="text-right flex flex-col items-end">
-                                        <span className="text-2xl font-black text-amber-400 italic tracking-tighter leading-none">${Number(order.total).toFixed(2)}</span>
-                                        <span className="text-[8px] font-black text-white/20 uppercase tracking-widest mt-1">Pending Link</span>
-                                    </div>
-                                </button>
-                            )) : (
-                                <div className="p-16 text-center bg-white/[0.02] border border-dashed border-white/10 rounded-[3rem] space-y-6">
-                                    <div className="text-5xl opacity-10 grayscale">🛒</div>
-                                    <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/20 leading-relaxed italic">No un-linked 'Web' or 'Pending' orders found for this Oasis node.</p>
-                                </div>
-                            )}
-                        </div>
-
-                        <div className="pt-4 flex flex-col gap-3">
-                            <button 
-                                onClick={() => setOrderSelector(null)}
-                                className="w-full py-6 bg-white/5 border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-white transition-all shadow-xl"
-                            > 
-                                Cancel Linking Sequence 
-                            </button>
-                            <p className="text-[8px] font-bold text-white/10 uppercase tracking-[0.3em] text-center italic">Secure commerce anchor via Oasis Port Protocol.</p>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Node Configuration Modal (Chairs / Labels / Deletion) */}
-            {configUnitId && (
-                <div className="fixed inset-0 bg-black/90 backdrop-blur-xl z-[150] flex items-center justify-center p-6 animate-in zoom-in-95 duration-500">
-                    <div className="bg-[#0a0a0b] border border-white/10 w-full max-w-[420px] rounded-[3.5rem] p-12 space-y-12 shadow-3xl relative overflow-hidden">
-                        <div className="absolute top-0 right-0 p-12 opacity-[0.03] pointer-events-none">
-                            <span className="text-[200px] font-black italic select-none leading-none">⚙️</span>
-                        </div>
-
-                        <div className="text-center space-y-3 relative z-10">
-                            <h4 className="text-4xl font-black italic tracking-tighter uppercase text-white leading-none">Configure Node.</h4>
-                            <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest leading-none bg-indigo-500/10 px-4 py-2 rounded-full inline-block">Architectural Tuning: {units.find(u => u.id === configUnitId)?.label}</p>
-                        </div>
-
-                        <div className="space-y-8 relative z-10">
-                            <div className="space-y-4">
-                                <label className="text-[10px] font-black uppercase tracking-widest text-white/30 px-3">Unit Identifier (Alphanumeric Handle)</label>
-                                <input 
-                                    type="text" 
-                                    className="w-full bg-white/5 border border-white/10 rounded-3xl p-6 text-2xl text-white font-black italic tracking-tight focus:border-indigo-500 outline-none transition-all placeholder:text-white/10"
-                                    placeholder="e.g. Table 01"
-                                    value={units.find(u => u.id === configUnitId)?.label || ''}
-                                    onChange={(e) => updateUnit(configUnitId, { label: e.target.value })}
-                                />
-                            </div>
-
-                            {units.find(u => u.id === configUnitId)?.type === 'table' ? (
-                                <div className="space-y-4">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-white/30 px-3 font-mono">Structural Capacity (Chairs)</label>
-                                    <div className="flex items-center gap-6 bg-white/5 rounded-[2rem] p-3 border border-white/10">
-                                        <button onClick={() => updateUnit(configUnitId, { capacity: Math.max(1, (units.find(u => u.id === configUnitId)?.capacity || 2) - 1) })} className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center text-2xl hover:bg-indigo-600 transition-all font-black text-white shadow-lg">-</button>
-                                        <div className="flex-1 text-center py-2">
-                                            <span className="text-5xl font-black italic tracking-tighter text-white inline-block leading-none">{units.find(u => u.id === configUnitId)?.capacity || 2}</span>
-                                            <span className="block text-[8px] font-bold text-white/20 uppercase tracking-widest mt-1">Pax Capacity</span>
-                                        </div>
-                                        <button onClick={() => updateUnit(configUnitId, { capacity: (units.find(u => u.id === configUnitId)?.capacity || 2) + 1 })} className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center text-2xl hover:bg-indigo-600 transition-all font-black text-white shadow-lg">+</button>
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="space-y-4">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-white/30 px-3">Inventory Binding</label>
-                                    <button 
-                                        onClick={() => { setProductSelector(configUnitId); setConfigUnitId(null); }}
-                                        className="w-full py-7 bg-white/5 border border-white/10 text-white rounded-3xl font-black text-xs uppercase tracking-widest hover:bg-indigo-600 hover:border-indigo-500 transition-all shadow-xl group"
-                                    >
-                                        <span className="group-hover:scale-105 inline-block transition-transform">Assign Product SKU</span>
-                                    </button>
-                                </div>
-                            )}
-
-                            <div className="pt-10 border-t border-white/5 flex flex-col gap-4">
-                                <button onClick={() => setConfigUnitId(null)} className="w-full py-6 bg-white text-black rounded-3xl font-black text-xs uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98] transition-all shadow-2xl shadow-white/10">Confirm Node Tuning</button>
-                                <button onClick={() => deleteUnit(configUnitId)} className="w-full py-4 text-rose-500 font-black text-[10px] uppercase tracking-widest hover:text-rose-400 transition-all italic tracking-tighter text-center">Decommission Structural Unit</button>
-                            </div>
-                        </div>
+                            <h4 className="text-5xl font-black italic tracking-tighter uppercase leading-none mt-6">Receipt.</h4>
+                            <p className="text-[9px] font-black text-white/30 uppercase tracking-widest">Unit {activeReceipt.table_number} &bull; Total ${activeReceipt.total}</p>
+                         </header>
+                         <div className="p-12">
+                            <button className="w-full py-6 bg-indigo-600 text-white rounded-[2rem] font-black text-xs uppercase tracking-widest shadow-2xl">Settle Bill</button>
+                         </div>
                     </div>
                 </div>
             )}

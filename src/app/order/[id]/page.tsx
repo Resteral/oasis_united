@@ -15,42 +15,22 @@ export default function OrderPage() {
     useEffect(() => {
         async function fetchOrder() {
             if (!id) return;
-
-            const { data: orderData, error: orderError } = await supabase
-                .from('orders')
-                .select('*')
-                .eq('id', id)
-                .single();
-
-            if (orderError || !orderData) {
-                console.error('Order not found');
-                setLoading(false);
-                return;
-            }
-
+            const { data: orderData, error: orderError } = await supabase.from('orders').select('*').eq('id', id).single();
+            if (orderError || !orderData) { setLoading(false); return; }
             setOrder(orderData);
-
-            const { data: bizData } = await supabase
-                .from('businesses')
-                .select('name, theme, location, owner_id')
-                .eq('id', orderData.business_id)
-                .single();
-
-            if (bizData) {
-                setBusiness(bizData);
-            }
+            const { data: bizData } = await supabase.from('businesses').select('name, theme, location, owner_id').eq('id', orderData.business_id).single();
+            if (bizData) setBusiness(bizData);
             setLoading(false);
         }
-
         fetchOrder();
     }, [id]);
 
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-50">
-                <div className="text-center">
-                    <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                    <p className="text-gray-500 font-bold uppercase tracking-widest text-xs">Verifying Receipt...</p>
+            <div className="min-h-screen flex items-center justify-center bg-[#0a0a0b]">
+                <div className="text-center space-y-6">
+                    <div className="w-16 h-16 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                    <p className="text-white/20 font-black uppercase tracking-[0.4em] text-[10px] italic">Synchronizing Receipt Matrix...</p>
                 </div>
             </div>
         );
@@ -58,126 +38,151 @@ export default function OrderPage() {
 
     if (!order) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-50">
-                <div className="text-center p-8 bg-white rounded-3xl shadow-xl border border-gray-100 max-w-md">
-                    <span className="text-6xl block mb-6">🔍</span>
-                    <h1 className="text-2xl font-black text-gray-900 mb-2">Order Not Found</h1>
-                    <p className="text-gray-500 mb-8">We couldn't find the order you're looking for. Please check your link or contact support.</p>
-                    <Link href="/" className="px-8 py-3 bg-indigo-600 text-white rounded-2xl font-black text-xs tracking-widest uppercase hover:bg-indigo-700 transition-all block text-center">
-                        Back to Home
-                    </Link>
+            <div className="min-h-screen flex items-center justify-center bg-[#0a0a0b] p-8">
+                <div className="text-center max-w-md w-full p-12 bg-white/[0.03] border border-white/5 rounded-[4rem] animate-in zoom-in duration-700">
+                    <span className="text-6xl block mb-6 opacity-40">🔎</span>
+                    <h1 className="text-3xl font-black italic tracking-tighter uppercase text-white mb-2 leading-none">Order Not <br /><span className="text-indigo-500">Located.</span></h1>
+                    <p className="text-white/40 text-sm font-medium italic mb-10">We couldn't synchronize the requested order node. Please verify your portal link or contact the regional administrator.</p>
+                    <Link href="/" className="px-10 py-5 bg-white text-black rounded-[2.5rem] font-black text-[10px] tracking-widest uppercase hover:scale-105 active:scale-95 transition-all block">Return to Discovery Hub</Link>
                 </div>
             </div>
         );
     }
 
-    const theme = business?.theme || { primaryColor: '#4f46e5', backgroundColor: '#ffffff' };
+    const theme = business?.theme || { primaryColor: '#4f46e5', backgroundColor: '#0a0a0b' };
 
     return (
-        <div className="min-h-screen bg-gray-50 py-12 px-4">
-            <div className="max-w-2xl mx-auto">
-                <div className="bg-white rounded-[2.5rem] shadow-2xl border border-gray-100 overflow-hidden">
-                    {/* Brand Header */}
-                    <div className="p-12 text-center border-b border-gray-50" style={{ backgroundColor: theme.backgroundColor }}>
-                        <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 text-3xl shadow-inner border border-gray-100 bg-white">
-                            {order.type === 'takeout' ? '🛍️' : order.type === 'inhouse' ? '🍽️' : '🚚'}
-                        </div>
-                        <h1 className="text-3xl font-black text-gray-900 tracking-tight">Success!</h1>
-                        <p className="text-gray-500 mt-2 font-medium">Your {order.type} order from <span className="text-indigo-600 font-bold">{business?.name}</span> is confirmed.</p>
+        <div className="min-h-screen bg-[#0a0a0b] text-white py-24 px-6 md:px-10 selection:bg-indigo-500 selection:text-white">
+            <div className="max-w-4xl mx-auto space-y-12">
+                
+                {/* 🛰️ IMMERSIVE SUCCESS HEADER */}
+                <header className="relative p-16 md:p-24 bg-white/[0.02] border border-white/5 rounded-[4rem] overflow-hidden text-center space-y-8 animate-in fade-in slide-in-from-top-12 duration-1000">
+                     {/* Identity Hue Glow */}
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] opacity-10 blur-[100px] rounded-full pointer-events-none" style={{ background: `radial-gradient(circle, ${theme.primaryColor} 0%, transparent 70%)` }}></div>
 
-                        <div className="mt-8 inline-flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-700 rounded-full text-xs font-black uppercase tracking-widest">
-                            <span className="relative flex h-2 w-2">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                            </span>
-                            {order.status === 'completed' ? 'Paid & Confirmed' : 'Payment Received'}
+                    <div className="relative z-10 space-y-6">
+                        <div className="w-24 h-24 rounded-[2rem] bg-indigo-600 text-white flex items-center justify-center mx-auto text-4xl shadow-3xl shadow-indigo-600/30 animate-in zoom-in duration-700">
+                            {order.type === 'takeout' ? '🛍️' : order.type === 'inhouse' ? '🍽️' : '🚀'}
                         </div>
+                        <div className="space-y-2">
+                             <div className="inline-flex items-center gap-3 px-5 py-2 bg-emerald-500/10 border border-emerald-500/20 rounded-full text-[9px] font-black uppercase tracking-[0.3em] text-emerald-400">
+                                 <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-ping"></span>
+                                 Settlement Confirmed
+                             </div>
+                             <h1 className="text-5xl md:text-7xl font-black italic tracking-tighter uppercase leading-[0.85]">Mission <br /><span className="text-indigo-500">Accomplished.</span></h1>
+                        </div>
+                        <p className="text-lg md:text-xl font-medium text-white/40 italic">Your {order.type} order from <span className="text-white font-black">{business?.name || 'A Boutique Node'}</span> has been synchronized with the regional matrix.</p>
                     </div>
+                </header>
 
-                    {/* Order Details */}
-                    <div className="p-12 space-y-10">
-                        {/* Summary Items */}
-                        <div className="space-y-4">
-                            <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-50 pb-2">Order Summary</h3>
-                            {order.items.map((item: any, idx: number) => (
-                                <div key={idx} className="flex justify-between items-center group">
-                                    <div className="flex items-center gap-4">
-                                        <div className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center font-black text-xs text-gray-400 border border-gray-100">
-                                            {item.quantity}x
-                                        </div>
-                                        <div>
-                                            <p className="font-bold text-gray-900">{item.name}</p>
-                                            <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest">${item.price.toFixed(2)} each</p>
-                                        </div>
-                                    </div>
-                                    <span className="font-black text-gray-900">${(item.price * item.quantity).toFixed(2)}</span>
+                {/* 📦 THE ORDER LEDGER */}
+                <section className="grid grid-cols-1 lg:grid-cols-5 gap-10">
+                    
+                    {/* Items & Fulfillment (Left) */}
+                    <div className="lg:col-span-3 space-y-10 animate-in fade-in slide-in-from-left-8 duration-1000">
+                        
+                        {/* THE RECEIPT MATRIX */}
+                        <div className="bg-white/[0.02] border border-white/5 rounded-[3.5rem] p-12 space-y-10">
+                             <div className="flex justify-between items-end border-b border-white/5 pb-8">
+                                <div className="space-y-1">
+                                    <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/30 italic">RECEIPT LEDGER</p>
+                                    <h3 className="text-3xl font-black italic tracking-tighter uppercase text-white leading-none">Asset Summary.</h3>
                                 </div>
-                            ))}
+                                <span className="text-white/20 font-black italic text-xl tracking-tighter">#{order.id.slice(0, 8).toUpperCase()}</span>
+                             </div>
+
+                             <div className="space-y-6">
+                                {order.items.map((item: any, idx: number) => (
+                                    <div key={idx} className="flex justify-between items-center group">
+                                        <div className="flex items-center gap-6">
+                                            <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center font-black text-xs text-white/40 border border-white/5 group-hover:bg-indigo-500/10 group-hover:text-indigo-400 transition-all">
+                                                {item.quantity}x
+                                            </div>
+                                            <div className="space-y-1">
+                                                <p className="font-black italic text-xl tracking-tighter text-white uppercase leading-none">{item.name}</p>
+                                                <p className="text-[9px] font-black text-white/20 uppercase tracking-widest leading-none">${item.price.toFixed(2)} / Unit</p>
+                                            </div>
+                                        </div>
+                                        <span className="text-2xl font-black italic tracking-tighter text-white">${(item.price * item.quantity).toFixed(2)}</span>
+                                    </div>
+                                ))}
+                             </div>
+
+                             {/* Settlements Column */}
+                             <div className="pt-10 border-t border-white/5 space-y-4">
+                                <div className="flex justify-between items-center text-white/30 text-[10px] font-black uppercase tracking-widest italic">
+                                    <span>Base Remission</span>
+                                    <span>${(order.total - (order.type === 'shipping' ? (order.total - order.items.reduce((acc: number, item: any) => acc + (item.price * item.quantity), 0)) : 0)).toFixed(2)}</span>
+                                </div>
+                                {order.type === 'shipping' && (
+                                    <div className="flex justify-between items-center text-indigo-400 text-[10px] font-black uppercase tracking-widest italic">
+                                        <span>Logistics Transit Fee</span>
+                                        <span>${(order.total - order.items.reduce((acc: number, item: any) => acc + (item.price * item.quantity), 0)).toFixed(2)}</span>
+                                    </div>
+                                )}
+                                <div className="flex justify-between items-center pt-6">
+                                    <span className="text-xl font-black italic text-white uppercase tracking-tighter italic">Total Settlement</span>
+                                    <span className="text-5xl font-black italic text-indigo-500 tracking-tighter italic">${order.total.toFixed(2)}</span>
+                                </div>
+                             </div>
                         </div>
 
-                        {/* Live Delivery Tracking (Phase 15) */}
-                        {order.type === 'shipping' && order.id && (
-                            <div className="mb-12">
+                        {/* LIVE TRANSIT INTERFACE (If Shipping) */}
+                        {order.type === 'shipping' && (
+                            <div className="animate-in fade-in slide-in-from-bottom-12 duration-1000">
                                 <LiveTracking orderId={order.id} />
                             </div>
                         )}
-
-                        {/* Pricing Grid */}
-                        <div className="bg-gray-50/50 p-8 rounded-3xl space-y-3 border border-gray-100/50">
-                            <div className="flex justify-between text-sm text-gray-500 font-medium tracking-tight">
-                                <span>Subtotal</span>
-                                <span>${(order.total - (order.type === 'shipping' ? (order.total - order.items.reduce((acc: number, item: any) => acc + (item.price * item.quantity), 0)) : 0)).toFixed(2)}</span>
-                            </div>
-                            {order.type === 'shipping' && (
-                                <div className="flex justify-between text-sm text-gray-500 font-medium tracking-tight">
-                                    <span>Delivery Fee</span>
-                                    <span>${(order.total - order.items.reduce((acc: number, item: any) => acc + (item.price * item.quantity), 0)).toFixed(2)}</span>
-                                </div>
-                            )}
-                            <div className="flex justify-between pt-3 border-t border-gray-100 mt-3">
-                                <span className="text-lg font-black text-gray-900 uppercase tracking-tight">Total Paid</span>
-                                <span className="text-2xl font-black text-indigo-600">${order.total.toFixed(2)}</span>
-                            </div>
-                        </div>
-
-                        {/* Delivery/Pickup Details */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                            <div className="space-y-3">
-                                <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Customer Details</h4>
-                                <div className="space-y-1">
-                                    <p className="font-bold text-gray-900">{order.customer_name}</p>
-                                    <p className="text-sm text-gray-500">{order.customer_contact || 'No contact info provided'}</p>
-                                </div>
-                            </div>
-                            <div className="space-y-3">
-                                <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{order.type === 'takeout' ? 'Pickup Location' : order.type === 'inhouse' ? 'Table Assignment' : 'Delivery Address'}</h4>
-                                <p className="text-sm text-gray-600 font-medium leading-relaxed italic">
-                                    {order.type === 'takeout' ? (business?.location || 'Store address not set') : 
-                                     order.type === 'inhouse' ? `Table #${order.table_number || 'TBD'}` : 
-                                     order.address}
-                                </p>
-                            </div>
-                        </div>
-
-                        {/* Footer Actions */}
-                        <div className="pt-10 flex flex-col sm:flex-row gap-4">
-                            <button
-                                onClick={() => window.print()}
-                                className="flex-1 py-4 bg-gray-900 text-white rounded-2xl font-black text-xs tracking-widest uppercase hover:bg-gray-800 transition-all flex items-center justify-center gap-2 shadow-lg shadow-gray-200"
-                            >
-                                🖨️ Print Receipt
-                            </button>
-                            <Link
-                                href="/"
-                                className="flex-1 py-4 bg-white text-gray-900 border border-gray-100 rounded-2xl font-black text-xs tracking-widest uppercase hover:bg-gray-50 transition-all flex items-center justify-center gap-2 shadow-sm"
-                            >
-                                🏠 Back to Home
-                            </Link>
-                        </div>
                     </div>
-                </div>
 
-                <p className="mt-8 text-center text-gray-400 text-[10px] font-black uppercase tracking-[0.2em]">Oasis United Order System &bull; Receipt #{order.id.slice(0, 8)}</p>
+                    {/* Meta & Actions (Right) */}
+                    <div className="lg:col-span-2 space-y-10 animate-in fade-in slide-in-from-right-8 duration-1000">
+                         
+                         {/* FULFILLMENT PROTOCOL COORDINATES */}
+                         <div className="bg-white/[0.02] border border-white/5 rounded-[3.5rem] p-12 space-y-10">
+                             <div className="space-y-8">
+                                <div className="space-y-3">
+                                    <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/30 italic uppercase">IDENTITY UPLINK</p>
+                                    <div className="space-y-1">
+                                        <p className="text-2xl font-black italic tracking-tighter text-white uppercase leading-none">{order.customer_name}</p>
+                                        <p className="text-[10px] font-black text-white/40 uppercase tracking-widest">{order.customer_contact}</p>
+                                    </div>
+                                </div>
+                                <div className="space-y-3">
+                                    <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/30 italic uppercase">{order.type === 'takeout' ? 'COLLECTION HUB' : order.type === 'inhouse' ? 'TABLE ASSIGNMENT' : 'DISPATCH TARGET'}</p>
+                                    <p className="text-lg font-bold text-white leading-tight italic">
+                                        {order.type === 'takeout' ? (business?.location || 'Store Node Co-ordinates pending.') : 
+                                         order.type === 'inhouse' ? `STATION #${order.table_number || 'TBD'}` : 
+                                         order.address}
+                                    </p>
+                                </div>
+                             </div>
+
+                             {/* Tactical Actions */}
+                             <div className="pt-8 border-t border-white/5 space-y-4">
+                                <button
+                                    onClick={() => window.print()}
+                                    className="w-full py-6 bg-white text-black rounded-3xl font-black text-[10px] tracking-[0.4em] uppercase hover:scale-[1.02] transition-all flex items-center justify-center gap-4 shadow-3xl shadow-white/5"
+                                >
+                                    🖨️ ARCHIVE RECEIPT
+                                </button>
+                                <Link
+                                    href="/"
+                                    className="w-full py-6 bg-white/5 border border-white/10 rounded-3xl font-black text-[10px] tracking-[0.4em] uppercase hover:bg-white/10 transition-all flex items-center justify-center gap-4 text-white/40"
+                                >
+                                    🏠 RETURN TO HUB
+                                </Link>
+                             </div>
+                         </div>
+
+                         {/* Regional Integrity Note */}
+                         <div className="p-10 bg-indigo-500/5 border border-indigo-500/10 rounded-[3rem] text-center">
+                            <p className="text-[9px] font-black text-indigo-400 uppercase tracking-[0.4em] italic leading-relaxed">"Oasis United verified regional trade node. Peer-to-peer logistics active in this loop."</p>
+                         </div>
+                    </div>
+                </section>
+
+                <p className="text-center text-white/10 text-[9px] font-black uppercase tracking-[0.5em] italic pb-20">SYSTEM LOG: NODE_{order.id.slice(0, 12).toUpperCase()} SYNCED</p>
             </div>
         </div>
     );

@@ -1,57 +1,99 @@
 "use client";
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
 
 export default function GlobalNav() {
     const pathname = usePathname();
+    const [role, setRole] = useState<string | null>(null);
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-    const navItems = [
-        { label: 'Explore', path: '/marketplace', icon: '🌎' },
-        { label: 'Chat', path: '/messages', icon: '💬' },
-        { label: 'Oasis Hub', path: '/hub', icon: '⚡' }, // Added Hub Link
-        { label: 'Orders', path: '/my-oasis', icon: '🛍️' },
-        { label: 'Network', path: '/deliverer/dashboard', icon: '🛰️' },
-    ];
+    useEffect(() => {
+        async function getRole() {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                setIsAuthenticated(true);
+                const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+                setRole(profile?.role || 'consumer');
+            } else {
+                setIsAuthenticated(false);
+                setRole(null);
+            }
+        }
+        getRole();
 
-    if (pathname?.startsWith('/admin')) return null;
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            setIsAuthenticated(!!session);
+            if (session?.user) {
+                getRole();
+            } else {
+                setRole(null);
+            }
+        });
 
+        return () => subscription.unsubscribe();
+    }, []);
+
+    // The Cinematic Dock
     return (
-        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[200] w-[calc(100%-4rem)] max-w-lg">
-            <nav className="bg-black/90 backdrop-blur-3xl rounded-[2.5rem] p-3 shadow-[0_32px_128px_-16px_rgba(0,0,0,0.5)] border border-white/10 flex justify-between items-center overflow-hidden">
-                
-                {/* Brand / Logo Button */}
-                <Link href="/" className="px-5 py-3 hover:scale-110 transition-transform">
-                    <img src="/logo.png" alt="Oasis" className="w-10 h-10 object-contain invert" />
+        <nav className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[200] px-3 py-3 bg-[#0c0c0e]/80 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] shadow-[0_32px_128px_-16px_rgba(0,0,0,0.8)] flex items-center gap-1.5 group/nav">
+            <Link 
+                href="/marketplace" 
+                className={`flex items-center gap-3 px-6 py-3.5 rounded-3xl transition-all duration-500 hover:bg-white/5 active:scale-90 ${
+                    pathname === '/marketplace' ? 'bg-white/10 text-white shadow-xl shadow-white/5' : 'text-white/40'
+                }`}
+            >
+                <span className="text-xl">🧭</span>
+                <span className={`text-[9px] font-black uppercase tracking-widest transition-all duration-500 ${pathname === '/marketplace' ? 'w-auto opacity-100' : 'w-0 opacity-0 overflow-hidden group-hover/nav:w-auto group-hover/nav:opacity-100'}`}>Market</span>
+            </Link>
+
+            <Link 
+                href="/hub" 
+                className={`flex items-center gap-3 px-6 py-3.5 rounded-3xl transition-all duration-500 hover:bg-white/5 active:scale-90 ${
+                    pathname === '/hub' ? 'bg-white/10 text-white shadow-xl shadow-white/5' : 'text-white/40'
+                }`}
+            >
+                <span className="text-xl">🛰️</span>
+                <span className={`text-[9px] font-black uppercase tracking-widest transition-all duration-500 ${pathname === '/hub' ? 'w-auto opacity-100' : 'w-0 opacity-0 overflow-hidden group-hover/nav:w-auto group-hover/nav:opacity-100'}`}>Hub</span>
+            </Link>
+
+            {/* Role-Specific Portal */}
+            {role === 'business' && (
+                <Link 
+                    href="/dashboard" 
+                    className={`flex items-center gap-3 px-6 py-3.5 rounded-3xl transition-all duration-500 border border-transparent hover:bg-amber-400/5 active:scale-90 ${
+                        pathname.startsWith('/dashboard') ? 'bg-amber-400/10 text-amber-400 border-amber-400/20 shadow-xl shadow-amber-400/10' : 'text-white/40'
+                    }`}
+                >
+                    <span className="text-xl">🏪</span>
+                    <span className={`text-[9px] font-black uppercase tracking-widest transition-all duration-500 ${pathname.startsWith('/dashboard') ? 'w-auto opacity-100' : 'w-0 opacity-0 overflow-hidden group-hover/nav:w-auto group-hover/nav:opacity-100'}`}>Merchant</span>
                 </Link>
+            )}
 
-                <div className="flex-1 flex justify-around">
-                    {navItems.map((item) => {
-                        const isActive = pathname === item.path;
-                        return (
-                            <Link
-                                key={item.path}
-                                href={item.path}
-                                className={`flex flex-col items-center gap-1.5 py-3 px-3 rounded-2xl transition-all duration-500 relative group ${isActive
-                                    ? 'text-indigo-400'
-                                    : 'text-gray-500 hover:text-white'
-                                    }`}
-                            >
-                                <span className={`text-xl transition-transform duration-500 ${isActive ? 'scale-110' : 'group-hover:scale-110'}`}>
-                                    {item.icon}
-                                </span>
-                                <span className={`text-[8px] font-black uppercase tracking-widest transition-all ${isActive ? 'opacity-100' : 'opacity-0 scale-50 group-hover:opacity-40 group-hover:scale-100'
-                                    }`}>
-                                    {item.label}
-                                </span>
+            {role === 'deliverer' && (
+                <Link 
+                    href="/deliverer/dashboard" 
+                    className={`flex items-center gap-3 px-6 py-3.5 rounded-3xl transition-all duration-500 border border-transparent hover:bg-indigo-600/5 active:scale-90 ${
+                        pathname.startsWith('/deliverer') ? 'bg-indigo-600/10 text-indigo-400 border-indigo-600/20 shadow-xl shadow-indigo-600/10' : 'text-white/40'
+                    }`}
+                >
+                    <span className="text-xl">🚐</span>
+                    <span className={`text-[9px] font-black uppercase tracking-widest transition-all duration-500 ${pathname.startsWith('/deliverer') ? 'w-auto opacity-100' : 'w-0 opacity-0 overflow-hidden group-hover/nav:w-auto group-hover/nav:opacity-100'}`}>Fleet</span>
+                </Link>
+            )}
 
-                                {isActive && (
-                                    <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-indigo-500 rounded-full shadow-[0_0_8px_rgba(129,140,248,0.5)]"></div>
-                                )}
-                            </Link>
-                        );
-                    })}
-                </div>
-            </nav>
-        </div>
+            {!isAuthenticated && (
+                <Link 
+                    href="/login" 
+                    className={`flex items-center gap-3 px-6 py-3.5 rounded-3xl transition-all duration-500 hover:bg-white/5 active:scale-90 ${
+                        pathname === '/login' ? 'bg-white text-black' : 'text-white/40'
+                    }`}
+                >
+                    <span className="text-xl">🔑</span>
+                    <span className={`text-[9px] font-black uppercase tracking-widest transition-all duration-500 ${pathname === '/login' ? 'w-auto opacity-100' : 'w-0 opacity-0 overflow-hidden group-hover/nav:nav:w-auto group-hover/nav:opacity-100'}`}>Login</span>
+                </Link>
+            )}
+        </nav>
     );
 }

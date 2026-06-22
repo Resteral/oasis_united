@@ -102,47 +102,69 @@ export default function MarketplaceClient({ initialFeatured, initialShoutouts }:
                                 </div>
                             </div>
 
-                            <div className={`grid grid-cols-1 md:grid-cols-2 gap-8 transition-all duration-500 ${loading ? 'opacity-50' : 'opacity-100'}`}>
-                                {trendingView === 'Items' ? (
-                                    featured.products?.slice(0, 6).map((product: any) => (
-                                        <div key={product.id} className="group relative bg-[hsl(var(--card))/0.4] rounded-[3rem] p-8 border border-white/5 hover:border-amber-400/30 transition-all flex flex-col md:flex-row gap-8 items-center shadow-3xl">
-                                            <Link href={`/shop/${product.business_id}`} className="w-32 h-32 bg-white/5 rounded-2xl overflow-hidden shrink-0">
-                                                {product.image_url ? (
-                                                    <img src={product.image_url} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all" alt="" />
-                                                ) : <div className="w-full h-full flex items-center justify-center text-3xl opacity-20">💎</div>}
-                                            </Link>
-                                            <div className="flex-1 space-y-2 overflow-hidden">
-                                                <Link href={`/shop/${product.business_id}`} className="block">
-                                                    <h3 className="font-black italic text-xl tracking-tighter uppercase truncate group-hover:text-amber-400 transition-colors">{product.name}</h3>
-                                                </Link>
-                                                <p className="text-[9px] font-bold text-white/30 uppercase tracking-widest">{product.businesses?.name}</p>
-                                                <div className="flex items-center justify-between">
-                                                    <div className="text-2xl font-black italic text-amber-400 mt-2">${Number(product.price).toFixed(2)}</div>
-                                                    <button 
-                                                        onClick={() => handleAddToCart(product)}
-                                                        className="px-6 py-2 bg-white/5 border border-white/10 rounded-full text-[9px] font-black uppercase tracking-widest hover:bg-amber-400 hover:text-black transition-all"
-                                                    >
-                                                        + Cart
-                                                    </button>
+                        <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 transition-all duration-700 ${loading ? 'opacity-50' : 'opacity-100'}`}>
+                            {trendingView === 'Items' ? (
+                                featured.products?.slice(0, 9).map((product: any) => (
+                                    <div key={product.id} className="group relative bg-white/[0.03] rounded-[3.5rem] overflow-hidden border border-white/5 hover:border-amber-400/30 transition-all shadow-3xl hover:-translate-y-4 duration-700">
+                                        <div className="aspect-square overflow-hidden relative">
+                                            {product.image_url ? (
+                                                <img src={product.image_url} className="w-full h-full object-cover grayscale group-hover:grayscale-0 group-hover:scale-110 transition-all duration-1000" alt="" />
+                                            ) : (
+                                                <div className="w-full h-full bg-zinc-900 flex items-center justify-center text-4xl opacity-20">💎</div>
+                                            )}
+                                            <div className="absolute top-6 left-6 flex flex-col gap-2">
+                                                <div className="px-4 py-1.5 bg-black/40 backdrop-blur-xl border border-white/10 rounded-full text-[8px] font-black uppercase tracking-widest text-white/60">
+                                                    New In-Node
+                                                </div>
+                                                {product.is_featured && (
+                                                    <div className="px-4 py-1.5 bg-amber-400 text-black rounded-full text-[8px] font-black uppercase tracking-widest shadow-xl shadow-amber-400/20 animate-pulse">
+                                                        Featured
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <div className="p-10 space-y-4 relative">
+                                            <div className="space-y-1">
+                                                <p className="text-[9px] font-black uppercase tracking-[0.4em] text-white/30">{product.businesses?.name}</p>
+                                                <h3 className="font-black italic text-2xl tracking-tighter uppercase truncate text-white leading-none">{product.name}</h3>
+                                            </div>
+                                            <div className="flex items-center justify-between pt-6 border-t border-white/5">
+                                                <div className="text-3xl font-black italic tracking-tighter text-amber-400">${Number(product.price).toFixed(2)}</div>
+                                                <button 
+                                                    onClick={() => handleAddToCart(product)}
+                                                    className="p-4 bg-white text-black rounded-2xl hover:bg-amber-400 transition-all shadow-xl active:scale-95"
+                                                >
+                                                    <span className="text-[10px] font-black uppercase tracking-widest">Add to Cart</span>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))
+                            ) : (
+                                featured.businesses?.slice(0, 9).map((biz: any) => (
+                                    <Link key={biz.id} href={`/shop/${biz.id}`} className="group relative bg-[#0c0c0e] rounded-[3.5rem] p-12 border border-white/5 hover:border-indigo-500/30 transition-all flex flex-col justify-between min-h-[380px] shadow-3xl hover:-translate-y-4 duration-700">
+                                        <div className="absolute top-0 right-0 p-16 opacity-[0.03] select-none pointer-events-none group-hover:opacity-10 transition-all italic">
+                                            <span className="text-[140px] font-black leading-none text-indigo-500">{biz.name[0]}</span>
+                                        </div>
+                                        <div className="space-y-4 relative z-10">
+                                            <div className="w-20 h-20 bg-indigo-600/10 rounded-[1.5rem] flex items-center justify-center text-4xl font-black italic text-indigo-500 border border-indigo-500/20 group-hover:scale-110 transition-all duration-700">
+                                                {biz.name[0]}
+                                            </div>
+                                            <div className="space-y-2">
+                                                <h3 className="font-black italic text-4xl tracking-tighter uppercase leading-[0.85] text-white">{biz.name}</h3>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
+                                                    <p className="text-[10px] font-black uppercase tracking-widest text-emerald-500/60 leading-none">{biz.location}</p>
                                                 </div>
                                             </div>
                                         </div>
-                                    ))
-                                ) : (
-                                    featured.businesses?.slice(0, 6).map((biz: any) => (
-                                        <Link key={biz.id} href={`/shop/${biz.id}`} className="group relative bg-[#1a1a1e] rounded-[3rem] p-8 border border-white/5 hover:border-amber-500/30 transition-all flex gap-8 items-center shadow-3xl">
-                                            <div className="w-32 h-32 bg-amber-500/10 rounded-2xl flex items-center justify-center text-4xl font-black italic text-amber-500 border border-amber-500/20 group-hover:scale-110 transition-transform shrink-0">
-                                                {biz.name[0]}
-                                            </div>
-                                            <div className="space-y-1">
-                                                <h3 className="font-black italic text-xl tracking-tighter uppercase truncate">{biz.name}</h3>
-                                                <p className="text-[9px] font-black uppercase tracking-widest text-amber-500/40">{biz.location}</p>
-                                                <span className="inline-block mt-2 px-3 py-1 bg-white/5 rounded-full text-[7px] font-black uppercase text-white/30 tracking-widest leading-none">{biz.category}</span>
-                                            </div>
-                                        </Link>
-                                    ))
-                                )}
-                            </div>
+                                        <div className="pt-8 relative z-10">
+                                            <span className="inline-block px-5 py-2 bg-white/5 rounded-full text-[9px] font-black uppercase text-white/40 tracking-widest border border-white/5 group-hover:border-indigo-500/20 transition-all">{biz.category || 'Independent Boutique'}</span>
+                                        </div>
+                                    </Link>
+                                ))
+                            )}
+                        </div>
                         </section>
 
                         {/* Recent Network Activity */}

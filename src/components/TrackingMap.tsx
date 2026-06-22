@@ -95,12 +95,37 @@ export default function TrackingMap({ activeDrivers, focusedOrder }: TrackingMap
                         </g>
                     ))}
 
-                    {/* Regional Discovery Static Nodes (Businesses) */}
-                    <g className="opacity-20 grayscale">
-                        <circle cx="20" cy="30" r="0.5" fill="white" />
-                        <circle cx="80" cy="45" r="0.5" fill="white" />
-                        <circle cx="50" cy="85" r="0.5" fill="white" />
-                        <circle cx="65" cy="15" r="0.5" fill="white" />
+                    {/* Regional Discovery Live Nodes (Boutiques) */}
+                    <g className="group/nodes">
+                        {[
+                            { x: 20, y: 30, name: 'Lakeside Grill' },
+                            { x: 80, y: 45, name: 'Wolfe Market' },
+                            { x: 50, y: 85, name: 'Peak Hardware' },
+                            { x: 65, y: 15, name: 'Forest Cafe' },
+                        ].map((node, i) => (
+                            <g key={i} className="hover:opacity-100 transition-opacity">
+                                <circle 
+                                    cx={node.x} 
+                                    cy={node.y} 
+                                    r="1.5" 
+                                    className="fill-amber-400/10 animate-pulse" 
+                                />
+                                <circle 
+                                    cx={node.x} 
+                                    cy={node.y} 
+                                    r="0.5" 
+                                    className="fill-amber-400" 
+                                />
+                                <text
+                                    x={node.x}
+                                    y={node.y + 3}
+                                    textAnchor="middle"
+                                    className="text-[1.5px] font-black fill-amber-400/40 uppercase tracking-widest opacity-0 group-hover/nodes:opacity-100 transition-opacity"
+                                >
+                                    {node.name} [NODE]
+                                </text>
+                            </g>
+                        ))}
                     </g>
                 </svg>
             </div>

@@ -46,40 +46,50 @@ export default function HomeClient({ initialBusinesses }: HomeClientProps) {
       </header>
 
       <main>
-        {/* Cinematic Hero Section */}
-        <section className="relative min-h-screen flex items-center justify-center pt-32 pb-20 overflow-hidden">
+        {/* Cinematic Hero Section - Simplified & Higher Impact */}
+        <section className="relative min-h-[90vh] flex items-center justify-center pt-32 pb-20 overflow-hidden">
           {/* Animated Background Elements */}
           <div className="absolute inset-0 z-0">
              <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-amber-400/10 rounded-full blur-[120px] animate-pulse"></div>
              <div className="absolute bottom-1/4 right-1/4 w-[600px] h-[600px] bg-indigo-600/10 rounded-full blur-[150px] animate-pulse delay-700"></div>
-             <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-[0.03]"></div>
           </div>
 
-          <div className="relative z-10 max-w-6xl mx-auto px-10 text-center space-y-12">
-            <div className="inline-flex items-center gap-3 px-4 py-2 bg-amber-400/10 border border-amber-400/20 rounded-full animate-in fade-in slide-in-from-bottom-4 duration-1000">
-              <span className="w-1.5 h-1.5 bg-amber-400 rounded-full animate-ping"></span>
-              <span className="text-[10px] font-black uppercase tracking-[0.4em] text-amber-400">Neighborhood Commerce Protocol 1.0</span>
+          <div className="relative z-10 max-w-7xl mx-auto px-10 text-center space-y-16">
+            <div className="space-y-6">
+                <h1 className="text-7xl md:text-[11rem] font-black italic tracking-tighter uppercase leading-[0.8] animate-in slide-in-from-bottom duration-1000">
+                  The <span className="text-amber-400">Oasis.</span>
+                </h1>
+                <p className="max-w-3xl mx-auto text-xl md:text-3xl font-medium text-white/40 leading-relaxed italic">
+                    Simple, independent local commerce for everyone.
+                </p>
             </div>
 
-            <h1 className="text-7xl md:text-[10rem] font-black italic tracking-tighter uppercase leading-[0.85] animate-in fade-in slide-in-from-bottom-12 duration-1000 delay-200">
-              Your Town. <br />
-              <span className="text-amber-400">Unified.</span>
-            </h1>
-
-            <p className="max-w-2xl mx-auto text-lg md:text-2xl font-medium text-white/50 leading-relaxed italic animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-500">
-              The premier independent discovery engine for localized boutiques, logistics, and neighborhood infrastructure.
-            </p>
-
-            <div className="max-w-4xl mx-auto pt-10 animate-in fade-in slide-in-from-bottom-12 duration-1000 delay-700">
-                <OasisCompass />
-              <div className="mt-20 flex flex-wrap justify-center gap-8 relative z-20">
-                <Link href="/marketplace" className="px-12 py-6 bg-white text-black rounded-3xl font-black text-xs uppercase tracking-widest hover:bg-amber-400 transition-all shadow-2xl hover:scale-105 active:scale-95 duration-300">
-                  Enter The Oasis →
+            {/* HIGH-FIDEIITY ENTRY VECTORS - Simplified Selection */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto pt-10">
+                {/* 1. SHOP */}
+                <Link href="/marketplace" className="group bg-white/5 border border-white/5 p-12 rounded-[4rem] hover:bg-white/10 hover:border-amber-400/30 transition-all hover:scale-[1.05] duration-500">
+                    <div className="text-6xl mb-8 group-hover:scale-110 transition-transform">🛍️</div>
+                    <h3 className="text-3xl font-black italic uppercase tracking-tighter">Shop Local</h3>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-white/20 mt-2">Browse the marketplace</p>
                 </Link>
-                <Link href="/deliverer/dashboard" className="px-12 py-6 bg-white/5 border border-white/10 rounded-3xl font-black text-xs uppercase tracking-widest hover:bg-white/10 transition-all">
-                  Join Driver Fleet 🚐
+
+                {/* 2. SELL */}
+                <Link href="/register-business" className="group bg-amber-400 p-12 rounded-[4.5rem] hover:bg-amber-300 transition-all hover:scale-[1.05] duration-500 shadow-3xl shadow-amber-400/20">
+                    <div className="text-6xl mb-8 group-hover:scale-110 transition-transform">🏪</div>
+                    <h3 className="text-3xl font-black italic uppercase tracking-tighter text-black">Start Selling</h3>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-black/40 mt-2">Register your boutique</p>
                 </Link>
-              </div>
+
+                {/* 3. DELIVER */}
+                <Link href="/fleet" className="group bg-[#111113] border border-white/10 p-12 rounded-[4rem] hover:bg-indigo-600 transition-all hover:scale-[1.05] duration-500">
+                    <div className="text-6xl mb-8 group-hover:scale-110 transition-transform">🚐</div>
+                    <h3 className="text-3xl font-black italic uppercase tracking-tighter">Join Fleet</h3>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-white/20 mt-2">Logistics and earnings</p>
+                </Link>
+            </div>
+
+            <div className="pt-10">
+                 <OasisCompass />
             </div>
           </div>
         </section>

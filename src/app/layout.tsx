@@ -23,6 +23,7 @@ export const viewport = {
 
 import PayPalProvider from "@/components/PayPalProvider";
 import GlobalNav from "@/components/GlobalNav";
+import UnifiedHeader from "@/components/UnifiedHeader";
 import PWARegister from "@/components/PWARegister";
 import PWAInstallBanner from "@/components/PWAInstallBanner";
 
@@ -37,6 +38,7 @@ export default function RootLayout({
         <PWARegister />
         <PWAInstallBanner />
         <PayPalProvider>
+          <UnifiedHeader />
           {children}
           <GlobalNav />
         </PayPalProvider>

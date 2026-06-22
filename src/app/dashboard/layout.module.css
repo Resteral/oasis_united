@@ -8,5 +8,6 @@
     margin-left: 250px;
     /* Sidebar width */
     padding: 3.5rem;
-    background-color: #f8fafc;
+    background-color: var(--dashboard-bg);
+    transition: background-color 0.3s ease;
 }

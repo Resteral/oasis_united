@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 
@@ -11,12 +11,39 @@ export default function HardwarePortal() {
     const [phone, setPhone] = useState('');
     const [shipment, setShipment] = useState<any>(null);
 
-    // Configurator state
     const [ssid, setSsid] = useState('');
     const [password, setPassword] = useState('');
     const [serialLog, setSerialLog] = useState<string[]>([]);
     const [serialStatus, setSerialStatus] = useState<'idle' | 'connecting' | 'writing' | 'success' | 'error'>('idle');
     const [serialErrorMessage, setSerialErrorMessage] = useState('');
+
+    // QOL States & Refs
+    const [copiedToken, setCopiedToken] = useState(false);
+    const [copiedCode, setCopiedCode] = useState(false);
+    const logContainerRef = useRef<HTMLDivElement>(null);
+
+    // Load saved SSID from localStorage on mount
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const savedSsid = localStorage.getItem('oasis-wifi-ssid') || '';
+            setSsid(savedSsid);
+        }
+    }, []);
+
+    // Auto-scroll serial console logs
+    useEffect(() => {
+        if (logContainerRef.current) {
+            logContainerRef.current.scrollTop = logContainerRef.current.scrollHeight;
+        }
+    }, [serialLog]);
+
+    const handleCopyToken = () => {
+        if (typeof navigator !== 'undefined') {
+            navigator.clipboard.writeText(token);
+            setCopiedToken(true);
+            setTimeout(() => setCopiedToken(false), 2000);
+        }
+    };
 
     useEffect(() => {
         async function loadHardwareDetails() {
@@ -69,6 +96,7 @@ export default function HardwarePortal() {
             setSerialStatus('error');
             return;
         }
+        localStorage.setItem('oasis-wifi-ssid', ssid);
 
         setSerialStatus('connecting');
         setSerialErrorMessage('');
@@ -262,6 +290,14 @@ void checkOrders() {
 }
 `;
 
+    const handleCopyCode = () => {
+        if (typeof navigator !== 'undefined') {
+            navigator.clipboard.writeText(arduinoCode.trim());
+            setCopiedCode(true);
+            setTimeout(() => setCopiedCode(false), 2000);
+        }
+    };
+
     return (
         <div className="p-8 max-w-7xl mx-auto space-y-12 bg-[#0a0a0b] min-h-screen text-white pb-40">
             {/* Header */}
@@ -312,6 +348,12 @@ void checkOrders() {
                                     value={token || 'NO_TOKEN_PROVISIONED'} 
                                     className="flex-1 bg-white/5 border border-white/10 p-4 rounded-2xl font-mono text-xs text-white/60 tracking-wider outline-none select-all"
                                 />
+                                <button 
+                                    onClick={handleCopyToken}
+                                    className="px-6 py-4 bg-indigo-600 text-white rounded-2xl text-[9px] font-black uppercase tracking-widest hover:bg-indigo-500 transition-all shrink-0 active:scale-95 shadow-lg shadow-indigo-600/10"
+                                >
+                                    {copiedToken ? '✓ Copied' : '📋 Copy'}
+                                </button>
                             </div>
                         </div>
                         {phone && (
@@ -381,7 +423,7 @@ void checkOrders() {
                         </div>
                     </div>
 
-                    <div className="flex-1 bg-white/[0.01] border border-white/5 p-6 rounded-2xl font-mono text-[10px] text-indigo-300 space-y-2 overflow-y-auto max-h-[220px]">
+                    <div ref={logContainerRef} className="flex-1 bg-white/[0.01] border border-white/5 p-6 rounded-2xl font-mono text-[10px] text-indigo-300 space-y-2 overflow-y-auto max-h-[220px]">
                         {serialLog.length === 0 ? (
                             <p className="text-white/20 italic">Awaiting serial connection trigger...</p>
                         ) : (
@@ -399,12 +441,47 @@ void checkOrders() {
                 </div>
             </div>
 
+            {/* Physical Connection Guide */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 pt-6">
+                <div className="bg-white/[0.02] border border-white/5 p-10 rounded-[3rem] space-y-6">
+                    <span className="text-[9px] font-black uppercase tracking-[0.3em] text-white/30">Oasis Hardware Setup</span>
+                    <h3 className="text-3xl font-black italic tracking-tighter uppercase text-white">How the Network Works</h3>
+                    <div className="space-y-4 text-xs font-medium text-white/40 leading-relaxed italic">
+                        <p>1. **Scouting & Onboarding**: Fleet scouts invite merchants to join Oasis. The store is listed instantly on the discovery marketplace.</p>
+                        <p>2. **Hardware Request**: Merchants upgrade to the Hardware Subscription plan on the billing hub. A custom-flashed ESP32-S microchip is shipped/delivered.</p>
+                        <p>3. **Automatic Auditing**: The physical device connects to the internet and checks the Oasis Route Queue for new orders every 10 seconds.</p>
+                    </div>
+                </div>
+
+                <div className="bg-white/[0.02] border border-white/5 p-10 rounded-[3rem] space-y-6">
+                    <span className="text-[9px] font-black uppercase tracking-[0.3em] text-white/30">Physical Installation Guide</span>
+                    <h3 className="text-3xl font-black italic tracking-tighter uppercase text-white">Hooking Up Your ESP32-S</h3>
+                    <div className="space-y-4 text-xs font-medium text-white/40 leading-relaxed italic">
+                        <p>💡 **Pinout Connections**:
+                           - Connect a Piezo Buzzer to sound alerts: Positive (+) pin to **GPIO 23**, Negative (-) pin to **GND**.</p>
+                        <p>🔌 **Powering On**:
+                           - Plug a USB-C data cable into the chip's native USB port. 
+                           - Connect the other end to your store's computer (for browser provisioning) or a 5V power brick.</p>
+                        <p>🛠️ **Wi-Fi Sync**:
+                           - Keep the USB plugged in, open this portal, type your local Wi-Fi SSID and password, and click **Connect & Program** to link the device to your account.</p>
+                    </div>
+                </div>
+            </div>
+
             {/* Firmware Code Snippet */}
             <div className="bg-white/[0.02] border border-white/5 p-12 rounded-[4rem] space-y-8">
-                <div className="space-y-2">
-                    <span className="text-[9px] font-black uppercase tracking-[0.3em] text-white/30">Developers / Advanced Setup</span>
-                    <h3 className="text-4xl font-black italic tracking-tighter uppercase text-white leading-none">Firmware Code</h3>
-                    <p className="text-xs text-white/40 leading-relaxed max-w-xl italic">If you want to compile and write the chip software yourself using the Arduino IDE, use the pre-configured boilerplate below. It is already injected with your API token.</p>
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+                    <div className="space-y-2">
+                        <span className="text-[9px] font-black uppercase tracking-[0.3em] text-white/30">Developers / Advanced Setup</span>
+                        <h3 className="text-4xl font-black italic tracking-tighter uppercase text-white leading-none">Firmware Code</h3>
+                        <p className="text-xs text-white/40 leading-relaxed max-w-xl italic">If you want to compile and write the chip software yourself using the Arduino IDE, use the pre-configured boilerplate below. It is already injected with your API token.</p>
+                    </div>
+                    <button
+                        onClick={handleCopyCode}
+                        className="px-8 py-4 bg-white/5 border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest text-indigo-400 hover:bg-white/10 transition-all flex items-center gap-2 active:scale-95 shrink-0"
+                    >
+                        {copiedCode ? '✓ Copied Boilerplate' : '📋 Copy Boilerplate'}
+                    </button>
                 </div>
 
                 <div className="relative">

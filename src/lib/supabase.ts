@@ -1,4 +1,5 @@
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { createBrowserClient } from '@supabase/ssr';
+import { SupabaseClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -8,7 +9,7 @@ if (!supabaseUrl || !supabaseKey) {
 }
 
 export const supabase: SupabaseClient = (supabaseUrl && supabaseKey)
-    ? createClient(supabaseUrl, supabaseKey)
+    ? createBrowserClient(supabaseUrl, supabaseKey)
     : {
         auth: {
             getUser: async () => ({ data: { user: null }, error: null }),
@@ -23,3 +24,4 @@ export const supabase: SupabaseClient = (supabaseUrl && supabaseKey)
             delete: () => ({ select: () => ({ data: [], error: null }) }),
         })
     } as unknown as SupabaseClient;
+

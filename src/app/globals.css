@@ -21,6 +21,43 @@
   --input: 228 45% 10%;
   --ring: 43 96% 58%;
   --radius: 1rem;
+
+  /* Dashboard Theme Variables */
+  --dashboard-bg: #f8fafc;
+  --card-bg: #ffffff;
+  --card-border: #e2e8f0;
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --border-color: #e2e8f0;
+  --row-hover: #f8fafc;
+
+  --sidebar-bg: #ffffff;
+  --sidebar-border: #e2e8f0;
+  --sidebar-text: #64748b;
+  --sidebar-hover-bg: #f8fafc;
+  --sidebar-hover-text: #1e293b;
+  --sidebar-active-bg: #f5f3ff;
+  --sidebar-active-text: #4f46e5;
+  --sidebar-footer-bg: rgba(249, 250, 251, 0.8);
+}
+
+.dim-mode, .dark-mode {
+  --dashboard-bg: #09090b;
+  --card-bg: #18181b;
+  --card-border: rgba(255, 255, 255, 0.08);
+  --text-main: #f4f4f5;
+  --text-muted: #a1a1aa;
+  --border-color: rgba(255, 255, 255, 0.08);
+  --row-hover: rgba(255, 255, 255, 0.04);
+
+  --sidebar-bg: #09090b;
+  --sidebar-border: rgba(255, 255, 255, 0.08);
+  --sidebar-text: #a1a1aa;
+  --sidebar-hover-bg: rgba(255, 255, 255, 0.04);
+  --sidebar-hover-text: #ffffff;
+  --sidebar-active-bg: rgba(79, 70, 229, 0.2);
+  --sidebar-active-text: #a5b4fc;
+  --sidebar-footer-bg: rgba(255, 255, 255, 0.03);
 }
 
 @utility oasis-gloss {
@@ -93,4 +130,11 @@ h1, h2, h3, h4, h5, h6 {
 @keyframes pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: .5; }
+}
+
+.hover-row {
+  transition: background-color 0.2s ease;
+}
+.hover-row:hover {
+  background-color: var(--row-hover) !important;
 }

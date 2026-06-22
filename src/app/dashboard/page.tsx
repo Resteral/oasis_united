@@ -192,7 +192,7 @@ export default function DashboardOverview() {
     );
 
     return (
-        <div className="p-8 max-w-7xl mx-auto space-y-12 bg-[#0a0a0b] min-h-screen text-white pb-40">
+        <div style={{ color: 'var(--text-main)' }} className="p-8 max-w-7xl mx-auto space-y-12 min-h-screen pb-40">
             {/* Command Center Quick Access */}
             <div className="flex bg-white/[0.03] border border-white/10 p-4 rounded-[2.5rem] backdrop-blur-3xl sticky top-24 z-50 shadow-3xl overflow-x-auto gap-4 no-scrollbar">
                 <Link href="/dashboard/products" className="flex items-center gap-3 px-6 py-3 bg-indigo-600 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-500 transition-all whitespace-nowrap">
@@ -231,28 +231,28 @@ export default function DashboardOverview() {
                     <span className="w-2.5 h-2.5 bg-indigo-500 rounded-full shadow-[0_0_10px_rgba(79,70,229,0.5)]"></span>
                     <h2 className="text-[10px] font-black uppercase tracking-[0.5em] text-white/40">Command Center Alpha</h2>
                 </div>
-                <h1 className="text-6xl md:text-8xl font-black italic tracking-tighter uppercase leading-[0.85] text-white">Dashboard <br /><span className="text-indigo-500">Overview.</span></h1>
+                <h1 style={{ color: 'var(--text-main)' }} className="text-6xl md:text-8xl font-black italic tracking-tighter uppercase leading-[0.85]">Dashboard <br /><span className="text-indigo-500">Overview.</span></h1>
             </div>
 
             {/* Stat Cards (High-Fidelity) */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-                <div className="bg-white/[0.03] p-10 rounded-[3.5rem] border border-white/5 flex flex-col transition-all hover:bg-white/[0.05] hover:-translate-y-2 group">
+                <div style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)' }} className="p-10 rounded-[3.5rem] border flex flex-col transition-all hover:-translate-y-2 group shadow-sm">
                     <div className="flex justify-between items-start">
-                        <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white/30">Total Revenue</span>
+                        <span style={{ color: 'var(--text-muted)' }} className="text-[10px] font-black uppercase tracking-[0.3em]">Total Revenue</span>
                         <span className="text-emerald-500 text-[10px] font-black uppercase">+12.5%</span>
                     </div>
-                    <span className="text-5xl font-black italic tracking-tighter text-white mt-6">${stats.totalRevenue.toLocaleString()}</span>
+                    <span style={{ color: 'var(--text-main)' }} className="text-5xl font-black italic tracking-tighter mt-6">${stats.totalRevenue.toLocaleString()}</span>
                     <div className="mt-8 h-1 w-full bg-white/5 rounded-full overflow-hidden">
                         <div className="h-full bg-emerald-500 w-[60%] shadow-[0_0_10px_rgba(16,185,129,0.4)]"></div>
                     </div>
                 </div>
 
-                <div className="bg-white/[0.03] p-10 rounded-[3.5rem] border border-white/5 flex flex-col transition-all hover:bg-white/[0.05] hover:-translate-y-2 group">
+                <div style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)' }} className="p-10 rounded-[3.5rem] border flex flex-col transition-all hover:-translate-y-2 group shadow-sm">
                     <div className="flex justify-between items-start">
-                        <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white/30">Discovery Reach</span>
+                        <span style={{ color: 'var(--text-muted)' }} className="text-[10px] font-black uppercase tracking-[0.3em]">Discovery Reach</span>
                         <span className="text-indigo-400 text-[10px] font-black uppercase">Active Nodes</span>
                     </div>
-                    <span className="text-5xl font-black italic tracking-tighter text-white mt-6">{stats.totalViews.toLocaleString()}</span>
+                    <span style={{ color: 'var(--text-main)' }} className="text-5xl font-black italic tracking-tighter mt-6">{stats.totalViews.toLocaleString()}</span>
                     <div className="mt-8 h-1 w-full bg-white/5 rounded-full overflow-hidden">
                         <div className="h-full bg-indigo-500 w-[85%] shadow-[0_0_10px_rgba(79,70,229,0.4)]"></div>
                     </div>
@@ -261,37 +261,37 @@ export default function DashboardOverview() {
                 <div className="bg-indigo-600/10 p-10 rounded-[3.5rem] border border-indigo-500/20 flex flex-col transition-all hover:bg-indigo-600/20 hover:-translate-y-2">
                     <div className="flex justify-between items-start">
                         <span className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-400">Node Conversion</span>
-                        <span className="text-white text-[10px] font-black uppercase">Oasis Score</span>
+                        <span style={{ color: 'var(--text-main)' }} className="text-[10px] font-black uppercase">Oasis Score</span>
                     </div>
-                    <span className="text-5xl font-black italic tracking-tighter text-white mt-6">{stats.conversionRate}%</span>
+                    <span style={{ color: 'var(--text-main)' }} className="text-5xl font-black italic tracking-tighter mt-6">{stats.conversionRate}%</span>
                     <div className="mt-8 flex gap-1">
-                        {[1,2,3,4,5].map(i => <div key={i} className={`h-1.5 flex-1 rounded-full ${i <= 4 ? 'bg-white' : 'bg-white/20'}`}></div>)}
+                        {[1,2,3,4,5].map(i => <div key={i} className={`h-1.5 flex-1 rounded-full ${i <= 4 ? 'bg-indigo-500' : 'bg-white/20'}`}></div>)}
                     </div>
                 </div>
 
-                <div className="bg-white/[0.03] p-10 rounded-[3.5rem] border border-white/5 flex flex-col transition-all hover:bg-white/[0.05] hover:-translate-y-2 group">
+                <div style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)' }} className="p-10 rounded-[3.5rem] border flex flex-col transition-all hover:-translate-y-2 group shadow-sm">
                     <div className="flex justify-between items-start">
-                        <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white/30">Active Spaces</span>
+                        <span style={{ color: 'var(--text-muted)' }} className="text-[10px] font-black uppercase tracking-[0.3em]">Active Spaces</span>
                         <span className="text-amber-400 text-[11px] animate-pulse">●</span>
                     </div>
-                    <span className="text-5xl font-black italic tracking-tighter text-white mt-6">{stats.activeSpaces}</span>
+                    <span style={{ color: 'var(--text-main)' }} className="text-5xl font-black italic tracking-tighter mt-6">{stats.activeSpaces}</span>
                     <div className="mt-8 flex items-center gap-3">
-                        <span className="text-[9px] font-black uppercase tracking-widest text-white/30 italic">Posts & Events Live</span>
+                        <span style={{ color: 'var(--text-muted)' }} className="text-[9px] font-black uppercase tracking-widest italic">Posts & Events Live</span>
                     </div>
                 </div>
             </div>
 
             {/* Charts Section */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-                <div className="lg:col-span-2 bg-white p-10 rounded-[3rem] shadow-sm border border-gray-100">
+                <div style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)' }} className="lg:col-span-2 p-10 rounded-[3rem] shadow-sm border">
                     <div className="flex justify-between items-center mb-10">
                         <div>
-                            <h3 className="text-xl font-black text-gray-900 uppercase tracking-tight">Performance Trends</h3>
-                            <p className="text-sm text-gray-400 font-medium tracking-tight">Revenue and View distribution over the last 7 days</p>
+                            <h3 style={{ color: 'var(--text-main)' }} className="text-xl font-black uppercase tracking-tight">Performance Trends</h3>
+                            <p style={{ color: 'var(--text-muted)' }} className="text-sm font-medium tracking-tight">Revenue and View distribution over the last 7 days</p>
                         </div>
                         <div className="flex gap-6">
-                            <div className="flex items-center gap-2"><div className="w-3 h-3 bg-indigo-600 rounded-full"></div><span className="text-[10px] font-black text-gray-400 uppercase">Revenue</span></div>
-                            <div className="flex items-center gap-2"><div className="w-3 h-3 bg-indigo-300 rounded-full"></div><span className="text-[10px] font-black text-gray-400 uppercase">Views</span></div>
+                            <div className="flex items-center gap-2"><div className="w-3 h-3 bg-indigo-600 rounded-full"></div><span style={{ color: 'var(--text-muted)' }} className="text-[10px] font-black uppercase">Revenue</span></div>
+                            <div className="flex items-center gap-2"><div className="w-3 h-3 bg-indigo-300 rounded-full"></div><span style={{ color: 'var(--text-muted)' }} className="text-[10px] font-black uppercase">Views</span></div>
                         </div>
                     </div>
 
@@ -308,13 +308,13 @@ export default function DashboardOverview() {
                                         <stop offset="95%" stopColor="#A5B4FC" stopOpacity={0} />
                                     </linearGradient>
                                 </defs>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
-                                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 800, fill: '#94A3B8' }} dy={15} />
-                                <YAxis axisLine={false} tickLine={false} tickFormatter={(val) => `$${val}`} tick={{ fontSize: 10, fontWeight: 800, fill: '#94A3B8' }} />
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-color)" />
+                                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 800, fill: 'var(--text-muted)' }} dy={15} />
+                                <YAxis axisLine={false} tickLine={false} tickFormatter={(val) => `$${val}`} tick={{ fontSize: 10, fontWeight: 800, fill: 'var(--text-muted)' }} />
                                 <Tooltip
-                                    contentStyle={{ borderRadius: '24px', border: '1px solid #F1F5F9', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.1)', padding: '16px' }}
-                                    itemStyle={{ fontWeight: 900, fontSize: '12px' }}
-                                    labelStyle={{ fontWeight: 900, fontSize: '10px', color: '#94A3B8', marginBottom: '4px', textTransform: 'uppercase' }}
+                                    contentStyle={{ backgroundColor: 'var(--card-bg)', borderRadius: '24px', border: '1px solid var(--border-color)', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.1)', padding: '16px' }}
+                                    itemStyle={{ fontWeight: 900, fontSize: '12px', color: 'var(--text-main)' }}
+                                    labelStyle={{ fontWeight: 900, fontSize: '10px', color: 'var(--text-muted)', marginBottom: '4px', textTransform: 'uppercase' }}
                                     cursor={{ stroke: '#4F46E5', strokeWidth: 2, strokeDasharray: '4 4' }}
                                 />
                                 <Area type="monotone" dataKey="revenue" stroke="#4F46E5" strokeWidth={4} fillOpacity={1} fill="url(#colorRevenue)" />
@@ -325,24 +325,24 @@ export default function DashboardOverview() {
                 </div>
 
                 {/* Activity Pulse Ticker */}
-                <div className="bg-white p-10 rounded-[3rem] shadow-sm border border-gray-100 flex flex-col">
-                    <h3 className="text-xl font-black text-gray-900 uppercase tracking-tight mb-8">Platform Pulse</h3>
+                <div style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)' }} className="p-10 rounded-[3rem] shadow-sm border flex flex-col">
+                    <h3 style={{ color: 'var(--text-main)' }} className="text-xl font-black uppercase tracking-tight mb-8">Platform Pulse</h3>
                     <div className="flex-1 space-y-6 overflow-y-auto pr-2">
                         {activityPulse.length === 0 ? (
                             <div className="h-full flex items-center justify-center">
                                 <p className="text-xs font-black text-gray-300 uppercase tracking-widest text-center">No pulse detected yet</p>
                             </div>
                         ) : activityPulse.map((event, i) => (
-                            <div key={i} className="flex items-start gap-4 p-4 hover:bg-gray-50 rounded-2xl transition-all group">
+                            <div key={i} className="flex items-start gap-4 p-4 hover-row rounded-2xl transition-all group">
                                 <div className={`mt-1.5 h-2 w-2 rounded-full shrink-0 ${event.event_type === 'conversion' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)] animate-pulse' :
                                         event.event_type === 'click' ? 'bg-indigo-400' : 'bg-gray-300'
                                     }`} />
                                 <div className="flex flex-col">
-                                    <span className="text-sm font-black text-gray-900 uppercase italic tracking-tight group-hover:text-indigo-600 transition-colors">
+                                    <span style={{ color: 'var(--text-main)' }} className="text-sm font-black uppercase italic tracking-tight group-hover:text-indigo-600 transition-colors">
                                         {event.event_type === 'conversion' ? 'New Customer Order' :
                                             event.event_type === 'click' ? 'Product Engagement' : 'Marketplace View'}
                                     </span>
-                                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-tighter mt-0.5">
+                                    <span style={{ color: 'var(--text-muted)' }} className="text-[10px] font-black uppercase tracking-tighter mt-0.5">
                                         {new Date(event.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {event.metadata?.page || 'Discovery'}
                                     </span>
                                 </div>
@@ -355,9 +355,9 @@ export default function DashboardOverview() {
             {/* Live Seating Layout Section - The Selling Context */}
             {businessId && (
                 <div className="grid grid-cols-1 lg:grid-cols-5 gap-10">
-                    <div className="lg:col-span-3 bg-gray-950 p-12 rounded-[4rem] shadow-3xl border border-white/5 relative overflow-hidden group">
+                    <div style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)' }} className="lg:col-span-3 p-12 rounded-[4rem] shadow-3xl border relative overflow-hidden group">
                         <div className="absolute top-0 right-0 p-16 opacity-[0.03] select-none pointer-events-none grayscale group-hover:opacity-10 transition-opacity">
-                            <span className="text-[140px] font-black italic leading-none text-white">GRID</span>
+                            <span style={{ color: 'var(--text-main)' }} className="text-[140px] font-black italic leading-none">GRID</span>
                         </div>
                         <div className="relative z-10">
                             <div className="flex justify-between items-center mb-12">
@@ -423,18 +423,18 @@ export default function DashboardOverview() {
             )}
 
             {/* Recent Orders Section (High Fidelity Matrix) */}
-            <div className="bg-white/[0.03] p-12 rounded-[4rem] border border-white/10 shadow-3xl">
+            <div style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)' }} className="p-12 rounded-[4rem] border shadow-3xl">
                 <div className="flex justify-between items-end mb-12">
                     <div className="space-y-2">
-                        <h3 className="text-3xl font-black italic tracking-tighter uppercase text-white leading-none">Transactions</h3>
-                        <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.4em]">Node Financial Audit Matrix</p>
+                        <h3 style={{ color: 'var(--text-main)' }} className="text-3xl font-black italic tracking-tighter uppercase leading-none">Transactions</h3>
+                        <p style={{ color: 'var(--text-muted)' }} className="text-[10px] font-black uppercase tracking-[0.4em]">Node Financial Audit Matrix</p>
                     </div>
                     <Link href="/dashboard/orders" className="px-8 py-3 bg-white/5 border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-white transition-all">Review Global Ledger →</Link>
                 </div>
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-separate border-spacing-y-4">
                         <thead>
-                            <tr className="text-white/20">
+                            <tr style={{ color: 'var(--text-muted)' }}>
                                 <th className="pb-4 px-6 text-[9px] font-black uppercase tracking-[0.3em]">Customer Node</th>
                                 <th className="pb-4 px-6 text-[9px] font-black uppercase tracking-[0.3em]">Temporal Stamp</th>
                                 <th className="pb-4 px-6 text-[9px] font-black uppercase tracking-[0.3em]">Settlement</th>
@@ -443,18 +443,18 @@ export default function DashboardOverview() {
                         </thead>
                         <tbody>
                             {recentOrders.map((order, i) => (
-                                <tr key={i} className="group bg-white/[0.02] hover:bg-white/[0.05] transition-all">
-                                    <td className="py-8 px-6 rounded-l-[2rem] border-y border-l border-white/5">
+                                <tr key={i} style={{ backgroundColor: 'var(--sidebar-footer-bg)' }} className="group hover-row transition-all">
+                                    <td style={{ borderColor: 'var(--border-color)' }} className="py-8 px-6 rounded-l-[2rem] border-y border-l">
                                         <div className="flex items-center gap-4">
                                             <div className="w-10 h-10 bg-indigo-600/10 rounded-xl flex items-center justify-center border border-indigo-500/20">
                                                 <span className="text-xs">👤</span>
                                             </div>
-                                            <span className="font-black text-white italic uppercase tracking-tighter text-lg">{order.customer_name || 'Anonymous Guest'}</span>
+                                            <span style={{ color: 'var(--text-main)' }} className="font-black italic uppercase tracking-tighter text-lg">{order.customer_name || 'Anonymous Guest'}</span>
                                         </div>
                                     </td>
-                                    <td className="py-8 px-6 border-y border-white/5 text-[11px] font-black text-white/30 uppercase italic">{new Date(order.created_at).toLocaleDateString()} &bull; {new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
-                                    <td className="py-8 px-6 border-y border-white/5 font-black text-white text-2xl tracking-tighter">${order.total}</td>
-                                    <td className="py-8 px-6 rounded-r-[2rem] border-y border-r border-white/5 text-right">
+                                    <td style={{ borderColor: 'var(--border-color)', color: 'var(--text-muted)' }} className="py-8 px-6 border-y text-[11px] font-black uppercase italic">{new Date(order.created_at).toLocaleDateString()} &bull; {new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
+                                    <td style={{ borderColor: 'var(--border-color)', color: 'var(--text-main)' }} className="py-8 px-6 border-y font-black text-2xl tracking-tighter">${order.total}</td>
+                                    <td style={{ borderColor: 'var(--border-color)' }} className="py-8 px-6 rounded-r-[2rem] border-y border-r text-right">
                                         <div className="flex justify-end">
                                             <span className={`px-5 py-2 rounded-full text-[8px] font-black uppercase tracking-widest ${order.status === 'completed' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-amber-400/10 text-amber-400 border border-amber-400/20'}`}>
                                                 {order.status === 'completed' ? '✓ SETTLED' : '⚠ PROCESSING'}

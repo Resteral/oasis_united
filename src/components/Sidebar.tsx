@@ -26,17 +26,26 @@ export default function Sidebar() {
     const [dim, setDim] = useState(false);
 
     useEffect(() => {
-        const isDim = localStorage.getItem('oasis-dim') === 'true';
+        const isDim = localStorage.getItem('oasis-dim') === 'true' || localStorage.getItem('oasis-dark') === 'true';
         setDim(isDim);
-        if (isDim) document.documentElement.classList.add('dim-mode');
+        if (isDim) {
+            document.documentElement.classList.add('dim-mode');
+            document.documentElement.classList.add('dark-mode');
+        }
     }, []);
 
     const toggleDim = () => {
         const next = !dim;
         setDim(next);
         localStorage.setItem('oasis-dim', next.toString());
-        if (next) document.documentElement.classList.add('dim-mode');
-        else document.documentElement.classList.remove('dim-mode');
+        localStorage.setItem('oasis-dark', next.toString());
+        if (next) {
+            document.documentElement.classList.add('dim-mode');
+            document.documentElement.classList.add('dark-mode');
+        } else {
+            document.documentElement.classList.remove('dim-mode');
+            document.documentElement.classList.remove('dark-mode');
+        }
     };
 
     return (
@@ -67,13 +76,16 @@ export default function Sidebar() {
             </nav>
 
             <div className={styles.footer}>
-                <div className="flex items-center gap-3 p-2 bg-gray-50/50 rounded-2xl border border-gray-100/10">
+                <div 
+                    style={{ backgroundColor: 'var(--sidebar-footer-bg)' }}
+                    className="flex items-center gap-3 p-2 rounded-2xl border border-gray-100/10"
+                >
                     <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-black text-xs shadow-lg">
                         BO
                     </div>
                     <div className="flex-1 overflow-hidden">
-                        <div className="text-xs font-black text-white truncate">Oasis Admin</div>
-                        <div className="text-[10px] font-bold text-gray-400 truncate uppercase tracking-tighter">Sovereign Node</div>
+                        <div style={{ color: 'var(--text-main)' }} className="text-xs font-black truncate">Oasis Admin</div>
+                        <div style={{ color: 'var(--text-muted)' }} className="text-[10px] font-bold truncate uppercase tracking-tighter">Sovereign Node</div>
                     </div>
                 </div>
                 
@@ -81,7 +93,7 @@ export default function Sidebar() {
                     onClick={toggleDim}
                     className="mt-4 w-full py-3 bg-white/5 border border-white/10 rounded-xl text-[8px] font-black uppercase tracking-[0.3em] flex items-center justify-center gap-2 hover:bg-white/10 transition-all text-white/40 hover:text-white"
                 >
-                    {dim ? '🌕 Normal Mode' : '🌑 Dim Mode (OLED)'}
+                    {dim ? '☀️ Light Mode' : '🌙 Dark Mode'}
                 </button>
             </div>
         </aside>

@@ -70,6 +70,32 @@ export default function FieldManualPage() {
                     </div>
                 </section>
 
+                {/* Website Operations & Hardware Onboarding Manual */}
+                <section className="lg:col-span-12 grid grid-cols-1 md:grid-cols-2 gap-12">
+                    {/* How everything works */}
+                    <div className="bg-white/5 border border-white/10 p-12 rounded-[4rem] space-y-8">
+                        <div className="inline-flex px-4 py-1.5 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-full text-[9px] font-black uppercase tracking-widest">Operational Context</div>
+                        <h2 className="text-4xl font-black italic uppercase tracking-tighter">How Oasis <span className="text-indigo-400">Works.</span></h2>
+                        <div className="space-y-6 text-sm text-white/40 font-medium italic leading-relaxed">
+                            <p>🗺️ **The Discovery Hub**: Local citizens browse active town boutiques via the marketplace and find verified neighborhood shops. Every store is mapped to its active regional hub.</p>
+                            <p>💬 **Automated AI ordering**: Customers can chat with the storefront's floating AI ordering assistant to add items to their cart, verify stock, and process checkout. Additionally, they can text the store's Twilio phone number directly to place orders over SMS.</p>
+                            <p>🚐 **The Fleet Commission**: Fleet members onboard local merchants, set up their visual storefronts, and manage delivery logistics. They act as regional scouts connecting physical outlets to the digital lattice.</p>
+                        </div>
+                    </div>
+
+                    {/* How to hook up your ESP32 */}
+                    <div className="bg-white/5 border border-white/10 p-12 rounded-[4rem] space-y-8">
+                        <div className="inline-flex px-4 py-1.5 bg-amber-400/10 text-amber-400 border border-amber-400/20 rounded-full text-[9px] font-black uppercase tracking-widest">Hardware Deployment Protocol</div>
+                        <h2 className="text-4xl font-black italic uppercase tracking-tighter">ESP32-S <span className="text-amber-400">Hookup Guide.</span></h2>
+                        <div className="space-y-6 text-sm text-white/40 font-medium italic leading-relaxed">
+                            <p>🔌 **Step 1: Connect Power & USB**: Plug the provided USB-C data cable into the ESP32-S development board, and connect it to your store's computer (or any 5V USB wall charger).</p>
+                            <p>🔊 **Step 2: Attach the Buzzer**: For physical audio alerts, connect a standard Piezo buzzer. Wire the positive (+) leg to pin **GPIO 23** and the negative (-) leg to any **GND** pin.</p>
+                            <p>⚡ **Step 3: browser-based Sync**: Visit the Hardware Panel on Chrome or Edge. Enter your local Wi-Fi SSID and password, then click **Connect & Program** to flash your credentials onto the chip over USB.</p>
+                            <p>🔔 **Step 4: Receive Orders**: Once programmed, the chip auto-connects to your Wi-Fi and queries the database every 10 seconds. The buzzer will double-beep whenever a new customer order is placed!</p>
+                        </div>
+                    </div>
+                </section>
+
                 {/* Meritocracy Leaderboard */}
                 <section className="lg:col-span-7 space-y-12">
                     <header className="space-y-2">

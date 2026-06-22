@@ -41,7 +41,8 @@ export default function ProductsPage() {
         setLoading(true);
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
-        const { data: business } = await supabase.from('businesses').select('id').eq('owner_id', user.id).single();
+        const { data: businesses } = await supabase.from('businesses').select('id').eq('owner_id', user.id).limit(1);
+        const business = businesses && businesses.length > 0 ? businesses[0] : null;
         if (business) {
             setBusinessId(business.id);
             const { data: prods } = await supabase.from('products').select('*').eq('business_id', business.id).order('created_at', { ascending: false });

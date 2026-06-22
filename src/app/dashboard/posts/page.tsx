@@ -19,7 +19,8 @@ export default function PostsPage() {
             const { data: { user } } = await supabase.auth.getUser();
             setUser(user);
             if (user) {
-                const { data: business } = await supabase.from('businesses').select('id').eq('owner_id', user.id).single();
+                const { data: businesses } = await supabase.from('businesses').select('id').eq('owner_id', user.id).limit(1);
+                const business = businesses && businesses.length > 0 ? businesses[0] : null;
                 if (business) {
                     const { data: postsData } = await supabase
                         .from('posts')
@@ -38,7 +39,8 @@ export default function PostsPage() {
         if (!content) return;
         if (!user) return;
 
-        const { data: business } = await supabase.from('businesses').select('id').eq('owner_id', user.id).single();
+        const { data: businesses } = await supabase.from('businesses').select('id').eq('owner_id', user.id).limit(1);
+        const business = businesses && businesses.length > 0 ? businesses[0] : null;
         if (!business) return;
 
         const newPost = {

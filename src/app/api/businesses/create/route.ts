@@ -19,35 +19,59 @@ export async function POST(req: Request) {
         }
 
         // 1. Check for existing node to prevent duplication conflicts
-        const { data: existingBiz } = await supabase
+        const { data: existingBizs } = await supabase
             .from('businesses')
             .select('id')
             .eq('owner_id', user.id)
-            .single();
+            .limit(1);
 
-        if (existingBiz) {
+        if (existingBizs && existingBizs.length > 0) {
             return NextResponse.json({ error: 'Conflict Detected: Identity node already active on this uplink.' }, { status: 409 });
         }
 
-        // 2. Provision the business node
-        const { data: business, error: bizError } = await supabase
-            .from('businesses')
-            .insert({
-                owner_id: user.id,
-                slug,
-                name,
-                category,
-                description,
-                town_id: townId,
-                image_url: imageUrl || 'https://images.unsplash.com/photo-1541167760496-1628856ab772?q=80&w=1000&auto=format&fit=crop',
-                theme: theme || { primaryColor: '#4F46E5', backgroundColor: '#0a0a0b' }
-            })
-            .select()
-            .single();
+        // 2. Provision the business node with slug collision retries
+        let business = null;
+        let bizError = null;
+        let finalSlug = slug;
+        const maxRetries = 3;
+
+        for (let attempt = 0; attempt < maxRetries; attempt++) {
+            if (attempt > 0) {
+                const baseSlug = slug.includes('-') ? slug.substring(0, slug.lastIndexOf('-')) : slug;
+                const uniqueSuffix = Math.random().toString(36).substring(2, 6);
+                finalSlug = `${baseSlug}-${uniqueSuffix}`;
+            }
+
+            const { data, error } = await supabase
+                .from('businesses')
+                .insert({
+                    owner_id: user.id,
+                    slug: finalSlug,
+                    name,
+                    category,
+                    description,
+                    town_id: townId,
+                    image_url: imageUrl || 'https://images.unsplash.com/photo-1541167760496-1628856ab772?q=80&w=1000&auto=format&fit=crop',
+                    theme: theme || { primaryColor: '#4F46E5', backgroundColor: '#0a0a0b' }
+                })
+                .select()
+                .single();
+
+            if (!error) {
+                business = data;
+                bizError = null;
+                break;
+            }
+
+            bizError = error;
+            if (error.code !== '23505') {
+                break;
+            }
+            console.warn(`Slug collision detected for '${finalSlug}', retrying with new suffix...`);
+        }
 
         if (bizError) {
             console.error('Error creating business:', bizError);
-            // Handle specific Supabase errors for clearer UI feedback
             if (bizError.code === '23505') {
                 return NextResponse.json({ error: 'Identity Conflict: Slug/URL already claimed in the regional matrix.' }, { status: 400 });
             }

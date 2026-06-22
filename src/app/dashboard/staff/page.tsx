@@ -24,7 +24,8 @@ export default function StaffPage() {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
-        const { data: business } = await supabase.from('businesses').select('id').eq('owner_id', user.id).single();
+        const { data: businesses } = await supabase.from('businesses').select('id').eq('owner_id', user.id).limit(1);
+        const business = businesses && businesses.length > 0 ? businesses[0] : null;
         if (!business) return;
 
         const { data, error } = await supabase
@@ -55,7 +56,8 @@ export default function StaffPage() {
         setMessage({ text: 'Sending invitation...', type: 'info' });
 
         const { data: { user } } = await supabase.auth.getUser();
-        const { data: business } = await supabase.from('businesses').select('id').eq('owner_id', user?.id).single();
+        const { data: businesses } = await supabase.from('businesses').select('id').eq('owner_id', user?.id).limit(1);
+        const business = businesses && businesses.length > 0 ? businesses[0] : null;
 
         if (!business) return;
 

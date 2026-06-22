@@ -61,7 +61,8 @@ export default function SettingsPage() {
             const { data: profile } = await supabase.from('profiles').select('subscription_tier').eq('id', user.id).single();
             if (profile) setSubscriptionTier(profile.subscription_tier || 'free');
 
-            const { data: business } = await supabase.from('businesses').select('*').eq('owner_id', user.id).single();
+            const { data: businesses } = await supabase.from('businesses').select('*').eq('owner_id', user.id).limit(1);
+            const business = businesses && businesses.length > 0 ? businesses[0] : null;
 
             if (business) {
                 setBusinessId(business.id);

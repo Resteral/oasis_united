@@ -19,7 +19,8 @@ export default function HubClient() {
                 const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
                 setRole(profile?.role || 'citizen');
                 if (profile?.role === 'business') {
-                    const { data: biz } = await supabase.from('businesses').select('name').eq('owner_id', user.id).single();
+                    const { data: bizs } = await supabase.from('businesses').select('name').eq('owner_id', user.id).limit(1);
+                    const biz = bizs && bizs.length > 0 ? bizs[0] : null;
                     setBusinessName(biz?.name || null);
                 }
             }

@@ -26,8 +26,8 @@ export default function RegisterBusinessClient() {
         const checkExisting = async () => {
             const { data: { user } } = await supabase.auth.getUser();
             if (user) {
-                const { data } = await supabase.from('businesses').select('id').eq('owner_id', user.id).single();
-                if (data) setHasBusiness(true);
+                const { data } = await supabase.from('businesses').select('id').eq('owner_id', user.id).limit(1);
+                if (data && data.length > 0) setHasBusiness(true);
                 else setHasBusiness(false);
             } else {
                 setHasBusiness(false);
